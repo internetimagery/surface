@@ -2,11 +2,16 @@
 
 import sys
 import os.path
+from itertools import ifilter
 
 if sys.version_info.major == 3:
     from typing import Iterable, Dict, Tuple
 
 __all__ = ["map_modules"]
+
+
+def join(arg1, arg2):
+    return ".".join(ifilter(bool, (arg1, arg2)))
 
 
 def get_abs_module(base):  # type: (str) -> str
@@ -30,25 +35,22 @@ def get_abs_module(base):  # type: (str) -> str
     return ".".join(modulepath)
 
 
-def get_sub_module(root):  # type: (str) -> Iterable[Tuple[str, str]
+def get_sub_module(root):  # type: (str) -> Iterable[Tuple[str, str]]
     """ Given a directory, descend getting relative module names """
     for filename in os.listdir(root):
         filepath = os.path.join(root, filename)
         if os.path.isdir(filepath):  # Descend further
             for name, childpath in get_sub_module(filepath):
-                yield "{}.{}".format(filename, name) if name else filename, childpath
+                yield join(filename, name), childpath
         else:
             name, ext = os.path.splitext(filename)
             if ext != ".py":
                 continue
-            if name == "__init__":
-                name = ""
-            yield (name, filepath)
+            yield ("" if name == "__init__" else name, filepath)
 
 
 def map_modules(sources):  # type: (Iterable[str]) -> Dict[str, str]
-    """ Discover and map module names to paths
-    """
+    """ Discover and map module names to paths """
     name_to_path = {}
     for source in sources:
         if os.path.isfile(source):
@@ -58,5 +60,6 @@ def map_modules(sources):  # type: (Iterable[str]) -> Dict[str, str]
         elif os.path.isdir(source):
             root = get_abs_module(source)
             for name, filepath in get_sub_module(source):
-                name_to_path["{}.{}".format(root, name) if root else name] = filepath
+                name_to_path[join(root, name)] = filepath
+
     return name_to_path
