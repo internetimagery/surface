@@ -1,7 +1,7 @@
 import ast
 import unittest
-from semantic._parser import get_api
-from semantic._base import *
+from api_gen._parser import get_api
+from api_gen._base import *
 
 
 class TestParse(unittest.TestCase):

@@ -4,7 +4,7 @@ import ast
 import sys
 from itertools import izip
 from abc import ABCMeta, abstractmethod
-from semantic._base import *
+from api_gen._base import *
 
 if sys.version_info.major == 3:
     from typing import Iterator, Union, List, Any
@@ -17,7 +17,7 @@ IGNORED_MODULES = ["typing"]
 VALID_NAMES = ["__init__"]
 
 
-def get_api(module):  # type: (ast.Module) -> Tuple[Any]
+def get_api(module):  # type: (ast.Module) -> Iterator[Any]
     """ Collect the exposed API of the source file """
     whitelist = []  # Look for __all__ definition
     for node in module.body:
@@ -87,13 +87,8 @@ def parse_func(node):  # type: (ast.FunctionDef) -> Iterator[Func]
 
 
 def parse_method(node):  # type: (ast.FunctionDef) -> Iterator[Func]
-    static = False
-    for decorator in node.decorator_list:
-        if isinstance(decorator, ast.Name) and decorator.id == "staticmethod":
-            static = True
-
     for func in parse_func(node):
-        if static:
+        if is_static(node):
             yield func
         else:
             yield Func(func.name, tuple(func.args[1:]), func.returns)
@@ -120,11 +115,18 @@ class_body_map = {ast.Assign: parse_assign, ast.FunctionDef: parse_method}
 # Utilities
 
 
-def is_all(node):
+def is_all(node):  # type: (Any) -> bool
     try:
         return node.targets[0].id == "__all__"
     except AttributeError:
         return False
+
+
+def is_static(node):  # type: (ast.FunctionDef) -> bool
+    for decorator in node.decorator_list:
+        if isinstance(decorator, ast.Name) and decorator.id == "staticmethod":
+            return True
+    return False
 
 
 def valid_name(name):  # type: (str) -> bool
