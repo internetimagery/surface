@@ -86,7 +86,8 @@ def func4(a, *args, **kwargs): pass
 class MyClass(object):
     var = 123
     def __init__(self, a, b, c): pass
-    def func1(self, a, b, c): pass
+    @classmethod
+    def func1(cls, a, b, c): pass
     @staticmethod
     def func2(a, b, c): pass
     def _func3(self, a, b, c): pass
@@ -103,7 +104,6 @@ class MyClass(object):
                         Func(
                             "__init__",
                             (
-                                Arg("self", ANY, False),
                                 Arg("a", ANY, False),
                                 Arg("b", ANY, False),
                                 Arg("c", ANY, False),
@@ -113,7 +113,6 @@ class MyClass(object):
                         Func(
                             "func1",
                             (
-                                Arg("self", ANY, False),
                                 Arg("a", ANY, False),
                                 Arg("b", ANY, False),
                                 Arg("c", ANY, False),

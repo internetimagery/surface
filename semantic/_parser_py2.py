@@ -60,6 +60,7 @@ def parse_assign(node):  # type: (ast.Assign) -> Iterator[Var]
 def parse_func(node):  # type: (ast.FunctionDef) -> Iterator[Func]
     if not valid_name(node.name):
         return
+
     defaults_pos = len(node.args.args) - len(node.args.defaults)
     args = tuple(
         Arg(arg.id, ANY, i >= defaults_pos) for i, arg in enumerate(node.args.args)
@@ -68,13 +69,27 @@ def parse_func(node):  # type: (ast.FunctionDef) -> Iterator[Func]
         args += (Arg("*", ANY, False),)
     if node.args.kwarg:
         args += (Arg("**", ANY, True),)
+
     yield Func(node.name, args, ANY)
+
+
+def parse_method(node):  # type: (ast.FunctionDef) -> Iterator[Func]
+    static = False
+    for decorator in node.decorator_list:
+        if isinstance(decorator, ast.Name) and decorator.id == "staticmethod":
+            static = True
+
+    for func in parse_func(node):
+        if static:
+            yield func
+        else:
+            yield Func(func.name, tuple(func.args[1:]), func.returns)
 
 
 def parse_class(node):  # type: (asf.ClassDef) -> Iterator[Class]
     if not valid_name(node.name):
         return
-    body = tuple(get_api(node))
+    body = tuple(n for b in node.body for n in class_body_map[type(b)](b))
     yield Class(node.name, body)
 
 
@@ -85,6 +100,8 @@ node_parse_map = {
     ast.FunctionDef: parse_func,
     ast.ClassDef: parse_class,
 }
+
+class_body_map = {ast.Assign: parse_assign, ast.FunctionDef: parse_method}
 
 # Utilities
 
