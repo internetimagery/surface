@@ -1,6 +1,7 @@
 import sys
 import unittest
 
-from source_test import *
+from test_parse import *
+from test_module import *
 
 unittest.main()

@@ -19,7 +19,7 @@ VALID_NAMES = ["__init__"]
 
 def get_api(module):  # type: (ast.Module) -> Iterator[Any]
     """ Collect the exposed API of the source file """
-    whitelist = []  # Look for __all__ definition
+    whitelist = []  # Look for __all__ definitions
     for node in module.body:
         if is_all(node):
             whitelist = [n.s for n in iter_node(node.value) if isinstance(n, ast.Str)]
