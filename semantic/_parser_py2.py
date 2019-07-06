@@ -11,11 +11,11 @@ if 0:
 __all__ = ["parse"]
 
 IGNORED_MODULES = ["typing"]
+VALID_NAMES = ["__init__"]
 
 
-def get_api(source):  # type: (str) -> Iterator[Any]
+def get_api(module):  # type: (ast.Module) -> Iterator[Any]
     """ Collect the exposed API of the source file """
-    module = ast.parse(source)
     for node in module.body:
         parser = node_parse_map.get(type(node))
         if parser:
@@ -71,17 +71,27 @@ def parse_func(node):  # type: (ast.FunctionDef) -> Iterator[Func]
     yield Func(node.name, args, ANY)
 
 
+def parse_class(node):  # type: (asf.ClassDef) -> Iterator[Class]
+    if not valid_name(node.name):
+        return
+    body = tuple(get_api(node))
+    yield Class(node.name, body)
+
+
 node_parse_map = {
     ast.Import: parse_import,
     ast.ImportFrom: parse_import_from,
     ast.Assign: parse_assign,
     ast.FunctionDef: parse_func,
+    ast.ClassDef: parse_class,
 }
 
 # Utilities
 
 
 def valid_name(name):  # type: (str) -> bool
+    if name in VALID_NAMES:
+        return True
     return not name.startswith("_")
 
 

@@ -1,3 +1,4 @@
+import ast
 import unittest
 from semantic._parser_py2 import get_api
 from semantic._base import *
@@ -5,7 +6,8 @@ from semantic._base import *
 
 class TestParse(unittest.TestCase):
     def test_import(self):
-        code = """
+        module = ast.parse(
+            """
 import abcd
 from typing import List
 import _abc
@@ -13,7 +15,8 @@ from abcd import _efgh
 from abcd import efgh, ijkl
 from abcd import *
 """
-        data = list(get_api(code))
+        )
+        data = list(get_api(module))
         self.assertEqual(
             data,
             [
@@ -25,7 +28,8 @@ from abcd import *
         )
 
     def test_variable(self):
-        code = """
+        module = ast.parse(
+            """
 abcd = "123"
 efgh = 123
 ijkl, mnop = 456, 789
@@ -34,7 +38,8 @@ qrst, = {"123": 123}
 uvw.xyz = True
 index[0] = 123
 """
-        data = list(get_api(code))
+        )
+        data = list(get_api(module))
         self.assertEqual(
             data,
             [
@@ -48,13 +53,16 @@ index[0] = 123
         )
 
     def test_function(self):
-        code = """
+        module = ast.parse(
+            """
 def func1(a, b, c): pass
 def func2(a, b=None): pass
+def _func3(a, b, c): pass
 @decoration
-def func3(a, *args, **kwargs): pass
+def func4(a, *args, **kwargs): pass
 """
-        data = list(get_api(code))
+        )
+        data = list(get_api(module))
         self.assertEqual(
             data,
             [
@@ -65,10 +73,64 @@ def func3(a, *args, **kwargs): pass
                 ),
                 Func("func2", (Arg("a", ANY, False), Arg("b", ANY, True)), ANY),
                 Func(
-                    "func3",
+                    "func4",
                     (Arg("a", ANY, False), Arg("*", ANY, False), Arg("**", ANY, True)),
                     ANY,
                 ),
+            ],
+        )
+
+    def test_class(self):
+        module = ast.parse(
+            """
+class MyClass(object):
+    var = 123
+    def __init__(self, a, b, c): pass
+    def func1(self, a, b, c): pass
+    @staticmethod
+    def func2(a, b, c): pass
+    def _func3(self, a, b, c): pass
+"""
+        )
+        data = list(get_api(module))
+        self.assertEqual(
+            data,
+            [
+                Class(
+                    "MyClass",
+                    (
+                        Var("var", ANY),
+                        Func(
+                            "__init__",
+                            (
+                                Arg("self", ANY, False),
+                                Arg("a", ANY, False),
+                                Arg("b", ANY, False),
+                                Arg("c", ANY, False),
+                            ),
+                            ANY,
+                        ),
+                        Func(
+                            "func1",
+                            (
+                                Arg("self", ANY, False),
+                                Arg("a", ANY, False),
+                                Arg("b", ANY, False),
+                                Arg("c", ANY, False),
+                            ),
+                            ANY,
+                        ),
+                        Func(
+                            "func2",
+                            (
+                                Arg("a", ANY, False),
+                                Arg("b", ANY, False),
+                                Arg("c", ANY, False),
+                            ),
+                            ANY,
+                        ),
+                    ),
+                )
             ],
         )
 
