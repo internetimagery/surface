@@ -1,7 +1,7 @@
 import ast
 import unittest
-from api_gen._parser import get_api
-from api_gen._base import *
+from surface._parser import get_api
+from surface._base import *
 
 
 class TestParse(unittest.TestCase):

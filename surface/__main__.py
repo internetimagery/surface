@@ -3,8 +3,8 @@
 import os.path
 from ast import parse
 from argparse import ArgumentParser
-from api_gen._parser import get_api
-from api_gen._module import map_modules
+from surface._parser import get_api
+from surface._module import map_modules
 
 parser = ArgumentParser(description="Generate representations of exposed Python API's")
 parser.add_argument("sources", nargs="+", help="Path to source file.")

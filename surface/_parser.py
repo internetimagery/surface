@@ -4,7 +4,7 @@ import ast
 import sys
 from itertools import izip
 from abc import ABCMeta, abstractmethod
-from api_gen._base import *
+from surface._base import *
 
 if sys.version_info.major == 3:
     from typing import Iterator, Union, List, Any

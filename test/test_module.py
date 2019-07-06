@@ -3,7 +3,7 @@ import os.path
 import unittest
 import tempfile
 
-from api_gen._module import map_modules
+from surface._module import map_modules
 
 
 class TestModule(unittest.TestCase):
