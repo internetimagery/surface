@@ -1,25 +1,38 @@
 """ Parse AST into base types """
 
 import ast
+import sys
 from itertools import izip
 from abc import ABCMeta, abstractmethod
 from semantic._base import *
 
-if 0:
-    from typing import Iterator
+if sys.version_info.major == 3:
+    from typing import Iterator, Union, List, Any
 
-__all__ = ["parse"]
+
+__all__ = ["get_api"]
+
 
 IGNORED_MODULES = ["typing"]
 VALID_NAMES = ["__init__"]
 
 
-def get_api(module):  # type: (ast.Module) -> Iterator[Any]
+def get_api(module):  # type: (ast.Module) -> Tuple[Any]
     """ Collect the exposed API of the source file """
+    whitelist = []  # Look for __all__ definition
+    for node in module.body:
+        if is_all(node):
+            whitelist = [n.s for n in iter_node(node.value) if isinstance(n, ast.Str)]
+
     for node in module.body:
         parser = node_parse_map.get(type(node))
         if parser:
             for item in parser(node):
+                try:
+                    if whitelist and item.name not in whitelist:
+                        continue
+                except AttributeError:
+                    pass
                 yield item
 
 
@@ -103,7 +116,15 @@ node_parse_map = {
 
 class_body_map = {ast.Assign: parse_assign, ast.FunctionDef: parse_method}
 
+
 # Utilities
+
+
+def is_all(node):
+    try:
+        return node.targets[0].id == "__all__"
+    except AttributeError:
+        return False
 
 
 def valid_name(name):  # type: (str) -> bool
@@ -112,7 +133,7 @@ def valid_name(name):  # type: (str) -> bool
     return not name.startswith("_")
 
 
-def iter_node(node):  # type: (Any) -> Iterator[Any]
+def iter_node(node):  # type: (Any) -> List[Any]
     if isinstance(node, (ast.Tuple, ast.List)):
         return node.elts
     if isinstance(node, ast.Dict):

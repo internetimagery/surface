@@ -1,6 +1,6 @@
 import ast
 import unittest
-from semantic._parser_py2 import get_api
+from semantic._parser import get_api
 from semantic._base import *
 
 
@@ -132,6 +132,16 @@ class MyClass(object):
                 )
             ],
         )
+
+    def test_all(self):
+        module = ast.parse(
+            """
+__all__ = ["var1", "var3"]
+var1, var2, var3 = 123, 456, 789
+"""
+        )
+        data = list(get_api(module))
+        self.assertEqual(data, [Var("var1", ANY), Var("var3", ANY)])
 
 
 if __name__ == "__main__":
