@@ -1,6 +1,6 @@
 """ Common base types """
 
-from collections import namedtuple
+from collections import namedtuple as _nt
 
 # Types
 
@@ -9,12 +9,12 @@ MODULE = "~module"
 
 # Structs
 
-Ref = namedtuple("Ref", ("path",))
+Ref = _nt("Ref", ("path",))
 
-Var = namedtuple("Var", ("name", "type"))
+Var = _nt("Var", ("name", "type"))
 
-Arg = namedtuple("Arg", ("name", "type", "keyword"))
+Arg = _nt("Arg", ("name", "type", "kind"))
 
-Func = namedtuple("Func", ("name", "args", "returns"))
+Func = _nt("Func", ("name", "args", "returns"))
 
-Class = namedtuple("Class", ("name", "body"))
+Class = _nt("Class", ("name", "body"))
