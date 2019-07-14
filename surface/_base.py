@@ -2,9 +2,14 @@
 
 from collections import namedtuple as _nt
 
+# Arg types
+
+POSITIONAL = 0b001
+KEYWORD = 0b010
+VARIADIC = 0b100
+
 # Types
 
-ANY = "~any"
 MODULE = "~module"
 
 # Structs

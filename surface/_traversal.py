@@ -27,7 +27,7 @@ def traverse(obj): # type: (Any) -> List[Any]
     attributes = (
         attr
         for attr in inspect.getmembers(obj)
-        if attr[0] == "__init__" or not attr[0].startswith("_")
+        if is_public(attr[0])
     )
     whitelist = getattr(obj, "__all__", [])
     if whitelist:
@@ -54,7 +54,7 @@ def handle_function(name, value):
         name,
         tuple(
             # TODO: Handle the more complex types (positional keyword)
-            Arg(n, typing.Any, p.kind == p.POSITIONAL_OR_KEYWORD)
+            Arg(n, typing.Any, convert_arg_kind(str(p.kind)))
             for n, p in sig.parameters.items()
         ),
         typing.Any,
@@ -70,7 +70,7 @@ def handle_method(name, value):
         name,
         tuple(
             # TODO: Handle the more complex types (positional keyword)
-            Arg(n, typing.Any, p.kind == p.POSITIONAL_OR_KEYWORD)
+            Arg(n, typing.Any, convert_arg_kind(str(p.kind)))
             for n, p in params
         ),
         typing.Any,
@@ -84,3 +84,22 @@ def handle_class(name, value):
 def handle_variable(name, value):
     # TODO: Handle typing of value
     return Var(name, typing.Any)
+
+
+def is_public(name):
+    return name == "__init__" or not name.startswith("_")
+
+
+def convert_arg_kind(kind):
+    print("TYPE", type(kind), kind)
+    if kind == "POSITIONAL_ONLY":
+        return POSITIONAL
+    if kind == "KEYWORD_ONLY":
+        return KEYWORD
+    if kind == "POSITIONAL_OR_KEYWORD":
+        return POSITIONAL | KEYWORD
+    if kind == "VAR_POSITIONAL":
+        return POSITIONAL | VARIADIC
+    if kind == "VAR_KEYWORD":
+        return KEYWORD | VARIADIC
+    raise TypeError("Unknown type.")
