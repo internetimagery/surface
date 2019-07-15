@@ -2,11 +2,11 @@
 
 from distutils.core import setup
 
-setup(name='Distutils',
+setup(name='surface',
       version='0.0.1a',
-      description='Python Distribution Utilities',
-      author='Greg Ward',
-      author_email='gward@python.net',
-      url='https://www.python.org/sigs/distutils-sig/',
-      packages=['distutils', 'distutils.command'],
+      description='Dump and compare simplified representation of a public api',
+      author='Jason Dixon',
+      url='https://github.com/internetimagery/surface',
+      packages=['surface'],
+      python_requires=['sigtools'],
      )
