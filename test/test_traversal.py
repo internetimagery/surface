@@ -2,8 +2,6 @@
 import sys
 import os.path
 import unittest
-from typing import Any
-
 
 from surface._traversal import traverse
 from surface._base import *
@@ -35,40 +33,41 @@ class TestImporter(unittest.TestCase):
                         Func(
                             "myMethod",
                             (
-                                Arg("a", Any, POSITIONAL | KEYWORD),
-                                Arg("b", Any, POSITIONAL | KEYWORD),
-                                Arg("c", Any, POSITIONAL | KEYWORD | DEFAULT),
+                                Arg("a", "typing.Any", POSITIONAL | KEYWORD),
+                                Arg("b", "typing.Any", POSITIONAL | KEYWORD),
+                                Arg("c", "typing.Any", POSITIONAL | KEYWORD | DEFAULT),
                             ),
-                            Any,
+                            "typing.Any",
                         ),
                         Func(
                             "myStatic",
                             (
-                                Arg("a", Any, POSITIONAL | KEYWORD),
-                                Arg("b", Any, POSITIONAL | KEYWORD),
-                                Arg("c", Any, POSITIONAL | VARIADIC),
+                                Arg("a", "typing.Any", POSITIONAL | KEYWORD),
+                                Arg("b", "typing.Any", POSITIONAL | KEYWORD),
+                                Arg("c", "typing.Any", POSITIONAL | VARIADIC),
                             ),
-                            Any,
+                            "typing.Any",
                         ),
                     ),
                 ),
                 Func(
                     "myFunc",
                     (
-                        Arg("a", Any, POSITIONAL | KEYWORD),
-                        Arg("b", Any, POSITIONAL | KEYWORD),
-                        Arg("c", Any, KEYWORD | VARIADIC),
+                        Arg("a", "typing.Any", POSITIONAL | KEYWORD),
+                        Arg("b", "typing.Any", POSITIONAL | KEYWORD),
+                        Arg("c", "typing.Any", KEYWORD | VARIADIC),
                     ),
-                    Any,
+                    "typing.Any",
                 ),
                 Func(
                     "myLambda",
                     (
-                        Arg("x", Any, POSITIONAL | KEYWORD),
+                        Arg("x", "typing.Any", POSITIONAL | KEYWORD),
                     ),
-                    Any,
+                    "typing.Any",
                 ),
-                Var("myVar", Any),
+                Module("myModule", "test_mod_basic.myModule"),
+                Var("myVar", "typing.Any"),
             ])
 
 

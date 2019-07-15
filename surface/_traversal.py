@@ -16,7 +16,6 @@
 # BONUS: so later a type can be compared by value, not just name
 
 import ast
-import typing
 import inspect
 import sigtools
 from surface._base import *
@@ -42,7 +41,9 @@ def traverse(obj): # type: (Any) -> List[Any]
     for name, value in attributes:
         # TODO: How to ensure we find the original classes and methods, and not wrappers?
 
-        if inspect.isclass(value):
+        if inspect.ismodule(value):
+            yield handle_module(name, value)
+        elif inspect.isclass(value):
             yield handle_class(name, value)
         # Python2
         elif inspect.ismethod(value):
@@ -64,12 +65,12 @@ def handle_function(name, value):
         tuple(
             Arg(
                 n,
-                typing.Any,
+                "typing.Any",
                 convert_arg_kind(str(p.kind)) | (0 if p.default is sig.empty else DEFAULT),
             )
             for n, p in sig.parameters.items()
         ),
-        typing.Any,
+        "typing.Any",
     )
 
 
@@ -83,12 +84,12 @@ def handle_method(name, value):
         tuple(
             Arg(
                 n,
-                typing.Any,
+                "typing.Any",
                 convert_arg_kind(str(p.kind)) | (0 if p.default is sig.empty else DEFAULT),
             )
             for n, p in params
         ),
-        typing.Any,
+        "typing.Any",
     )
 
 
@@ -98,7 +99,11 @@ def handle_class(name, value):
 
 def handle_variable(name, value):
     # TODO: Handle typing of value
-    return Var(name, typing.Any)
+    return Var(name, "typing.Any")
+
+
+def handle_module(name, value):
+    return Module(name, value.__name__)
 
 
 def is_public(name):

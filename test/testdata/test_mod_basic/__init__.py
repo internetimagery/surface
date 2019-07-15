@@ -1,4 +1,5 @@
 
+import test_mod_basic.myModule as myModule
 
 myVar = 123
 
