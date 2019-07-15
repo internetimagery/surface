@@ -29,23 +29,6 @@ class TestImporter(unittest.TestCase):
         self.assertEqual(
             data,
             [
-                Var("myVar", Any),
-                Func(
-                    "myLambda",
-                    (
-                        Arg("x", Any, POSITIONAL | KEYWORD),
-                    ),
-                    Any,
-                ),
-                Func(
-                    "myFunc",
-                    (
-                        Arg("a", Any, POSITIONAL | KEYWORD),
-                        Arg("b", Any, POSITIONAL | KEYWORD),
-                        Arg("c", Any, KEYWORD | VARIADIC),
-                    ),
-                    Any,
-                ),
                 Class(
                     "myClass",
                     (
@@ -54,7 +37,7 @@ class TestImporter(unittest.TestCase):
                             (
                                 Arg("a", Any, POSITIONAL | KEYWORD),
                                 Arg("b", Any, POSITIONAL | KEYWORD),
-                                Arg("c", Any, POSITIONAL | KEYWORD),
+                                Arg("c", Any, POSITIONAL | KEYWORD | DEFAULT),
                             ),
                             Any,
                         ),
@@ -69,6 +52,23 @@ class TestImporter(unittest.TestCase):
                         ),
                     ),
                 ),
+                Func(
+                    "myFunc",
+                    (
+                        Arg("a", Any, POSITIONAL | KEYWORD),
+                        Arg("b", Any, POSITIONAL | KEYWORD),
+                        Arg("c", Any, KEYWORD | VARIADIC),
+                    ),
+                    Any,
+                ),
+                Func(
+                    "myLambda",
+                    (
+                        Arg("x", Any, POSITIONAL | KEYWORD),
+                    ),
+                    Any,
+                ),
+                Var("myVar", Any),
             ])
 
 

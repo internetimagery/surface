@@ -29,9 +29,14 @@ def traverse(obj): # type: (Any) -> List[Any]
         for attr in inspect.getmembers(obj)
         if is_public(attr[0])
     )
+    # __all__ attribute restricts import with *,
+    # and displays what is intended to be public
     whitelist = getattr(obj, "__all__", [])
     if whitelist:
         attributes = (attr for attr in attributes if attr[0] in whitelist)
+
+    # Sort the attributes by name for readability, and diff-ability (is that a word?)
+    attributes = sorted(attributes, key=lambda a: a[0])
 
     # Walk the surface of the object, and extract the information
     for name, value in attributes:
@@ -39,12 +44,16 @@ def traverse(obj): # type: (Any) -> List[Any]
 
         if inspect.isclass(value):
             yield handle_class(name, value)
+        # Python2
+        elif inspect.ismethod(value):
+            yield handle_method(name, value)
         elif inspect.isfunction(value):
+            # python3
             if inspect.isclass(obj):
                 yield handle_method(name, value)
             else:
                 yield handle_function(name, value)
-        else:
+        elif name != "__init__":
             yield handle_variable(name, value)
 
 
@@ -53,8 +62,11 @@ def handle_function(name, value):
     return Func(
         name,
         tuple(
-            # TODO: Handle the more complex types (positional keyword)
-            Arg(n, typing.Any, convert_arg_kind(str(p.kind)))
+            Arg(
+                n,
+                typing.Any,
+                convert_arg_kind(str(p.kind)) | (0 if p.default is sig.empty else DEFAULT),
+            )
             for n, p in sig.parameters.items()
         ),
         typing.Any,
@@ -69,8 +81,11 @@ def handle_method(name, value):
     return Func(
         name,
         tuple(
-            # TODO: Handle the more complex types (positional keyword)
-            Arg(n, typing.Any, convert_arg_kind(str(p.kind)))
+            Arg(
+                n,
+                typing.Any,
+                convert_arg_kind(str(p.kind)) | (0 if p.default is sig.empty else DEFAULT),
+            )
             for n, p in params
         ),
         typing.Any,
@@ -91,7 +106,6 @@ def is_public(name):
 
 
 def convert_arg_kind(kind):
-    print("TYPE", type(kind), kind)
     if kind == "POSITIONAL_ONLY":
         return POSITIONAL
     if kind == "KEYWORD_ONLY":
