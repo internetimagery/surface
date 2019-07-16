@@ -66,7 +66,13 @@ class TestImporter(unittest.TestCase):
                     ),
                     "typing.Any",
                 ),
-                Module("myModule", "test_mod_basic.myModule"),
+                Module(
+                    "myModule",
+                    "test_mod_basic.myModule",
+                    (
+                        Var("myVar", "typing.Any"),
+                    ),
+                ),
                 Var("myVar", "typing.Any"),
             ])
 

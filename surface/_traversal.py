@@ -103,7 +103,9 @@ def handle_variable(name, value):
 
 
 def handle_module(name, value):
-    return Module(name, value.__name__)
+    return Module(
+        name, value.__name__, tuple(traverse(value))
+    )
 
 
 def is_public(name):
