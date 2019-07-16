@@ -21,13 +21,9 @@ import sigtools
 from surface._base import *
 
 
-def traverse(obj): # type: (Any) -> List[Any]
+def traverse(obj):  # type: (Any) -> List[Any]
     """ Entry point to generating an API representation. """
-    attributes = (
-        attr
-        for attr in inspect.getmembers(obj)
-        if is_public(attr[0])
-    )
+    attributes = (attr for attr in inspect.getmembers(obj) if is_public(attr[0]))
     # __all__ attribute restricts import with *,
     # and displays what is intended to be public
     whitelist = getattr(obj, "__all__", [])
@@ -40,6 +36,7 @@ def traverse(obj): # type: (Any) -> List[Any]
     # Walk the surface of the object, and extract the information
     for name, value in attributes:
         # TODO: How to ensure we find the original classes and methods, and not wrappers?
+        # TODO: Handle recursive traversal.
 
         if inspect.ismodule(value):
             yield handle_module(name, value)
@@ -66,7 +63,8 @@ def handle_function(name, value):
             Arg(
                 n,
                 "typing.Any",
-                convert_arg_kind(str(p.kind)) | (0 if p.default is sig.empty else DEFAULT),
+                convert_arg_kind(str(p.kind))
+                | (0 if p.default is sig.empty else DEFAULT),
             )
             for n, p in sig.parameters.items()
         ),
@@ -85,7 +83,8 @@ def handle_method(name, value):
             Arg(
                 n,
                 "typing.Any",
-                convert_arg_kind(str(p.kind)) | (0 if p.default is sig.empty else DEFAULT),
+                convert_arg_kind(str(p.kind))
+                | (0 if p.default is sig.empty else DEFAULT),
             )
             for n, p in params
         ),
@@ -98,14 +97,11 @@ def handle_class(name, value):
 
 
 def handle_variable(name, value):
-    # TODO: Handle typing of value
     return Var(name, "typing.Any")
 
 
 def handle_module(name, value):
-    return Module(
-        name, value.__name__, tuple(traverse(value))
-    )
+    return Module(name, value.__name__, tuple(traverse(value)))
 
 
 def is_public(name):

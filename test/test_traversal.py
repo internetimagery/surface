@@ -1,4 +1,3 @@
-
 import sys
 import os.path
 import unittest
@@ -14,6 +13,7 @@ except ImportError:
 path = os.path.join(os.path.dirname(__file__), "testdata")
 sys.path.insert(0, path)
 import test_mod_basic
+
 
 class TestImporter(unittest.TestCase):
 
@@ -61,22 +61,16 @@ class TestImporter(unittest.TestCase):
                 ),
                 Func(
                     "myLambda",
-                    (
-                        Arg("x", "typing.Any", POSITIONAL | KEYWORD),
-                    ),
+                    (Arg("x", "typing.Any", POSITIONAL | KEYWORD),),
                     "typing.Any",
                 ),
                 Module(
-                    "myModule",
-                    "test_mod_basic.myModule",
-                    (
-                        Var("myVar", "typing.Any"),
-                    ),
+                    "myModule", "test_mod_basic.myModule", (Var("myVar", "typing.Any"),)
                 ),
                 Var("myVar", "typing.Any"),
-            ])
+            ],
+        )
 
 
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
