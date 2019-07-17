@@ -15,10 +15,51 @@
 # BONUS: traverse heirarchy for specified types, recursively getting their api
 # BONUS: so later a type can be compared by value, not just name
 
-import ast
+import os.path
 import inspect
 import sigtools
 from surface._base import *
+
+
+def recurse(name, path_filter=None):  # type: (str, Callable[[str], bool]) -> Set[str]
+    """ Given a module path, return paths to its children. """
+
+    # Get location of module.
+    mod_names = set([name])
+    # TODO: Not all modules have a path?
+    print("IMPORTING", name)
+    mod = __import__(name, fromlist=[""])
+    try:
+        mod_path = mod.__file__
+    except AttributeError:
+        return mod_names
+    print("MODPATH", mod_path)
+
+    # Nothing to recurse if it is not a package.
+    if not mod_path.rsplit(".", 1)[0].endswith("__init__"):  # TODO: Care about pyc?
+        return mod_names
+
+    # Recursively walk through subpackages
+    package = os.path.dirname(mod_path)
+    subpackages = (os.path.join(package, sub) for sub in os.listdir(package))
+    for subpackage in subpackages:
+        if subpackage.endswith("__init__.py"):
+            continue
+        elif subpackage.endswith(".py"):
+            submodule = "{}.{}".format(name, os.path.basename(subpackage)[:-2])
+        elif os.path.isdir(subpackage) and os.path.isfile(
+            os.path.join(subpackage, "__init__.py")  # TODO: Handle pyc?
+        ):
+            submodule = "{}.{}".format(name, os.path.basename(subpackage))
+        else:
+            continue
+
+        if path_filter and not path_filter(submodule):
+            continue
+
+        print("DOING", subpackage)
+        mod_names.update(p for p in recurse(submodule))
+    return mod_names
 
 
 def traverse(obj):  # type: (Any) -> List[Any]

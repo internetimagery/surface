@@ -5,34 +5,48 @@ from __future__ import print_function
 import sys
 import argparse
 import surface
+import functools
+
+print = functools.partial(print, file=sys.stderr)
 
 
 def dump(args):
-    modules = {}
-    for name in args.modules:
+    modules = (
+        set(r for m in args.modules for r in surface.recurse(m))
+        if args.recurse
+        else args.modules
+    )
+
+    moduleAPI = {}
+    for name in modules:
         try:
-            mod = __import__(name, fromlist=[""])
+            api = surface.get_api(name)
         except ImportError:
             print(
-                "Failed to import '{}'.\nIs the module in your PYTHONPATH?".format(
-                    name
-                ),
-                file=sys.stderr,
+                "Failed to import '{}'.\nIs the module in your PYTHONPATH?".format(name)
             )
-            sys.exit(1)
+            return 1
         else:
-            modules[name] = mod
+            moduleAPI[name] = api
 
-            import surface
+    if not args.output:
+        for mod, api in moduleAPI.items():
+            print("[{}] ----------".format(mod))
+            print(surface.format_api(api, "    "))
+        return 0
 
-            print(surface.doit(mod))
-
-    print(modules)
-    sys.exit(0)
+    try:
+        import cPickle as Pickle
+    except ImportError:
+        import Pickle
+    with open(args.output, "wb") as fh:
+        Pickle.dump(moduleAPI)
+    print("Saved API to {}".format(args.output))
+    return 0
 
 
 def compare(args):
-    print("COMPARE", args)
+    print("TODO! COMPARE", args)
 
 
 parser = argparse.ArgumentParser(

@@ -13,8 +13,6 @@ DEFAULT    = 0b1000
 
 # Structs
 
-Ref = _nt("Ref", ("path",))
-
 Var = _nt("Var", ("name", "type"))
 
 Arg = _nt("Arg", ("name", "type", "kind"))
