@@ -16,10 +16,13 @@
 # BONUS: so later a type can be compared by value, not just name
 
 import re
+import logging
 import os.path
 import inspect
 import sigtools
 from surface._base import *
+
+LOG = logging.getLogger(__name__)
 
 import_reg = re.compile(r"__init__\.(py[cd]?|so)$")
 
@@ -72,21 +75,24 @@ def traverse(obj):  # type: (Any) -> List[Any]
         # TODO: How to ensure we find the original classes and methods, and not wrappers?
         # TODO: Handle recursive traversal.
 
-        if inspect.ismodule(value):
-            yield handle_module(name, value)
-        elif inspect.isclass(value):
-            yield handle_class(name, value)
-        # Python2
-        elif inspect.ismethod(value):
-            yield handle_method(name, value)
-        elif inspect.isfunction(value):
-            # python3
-            if inspect.isclass(obj):
+        try:
+            if inspect.ismodule(value):
+                yield handle_module(name, value)
+            elif inspect.isclass(value):
+                yield handle_class(name, value)
+            # Python2
+            elif inspect.ismethod(value):
                 yield handle_method(name, value)
-            else:
-                yield handle_function(name, value)
-        elif name != "__init__":
-            yield handle_variable(name, value)
+            elif inspect.isfunction(value):
+                # python3
+                if inspect.isclass(obj):
+                    yield handle_method(name, value)
+                else:
+                    yield handle_function(name, value)
+            elif name != "__init__":
+                yield handle_variable(name, value)
+        except SyntaxError as err:
+            LOG.warn("Failed to parse {} {}.\n{}".format(name, value, err))
 
 
 def handle_function(name, value):

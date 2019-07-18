@@ -5,9 +5,11 @@ from __future__ import print_function
 import sys
 import argparse
 import surface
+import logging
 import functools
 
-print = functools.partial(print, file=sys.stderr)
+LOG = logging.getLogger(__name__)
+LOG.addHandler(logging.StreamHandler(sys.stderr))
 
 
 def dump(args):
@@ -18,21 +20,23 @@ def dump(args):
     )
 
     moduleAPI = {}
-    for name in modules:
+    for module in modules:
         try:
-            api = surface.get_api(name)
+            api = surface.get_api(module)
         except ImportError:
-            print(
-                "Failed to import '{}'.\nIs the module in your PYTHONPATH?".format(name)
+            LOG.info(
+                "Failed to import '{}'.\nIs the module in your PYTHONPATH?".format(
+                    module
+                )
             )
             return 1
         else:
-            moduleAPI[name] = api
+            moduleAPI[module] = api
 
     if not args.output:
         for mod, api in moduleAPI.items():
-            print("[{}] ----------".format(mod))
-            print(surface.format_api(api, "    "))
+            sys.stdout.write("[{}]\n".format(mod))
+            sys.stdout.write(surface.format_api(api, "    "))
         return 0
 
     try:
@@ -41,12 +45,12 @@ def dump(args):
         import Pickle
     with open(args.output, "wb") as fh:
         Pickle.dump(moduleAPI)
-    print("Saved API to {}".format(args.output))
+    LOG.info("Saved API to {}".format(args.output))
     return 0
 
 
 def compare(args):
-    print("TODO! COMPARE", args)
+    LOG.info("TODO! COMPARE", args)
 
 
 parser = argparse.ArgumentParser(

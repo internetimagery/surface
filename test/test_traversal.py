@@ -16,16 +16,18 @@ import test_mod_basic
 
 
 class TestRecurse(unittest.TestCase):
-
     def test_recurse(self):
         paths = recurse("test_mod_recurse")
         print("PATHS", paths)
-        self.assertEqual(paths, [
-            "test_mod_recurse",
-            "test_mod_recurse.something",
-            "test_mod_recurse.submodule",
-            "test_mod_recurse.submodule.subsubmodule",
-        ])
+        self.assertEqual(
+            paths,
+            [
+                "test_mod_recurse",
+                "test_mod_recurse.something",
+                "test_mod_recurse.submodule",
+                "test_mod_recurse.submodule.subsubmodule",
+            ],
+        )
 
 
 class TestImporter(unittest.TestCase):
