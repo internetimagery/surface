@@ -24,7 +24,7 @@ from surface._base import *
 import_reg = re.compile(r"__init__\.(py[cd]?|so)$")
 
 
-def recurse(name, path_filter=None):  # type: (str, Callable[[str], bool]) -> Set[str]
+def recurse(name):  # type: (str) -> Set[str]
     """ Given a module path, return paths to its children. """
 
     stack = [name]
