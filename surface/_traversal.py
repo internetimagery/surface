@@ -15,51 +15,44 @@
 # BONUS: traverse heirarchy for specified types, recursively getting their api
 # BONUS: so later a type can be compared by value, not just name
 
+import re
 import os.path
 import inspect
 import sigtools
 from surface._base import *
 
+import_reg = re.compile(r"__init__\.(py[cd]?|so)$")
+
 
 def recurse(name, path_filter=None):  # type: (str, Callable[[str], bool]) -> Set[str]
     """ Given a module path, return paths to its children. """
 
-    # Get location of module.
-    mod_names = set([name])
-    # TODO: Not all modules have a path?
-    print("IMPORTING", name)
-    mod = __import__(name, fromlist=[""])
-    try:
-        mod_path = mod.__file__
-    except AttributeError:
-        return mod_names
-    print("MODPATH", mod_path)
+    stack = [name]
+    paths = []
 
-    # Nothing to recurse if it is not a package.
-    if not mod_path.rsplit(".", 1)[0].endswith("__init__"):  # TODO: Care about pyc?
-        return mod_names
-
-    # Recursively walk through subpackages
-    package = os.path.dirname(mod_path)
-    subpackages = (os.path.join(package, sub) for sub in os.listdir(package))
-    for subpackage in subpackages:
-        if subpackage.endswith("__init__.py"):
-            continue
-        elif subpackage.endswith(".py"):
-            submodule = "{}.{}".format(name, os.path.basename(subpackage)[:-2])
-        elif os.path.isdir(subpackage) and os.path.isfile(
-            os.path.join(subpackage, "__init__.py")  # TODO: Handle pyc?
-        ):
-            submodule = "{}.{}".format(name, os.path.basename(subpackage))
-        else:
+    while stack:
+        import_name = stack.pop()
+        module = __import__(import_name, fromlist=[""])
+        paths.append(import_name)
+        try:
+            module_path = module.__file__
+        except AttributeError:
             continue
 
-        if path_filter and not path_filter(submodule):
+        if not import_reg.search(module_path):
+            paths.append(import_name)
             continue
 
-        print("DOING", subpackage)
-        mod_names.update(p for p in recurse(submodule))
-    return mod_names
+        package = os.path.dirname(module_path)
+        submodules = os.listdir(package)
+        for submodule in submodules:
+            if submodule.startswith("_"):
+                pass
+            elif submodule.endswith(".py"):
+                paths.append("{}.{}".format(import_name, submodule[:-3]))
+            elif os.path.isfile(os.path.join(package, submodule, "__init__.py")):
+                stack.append("{}.{}".format(import_name, submodule))
+    return paths
 
 
 def traverse(obj):  # type: (Any) -> List[Any]

@@ -2,7 +2,7 @@ import sys
 import os.path
 import unittest
 
-from surface._traversal import traverse
+from surface._traversal import traverse, recurse
 from surface._base import *
 
 try:
@@ -13,6 +13,19 @@ except ImportError:
 path = os.path.join(os.path.dirname(__file__), "testdata")
 sys.path.insert(0, path)
 import test_mod_basic
+
+
+class TestRecurse(unittest.TestCase):
+
+    def test_recurse(self):
+        paths = recurse("test_mod_recurse")
+        print("PATHS", paths)
+        self.assertEqual(paths, [
+            "test_mod_recurse",
+            "test_mod_recurse.something",
+            "test_mod_recurse.submodule",
+            "test_mod_recurse.submodule.subsubmodule",
+        ])
 
 
 class TestImporter(unittest.TestCase):
