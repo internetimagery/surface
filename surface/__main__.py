@@ -7,6 +7,7 @@ import argparse
 import surface
 import logging
 import functools
+
 try:
     import cPickle as pickle
 except ImportError:

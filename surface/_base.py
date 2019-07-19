@@ -22,3 +22,5 @@ Func = _nt("Func", ("name", "args", "returns"))
 Class = _nt("Class", ("name", "body"))
 
 Module = _nt("Module", ("name", "path", "body"))
+
+Change = _nt("Change", ("level", "info"))
