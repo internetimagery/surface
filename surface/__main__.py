@@ -7,19 +7,24 @@ import argparse
 import surface
 import logging
 import functools
+try:
+    import cPickle as pickle
+except ImportError:
+    import pickle
+
 
 LOG = logging.getLogger(__name__)
 LOG.addHandler(logging.StreamHandler(sys.stderr))
 
 
-def dump(args):
+def run_dump(args):
     modules = (
         set(r for m in args.modules for r in surface.recurse(m))
         if args.recurse
         else args.modules
     )
 
-    moduleAPI = {}
+    module_api = {}
     for module in modules:
         try:
             api = surface.get_api(module)
@@ -31,26 +36,28 @@ def dump(args):
             )
             return 1
         else:
-            moduleAPI[module] = api
+            module_api[module] = api
 
     if not args.output:
-        for mod, api in moduleAPI.items():
+        for mod, api in module_api.items():
             sys.stdout.write("[{}]\n".format(mod))
             sys.stdout.write(surface.format_api(api, "    "))
         return 0
 
-    try:
-        import cPickle as Pickle
-    except ImportError:
-        import Pickle
-    with open(args.output, "wb") as fh:
-        Pickle.dump(moduleAPI)
+    with open(args.output, "wb") as handle:
+        pickle.dump(module_api, handle)
     LOG.info("Saved API to {}".format(args.output))
     return 0
 
 
-def compare(args):
-    LOG.info("TODO! COMPARE", args)
+def run_compare(args):
+    with open(args.old, "rb") as handle:
+        old_data = pickle.load(handle)
+
+    with open(args.new, "rb") as handle:
+        new_data = pickle.load(handle)
+
+    print(surface.compare(old_data, new_data))
 
 
 parser = argparse.ArgumentParser(
@@ -66,14 +73,14 @@ dump_parser.add_argument(
 dump_parser.add_argument(
     "-r", "--recurse", action="store_true", help="Recusively read submodules too."
 )
-dump_parser.set_defaults(func=dump)
+dump_parser.set_defaults(func=run_dump)
 
 compare_parser = subparsers.add_parser(
     "compare", help="Compare two API's and suggest a semantic version."
 )
 compare_parser.add_argument("old", help="Path to original API file.")
 compare_parser.add_argument("new", help="Path to new API file.")
-compare_parser.set_defaults(func=compare)
+compare_parser.set_defaults(func=run_compare)
 
 args = parser.parse_args()
 sys.exit(args.func(args))
