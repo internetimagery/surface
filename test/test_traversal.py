@@ -18,7 +18,6 @@ import test_mod_basic
 class TestRecurse(unittest.TestCase):
     def test_recurse(self):
         paths = recurse("test_mod_recurse")
-        print("PATHS", paths)
         self.assertEqual(
             paths,
             [

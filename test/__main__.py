@@ -1,7 +1,7 @@
 import sys
 import unittest
 
-from test_parse import *
-from test_module import *
+from test_traversal import *
+from test_compare import *
 
 unittest.main()
