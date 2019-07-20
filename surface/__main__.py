@@ -2,7 +2,9 @@
 
 from __future__ import print_function
 
+import re
 import sys
+import os.path
 import argparse
 import surface
 import logging
@@ -19,6 +21,12 @@ LOG.addHandler(logging.StreamHandler(sys.stderr))
 
 
 def run_dump(args):
+    pythonpath = (
+        os.path.realpath(p.strip()) for p in re.split(r"[:;]", args.pythonpath or "")
+    )
+    for path in pythonpath:
+        sys.path.insert(0, path)
+
     modules = (
         set(r for m in args.modules for r in surface.recurse(m))
         if args.recurse
@@ -76,6 +84,7 @@ def run_compare(args):
 parser = argparse.ArgumentParser(
     description="Generate representations of publicly exposed Python API's."
 )
+parser.add_argument("--debug", action="store_true", help="Show debug messages.")
 subparsers = parser.add_subparsers()
 
 dump_parser = subparsers.add_parser("dump", help="Store surface API in a file.")
@@ -86,6 +95,9 @@ dump_parser.add_argument(
 dump_parser.add_argument(
     "-r", "--recurse", action="store_true", help="Recusively read submodules too."
 )
+dump_parser.add_argument(
+    "-p", "--pythonpath", help="Additional paths to use for imports."
+)
 dump_parser.set_defaults(func=run_dump)
 
 compare_parser = subparsers.add_parser(
@@ -93,9 +105,14 @@ compare_parser = subparsers.add_parser(
 )
 compare_parser.add_argument("old", help="Path to original API file.")
 compare_parser.add_argument("new", help="Path to new API file.")
-compare_parser.add_argument("-v", "--verbose", help="Display more information about the changes detected.")
-compare_parser.add_argument("-b", "--bump", help="Instead of semantic level, return the version bumped.")
+compare_parser.add_argument(
+    "-v", "--verbose", help="Display more information about the changes detected."
+)
+compare_parser.add_argument(
+    "-b", "--bump", help="Instead of semantic level, return the version bumped."
+)
 compare_parser.set_defaults(func=run_compare)
 
 args = parser.parse_args()
+LOG.setLevel(logging.DEBUG if args.debug else logging.INFO)
 sys.exit(args.func(args))
