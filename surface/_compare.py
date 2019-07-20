@@ -1,6 +1,10 @@
 """ Compare two API's """
 
 # TODO: Better formatted output
+try:
+    from itertools import zip_longest
+except ImportError:
+    from itertools import izip_longest as zip_longest
 
 from surface._base import *
 
@@ -75,30 +79,96 @@ def compare_deep(basename, old_item, new_item):
         if type(old_item) != type(new_item):
             changes.add(Change(MAJOR, "Type Changed: {}".format(abs_name)))
         elif isinstance(new_item, (Class, Module)):
-            changes.update(
-                compare_deep(abs_name, old_item.body, new_item.body)
-            )
+            changes.update(compare_deep(abs_name, old_item.body, new_item.body))
         elif isinstance(new_item, Func):
-            changes.update(compare_func(old_item, new_item))
+            changes.update(compare_func(abs_name, old_item, new_item))
         elif isinstance(new_item, Var):
             if old_item.type != new_item.type:
                 changes.add(Change(MAJOR, "Type Changed: {}".format(abs_name)))
         else:
-            raise TypeError("Uknown type {}".format(type(new_item)))
+            raise TypeError("Unknown type {}".format(type(new_item)))
 
     return changes
 
 
-def compare_func(old_func, new_func):
-    # TODO: specific functionality relating to arguments
-    # TODO: split args into positional / keyword
-    # TODO: eg: adding *args or **kwargs is minor
-    # TODO: removing one of them is major
-    # TODO: likewise adding optional keyword args is minor
-    # TODO: changing the number of positional arguments is major
-    # TODO: renaming position ONLY args is patch
-    # TODO: renaming keyword args is major
-    return set()
+def compare_func(basename, old_func, new_func):
+    changes = set()
+
+    if old_func.returns != new_func.returns:
+        changes.add(Change(MAJOR, "Return Type Changed: {}".format(basename)))
+
+    # Check for changes to positional args, where order matters
+    old_positional = (arg for arg in old_func.args if arg.kind & POSITIONAL)
+    new_positional = (arg for arg in new_func.args if arg.kind & POSITIONAL)
+    for old_arg, new_arg in zip_longest(old_positional, new_positional):
+        if old_arg == new_arg:
+            continue
+        elif not old_arg:
+            # Adding a new optional arg (ie: arg=None) or variadic (ie *args / **kwargs)
+            # is not a breaking change. Adding anything else is.
+            level = MINOR if new_arg.kind & (VARIADIC | DEFAULT) else MAJOR
+            changes.add(
+                Change(level, "Added Arg: {}.({})".format(basename, new_arg.name))
+            )
+            continue
+        elif not new_arg:
+            # Removing an argument is always a breaking change.
+            changes.add(
+                Change(MAJOR, "Removed Arg: {}.({})".format(basename, old_arg.name))
+            )
+            continue
+
+        name = "{}.({})".format(basename, new_arg.name)
+        if old_arg.name != new_arg.name:
+            # It's not breaking to rename variadic or positional-only args, but is for anything else
+            level = (
+                PATCH
+                if new_arg.kind == old_arg.kind
+                and (new_arg.kind & VARIADIC or new_arg.kind == POSITIONAL)
+                else MAJOR
+            )
+            changes.add(Change(level, "Renamed Arg: {}".format(name)))
+        if old_arg.type != new_arg.type:
+            changes.add(Change(MAJOR, "Type Changed: {}".format(name)))
+        if old_arg.kind != new_arg.kind:
+            # Adding a default to an argument is not a breaking change.
+            level = MINOR if new_arg.kind == (old_arg.kind | DEFAULT) else MAJOR
+            changes.add(Change(level, "Kind Changed: {}".format(name)))
+
+    # Check for changes to keyword only arguments
+    old_keyword = set(
+        "({})".format(arg.name) for arg in old_func.args if arg.kind == KEYWORD
+    )
+    new_keyword = set(
+        "({})".format(arg.name) for arg in new_func.args if arg.kind == KEYWORD
+    )
+    changes.update(compare_names(basename, old_keyword, new_keyword))
+
+    # Finally, check variadic keyword (eg **kwargs)
+    old_var_keyword = [arg for arg in old_func.args if arg.kind & (KEYWORD | VARIADIC)]
+    new_var_keyword = [arg for arg in new_func.args if arg.kind & (KEYWORD | VARIADIC)]
+    if new_var_keyword == old_var_keyword:
+        pass
+    elif old_var_keyword and not new_var_keyword:
+        changes.add(
+            Change(
+                MAJOR, "Removed Arg: {}.({})".format(basename, old_var_keyword[0].name)
+            )
+        )
+    elif new_var_keyword and not old_var_keyword:
+        changes.add(
+            Change(
+                MINOR, "Added Arg: {}.({})".format(basename, new_var_keyword[0].name)
+            )
+        )
+    elif new_var_keyword[0].name != old_var_keyword[0].name:
+        changes.add(
+            Change(
+                PATCH, "Renamed Arg: {}.({})".format(basename, new_var_keyword[0].name)
+            )
+        )
+
+    return changes
 
 
 def join(parent, child):
