@@ -1,6 +1,6 @@
 """ Compare two API's """
 
-# TODO: Better formatted output
+# TODO: Better formatted output diff
 try:
     from itertools import zip_longest
 except ImportError:

@@ -1,5 +1,6 @@
+import re
 from surface._traversal import traverse, recurse
-from surface._compare import compare
+from surface._compare import compare, PATCH, MINOR, MAJOR
 from surface._base import (
     POSITIONAL,
     KEYWORD,
@@ -53,3 +54,19 @@ def format_api(api, indent=""):  # type: (Iterable[Any], str) -> str
         else:
             result += indent + str(item) + "\n"
     return result
+
+
+def bump_semantic_version(level, version):
+    """ Bump version with the provided level """
+    parts = re.match(r"(\d+)\.(\d+)\.(\d+)", version)
+    if not parts:
+        raise TypeError("Not a valid semantic version: {}".format(version))
+    if level == MAJOR:
+        return "{}.0.0".format(int(parts.group(1)) + 1)
+    if level == MINOR:
+        return "{}.{}.0".format(parts.group(1), int(parts.group(2)) + 1)
+    if level == PATCH:
+        return "{}.{}.{}".format(
+            parts.group(1), parts.group(2), int(parts.group(3)) + 1
+        )
+    raise ValueError("Unknown level {}".format(level))
