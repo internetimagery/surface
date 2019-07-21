@@ -66,17 +66,18 @@ def run_compare(args):
     with open(args.new, "rb") as handle:
         new_data = pickle.load(handle)
 
-    highest_level = semantic.PATCH
+    highest_level = surface.PATCH
     changes = surface.compare(old_data, new_data)
     for level, note in changes:
         if args.verbose:
             LOG.info(note)
-        if level == semantic.MAJOR:
+        if level == surface.MAJOR:
             highest_level = level
-        elif level == semantic.MINOR and highest_level != semantic.MAJOR:
+        elif level == surface.MINOR and highest_level != surface.MAJOR:
             highest_level = level
+
     if args.bump:
-        sys.stdout.write(semantic.bump_semantic_version(highest_level, args.bump))
+        sys.stdout.write(surface.bump_semantic_version(highest_level, args.bump))
     else:
         sys.stdout.write(highest_level)
 
@@ -106,7 +107,7 @@ compare_parser = subparsers.add_parser(
 compare_parser.add_argument("old", help="Path to original API file.")
 compare_parser.add_argument("new", help="Path to new API file.")
 compare_parser.add_argument(
-    "-v", "--verbose", help="Display more information about the changes detected."
+    "-v", "--verbose", action="store_true", help="Display more information about the changes detected."
 )
 compare_parser.add_argument(
     "-b", "--bump", help="Instead of semantic level, return the version bumped."
