@@ -2,11 +2,14 @@
 
 # TODO: Better formatted output diff
 try:
-    from itertools import zip_longest
+    from itertools import zip_longest  # type: ignore
 except ImportError:
-    from itertools import izip_longest as zip_longest
+    from itertools import izip_longest as zip_longest  # type: ignore
 
 from surface._base import *
+
+if False:  # type checking
+    from typing import Dict, Set, Sequence, Any, Iterable
 
 # Semantic types
 PATCH = "patch"
@@ -39,7 +42,7 @@ def compare(
         minor: version when you add functionality in a backwards-compatible manner.
         major: version when you make incompatible API changes.
     """
-    changes = set()
+    changes = set()  # type: Set[Any]
     # Check for renamed modules
     changes.update(compare_names("", api_old, api_new))
 
@@ -51,7 +54,9 @@ def compare(
     return changes
 
 
-def compare_names(basename, old_names, new_names):
+def compare_names(
+    basename, old_names, new_names
+):  # type: (str, Iterable[str], Iterable[str]) -> Iterable[Change]
     removed = (name for name in old_names if name not in new_names)
     added = (name for name in new_names if name not in old_names)
 
@@ -61,11 +66,13 @@ def compare_names(basename, old_names, new_names):
         yield Change(MINOR, "Added: {}".format(join(basename, name)))
 
 
-def compare_deep(basename, old_item, new_item):
-    changes = set()
+def compare_deep(
+    basename, old_items, new_items
+):  # type: (str, Iterable[Any], Iterable[Any]) -> Set[Any]
+    changes = set()  # type: Set[Any]
     # Map by name
-    old_map = {item.name: item for item in old_item}
-    new_map = {item.name: item for item in new_item}
+    old_map = {item.name: item for item in old_items}
+    new_map = {item.name: item for item in new_items}
 
     # Check for renames
     changes.update(compare_names(basename, old_map, new_map))
@@ -73,7 +80,7 @@ def compare_deep(basename, old_item, new_item):
     # Check for changes
     for name, new_item in new_map.items():
         old_item = old_map.get(name)
-        if not old_item:
+        if old_item is None:
             continue
         abs_name = join(basename, name)
         if type(old_item) != type(new_item):
@@ -91,8 +98,10 @@ def compare_deep(basename, old_item, new_item):
     return changes
 
 
-def compare_func(basename, old_func, new_func):
-    changes = set()
+def compare_func(
+    basename, old_func, new_func
+):  # type: (str, Func, Func) -> Set[Any]
+    changes = set()  # type: Set[Any]
 
     if old_func.returns != new_func.returns:
         changes.add(Change(MAJOR, "Return Type Changed: {}".format(basename)))
@@ -171,5 +180,5 @@ def compare_func(basename, old_func, new_func):
     return changes
 
 
-def join(parent, child):
+def join(parent, child):  # type: (str, str) -> str
     return "{}.{}".format(parent, child) if parent else child

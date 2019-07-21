@@ -11,16 +11,18 @@ import logging
 import functools
 
 try:
-    import cPickle as pickle
+    import cPickle as pickle  # type: ignore
 except ImportError:
-    import pickle
+    import pickle  # type: ignore
 
+if False:
+    from typing import Any
 
 LOG = logging.getLogger(__name__)
 LOG.addHandler(logging.StreamHandler(sys.stderr))
 
 
-def run_dump(args):
+def run_dump(args):  # type: (Any) -> int
     pythonpath = (
         os.path.realpath(p.strip()) for p in re.split(r"[:;]", args.pythonpath or "")
     )
@@ -59,7 +61,7 @@ def run_dump(args):
     return 0
 
 
-def run_compare(args):
+def run_compare(args):  # type: (Any) -> int
     with open(args.old, "rb") as handle:
         old_data = pickle.load(handle)
 
@@ -80,6 +82,7 @@ def run_compare(args):
         sys.stdout.write(surface.bump_semantic_version(highest_level, args.bump))
     else:
         sys.stdout.write(highest_level)
+    return 0
 
 
 parser = argparse.ArgumentParser(
@@ -107,7 +110,10 @@ compare_parser = subparsers.add_parser(
 compare_parser.add_argument("old", help="Path to original API file.")
 compare_parser.add_argument("new", help="Path to new API file.")
 compare_parser.add_argument(
-    "-v", "--verbose", action="store_true", help="Display more information about the changes detected."
+    "-v",
+    "--verbose",
+    action="store_true",
+    help="Display more information about the changes detected.",
 )
 compare_parser.add_argument(
     "-b", "--bump", help="Instead of semantic level, return the version bumped."

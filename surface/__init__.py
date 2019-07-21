@@ -13,6 +13,9 @@ from surface._base import (
     Module,
 )
 
+if False:  # Type checking
+    from typing import Tuple, Iterable, Any
+
 
 def get_api(name):  # type: (str) -> Tuple[Any, ...]
     """
@@ -56,7 +59,7 @@ def format_api(api, indent=""):  # type: (Iterable[Any], str) -> str
     return result
 
 
-def bump_semantic_version(level, version):
+def bump_semantic_version(level, version):  # type: (str, str) -> str
     """ Bump version with the provided level """
     parts = re.match(r"(\d+)\.(\d+)\.(\d+)", version)
     if not parts:

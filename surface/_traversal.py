@@ -22,12 +22,15 @@ import inspect
 import sigtools
 from surface._base import *
 
+if False:  # type checking
+    from typing import List, Set, Any
+
 LOG = logging.getLogger(__name__)
 
 import_reg = re.compile(r"__init__\.(py[cd]?|so)$")
 
 
-def recurse(name):  # type: (str) -> Set[str]
+def recurse(name):  # type: (str) -> List[str]
     """ Given a module path, return paths to its children. """
 
     stack = [name]
@@ -95,7 +98,7 @@ def traverse(obj):  # type: (Any) -> List[Any]
             LOG.warn("Failed to parse {} {}.\n{}".format(name, value, err))
 
 
-def handle_function(name, value):
+def handle_function(name, value): # type: (str, Any) -> Func
     sig = sigtools.signature(value)
     return Func(
         name,
@@ -112,7 +115,7 @@ def handle_function(name, value):
     )
 
 
-def handle_method(name, value):
+def handle_method(name, value): # type: (str, Any) -> Func
     sig = sigtools.signature(value)
     params = list(sig.parameters.items())
     if not "@staticmethod" in inspect.getsource(value):
@@ -132,23 +135,23 @@ def handle_method(name, value):
     )
 
 
-def handle_class(name, value):
+def handle_class(name, value): # type: (str, Any) -> Class
     return Class(name, tuple(traverse(value)))
 
 
-def handle_variable(name, value):
+def handle_variable(name, value): # type: (str, Any) -> Var
     return Var(name, "typing.Any")
 
 
-def handle_module(name, value):
+def handle_module(name, value): # type: (str, Any) -> Module
     return Module(name, value.__name__, tuple(traverse(value)))
 
 
-def is_public(name):
+def is_public(name): # type: (str) -> str
     return name == "__init__" or not name.startswith("_")
 
 
-def convert_arg_kind(kind):
+def convert_arg_kind(kind): # type: (str) -> int
     if kind == "POSITIONAL_ONLY":
         return POSITIONAL
     if kind == "KEYWORD_ONLY":
