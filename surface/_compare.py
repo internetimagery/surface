@@ -98,9 +98,7 @@ def compare_deep(
     return changes
 
 
-def compare_func(
-    basename, old_func, new_func
-):  # type: (str, Func, Func) -> Set[Any]
+def compare_func(basename, old_func, new_func):  # type: (str, Func, Func) -> Set[Any]
     changes = set()  # type: Set[Any]
 
     if old_func.returns != new_func.returns:

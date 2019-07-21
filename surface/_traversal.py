@@ -21,6 +21,7 @@ import os.path
 import inspect
 import sigtools
 from surface._base import *
+from surface._type import get_type
 
 if False:  # type checking
     from typing import List, Set, Any
@@ -98,7 +99,7 @@ def traverse(obj):  # type: (Any) -> List[Any]
             LOG.warn("Failed to parse {} {}.\n{}".format(name, value, err))
 
 
-def handle_function(name, value): # type: (str, Any) -> Func
+def handle_function(name, value):  # type: (str, Any) -> Func
     sig = sigtools.signature(value)
     return Func(
         name,
@@ -115,7 +116,7 @@ def handle_function(name, value): # type: (str, Any) -> Func
     )
 
 
-def handle_method(name, value): # type: (str, Any) -> Func
+def handle_method(name, value):  # type: (str, Any) -> Func
     sig = sigtools.signature(value)
     params = list(sig.parameters.items())
     if not "@staticmethod" in inspect.getsource(value):
@@ -135,23 +136,23 @@ def handle_method(name, value): # type: (str, Any) -> Func
     )
 
 
-def handle_class(name, value): # type: (str, Any) -> Class
+def handle_class(name, value):  # type: (str, Any) -> Class
     return Class(name, tuple(traverse(value)))
 
 
-def handle_variable(name, value): # type: (str, Any) -> Var
-    return Var(name, "typing.Any")
+def handle_variable(name, value):  # type: (str, Any) -> Var
+    return Var(name, get_type(value))
 
 
-def handle_module(name, value): # type: (str, Any) -> Module
+def handle_module(name, value):  # type: (str, Any) -> Module
     return Module(name, value.__name__, tuple(traverse(value)))
 
 
-def is_public(name): # type: (str) -> str
+def is_public(name):  # type: (str) -> str
     return name == "__init__" or not name.startswith("_")
 
 
-def convert_arg_kind(kind): # type: (str) -> int
+def convert_arg_kind(kind):  # type: (str) -> int
     if kind == "POSITIONAL_ONLY":
         return POSITIONAL
     if kind == "KEYWORD_ONLY":
