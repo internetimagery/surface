@@ -40,11 +40,13 @@ def run_dump(args):  # type: (Any) -> int
     for module in modules:
         try:
             api = surface.get_api(module, args.exclude_modules)
-        except ImportError:
+        except ImportError as err:
             LOG.info(
-                "Failed to import '{}'.\nIs the module and all its dependencies in your PYTHONPATH?".format(
-                    module
-                )
+                (
+                    "Failed to import '{}'.\n"
+                    "{}\n"
+                    "Is the module and all its dependencies in your PYTHONPATH?"
+                ).format(module, err)
             )
             return 1
         else:
