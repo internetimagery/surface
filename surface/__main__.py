@@ -24,7 +24,8 @@ LOG.addHandler(logging.StreamHandler(sys.stderr))
 
 def run_dump(args):  # type: (Any) -> int
     pythonpath = (
-        os.path.realpath(p.strip()) for p in re.split(r"[:;]", args.pythonpath or "")
+        os.path.realpath(os.path.expanduser(p.strip()))
+        for p in re.split(r"[:;]", args.pythonpath or "")
     )
     for path in pythonpath:
         sys.path.insert(0, path)
@@ -38,10 +39,10 @@ def run_dump(args):  # type: (Any) -> int
     module_api = {}
     for module in modules:
         try:
-            api = surface.get_api(module)
+            api = surface.get_api(module, args.exclude_modules)
         except ImportError:
             LOG.info(
-                "Failed to import '{}'.\nIs the module in your PYTHONPATH?".format(
+                "Failed to import '{}'.\nIs the module and all its dependencies in your PYTHONPATH?".format(
                     module
                 )
             )
@@ -101,6 +102,11 @@ dump_parser.add_argument(
 )
 dump_parser.add_argument(
     "-p", "--pythonpath", help="Additional paths to use for imports."
+)
+dump_parser.add_argument(
+    "--exclude-modules",
+    action="store_true",
+    help="Exclude exposed modules in API. (default False)",
 )
 dump_parser.set_defaults(func=run_dump)
 

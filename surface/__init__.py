@@ -17,18 +17,19 @@ if False:  # Type checking
     from typing import Tuple, Iterable, Any
 
 
-def get_api(name):  # type: (str) -> Tuple[Any, ...]
+def get_api(name, exclude_modules=False):  # type: (str, bool) -> Tuple[Any, ...]
     """
         Get a representation of the provided publicly exposed API.
 
         Args:
             name (str): path to module. eg mymodule.submodule
+            exclude_modules (bool): Exclude "naked" imports from API.
 
         Returns:
             Tuple[Any, ...]: Representation of API
     """
     mod = __import__(name, fromlist=[""])
-    API = traverse(mod)
+    API = traverse(mod, exclude_modules)
     return tuple(API)
 
 

@@ -62,7 +62,7 @@ def recurse(name):  # type: (str) -> List[str]
     return paths
 
 
-def traverse(obj):  # type: (Any) -> List[Any]
+def traverse(obj, exclude_modules=False):  # type: (Any, bool) -> List[Any]
     """ Entry point to generating an API representation. """
     attributes = (attr for attr in inspect.getmembers(obj) if is_public(attr[0]))
     # __all__ attribute restricts import with *,
@@ -76,11 +76,13 @@ def traverse(obj):  # type: (Any) -> List[Any]
 
     # Walk the surface of the object, and extract the information
     for name, value in attributes:
+        if not name:
+            continue
         # TODO: How to ensure we find the original classes and methods, and not wrappers?
-        # TODO: Handle recursive traversal.
+        # TODO: Handle recursive endless looping traversal.
 
         try:
-            if inspect.ismodule(value):
+            if inspect.ismodule(value) and not exclude_modules:
                 yield handle_module(name, value)
             elif inspect.isclass(value):
                 yield handle_class(name, value)
