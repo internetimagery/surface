@@ -18,6 +18,9 @@ except ImportError:
 if False:
     from typing import Any
 
+# Prevent pyc files from being generated
+sys.dont_write_bytecode = True
+
 LOG = logging.getLogger(__name__)
 LOG.addHandler(logging.StreamHandler(sys.stderr))
 
