@@ -3,7 +3,7 @@
 from distutils.core import setup
 
 setup(
-    name="surface",
+    name="api-surface",
     version="0.0.1a",
     description="Dump and compare simplified representation of a public api",
     author="Jason Dixon",
