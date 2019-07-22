@@ -1,4 +1,5 @@
 import re
+from importlib import import_module
 from surface._traversal import traverse, recurse
 from surface._compare import compare, PATCH, MINOR, MAJOR
 from surface._base import (
@@ -28,7 +29,7 @@ def get_api(name, exclude_modules=False):  # type: (str, bool) -> Tuple[Any, ...
         Returns:
             Tuple[Any, ...]: Representation of API
     """
-    mod = __import__(name, fromlist=[""])
+    mod = import_module(name)
     API = traverse(mod, exclude_modules)
     return tuple(API)
 

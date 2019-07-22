@@ -22,6 +22,7 @@ import inspect
 import sigtools
 from surface._base import *
 from surface._type import get_type
+from importlib import import_module
 
 if False:  # type checking
     from typing import List, Set, Any
@@ -39,7 +40,7 @@ def recurse(name):  # type: (str) -> List[str]
 
     while stack:
         import_name = stack.pop()
-        module = __import__(import_name, fromlist=[""])
+        module = import_module(import_name)
         paths.append(import_name)
         try:
             module_path = module.__file__
