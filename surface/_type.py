@@ -1,5 +1,8 @@
 """ Colllect typing info """
 
+if False: # type checking
+    from typing import Any, Tuple, List, Optional
+
 __all__ = ["get_type"]
 
 

@@ -25,7 +25,7 @@ from surface._type import get_type
 from importlib import import_module
 
 if False:  # type checking
-    from typing import List, Set, Any
+    from typing import List, Set, Any, Iterable
 
 LOG = logging.getLogger(__name__)
 
@@ -63,17 +63,17 @@ def recurse(name):  # type: (str) -> List[str]
     return paths
 
 
-def traverse(obj, exclude_modules=False):  # type: (Any, bool) -> List[Any]
+def traverse(obj, exclude_modules=False):  # type: (Any, bool) -> Iterable[Any]
     """ Entry point to generating an API representation. """
-    attributes = (attr for attr in inspect.getmembers(obj) if is_public(attr[0]))
+    attributes = [attr for attr in inspect.getmembers(obj) if is_public(attr[0])]
     # __all__ attribute restricts import with *,
     # and displays what is intended to be public
     whitelist = getattr(obj, "__all__", [])
     if whitelist:
-        attributes = (attr for attr in attributes if attr[0] in whitelist)
+        attributes = [attr for attr in attributes if attr[0] in whitelist]
 
     # Sort the attributes by name for readability, and diff-ability (is that a word?)
-    attributes = sorted(attributes, key=lambda a: a[0])
+    attributes.sort(key=lambda a: a[0])
 
     # Walk the surface of the object, and extract the information
     for name, value in attributes:
@@ -151,7 +151,7 @@ def handle_module(name, value):  # type: (str, Any) -> Module
     return Module(name, value.__name__, tuple(traverse(value)))
 
 
-def is_public(name):  # type: (str) -> str
+def is_public(name):  # type: (str) -> bool
     return name == "__init__" or not name.startswith("_")
 
 
