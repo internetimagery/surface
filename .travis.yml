@@ -4,12 +4,12 @@ python:
 - '3.6'
 install:
 - pip install -e ./
-- python -V | grep -q "Python 3" && pip install mypy
-- python -V | grep -q "Python 3" && pip install black
+- ./py3 pip install mypy
+- ./py3 pip install black
 script:
 - python tests
-- python -V | grep -q "Python 3" && mypy surface
-- python -V | grep -q "Python 3" && black --check surface
+- ./py3 mypy surface
+- ./py3 black --check surface
 deploy:
   provider: pypi
   skip_existing: true
