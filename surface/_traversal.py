@@ -21,11 +21,13 @@ import os.path
 import inspect
 import sigtools
 from surface._base import *
-from surface._type import get_type
+from surface._type import get_type, get_type_func
 from importlib import import_module
 
 if False:  # type checking
     from typing import List, Set, Any, Iterable
+
+__all__ = ["recurse", "traverse"]
 
 LOG = logging.getLogger(__name__)
 
@@ -106,38 +108,41 @@ def traverse(obj, exclude_modules=False):  # type: (Any, bool) -> Iterable[Any]
 
 def handle_function(name, value):  # type: (str, Any) -> Func
     sig = sigtools.signature(value)
+    param_types, return_type = get_type_func(value)
     return Func(
         name,
         tuple(
             Arg(
                 n,
-                "typing.Any",
+                t,
                 convert_arg_kind(str(p.kind))
                 | (0 if p.default is sig.empty else DEFAULT),
             )
-            for n, p in sig.parameters.items()
+            for (n, p), t in zip(sig.parameters.items(), param_types)
         ),
-        "typing.Any",
+        return_type,
     )
 
 
 def handle_method(name, value):  # type: (str, Any) -> Func
     sig = sigtools.signature(value)
     params = list(sig.parameters.items())
+    param_types, return_type = get_type_func(value)
     if not "@staticmethod" in inspect.getsource(value):
         params = params[1:]
+        param_types = param_types[1:]
     return Func(
         name,
         tuple(
             Arg(
                 n,
-                "typing.Any",
+                t,
                 convert_arg_kind(str(p.kind))
                 | (0 if p.default is sig.empty else DEFAULT),
             )
-            for n, p in params
+            for (n, p), t in zip(sig.parameters.items(), param_types)
         ),
-        "typing.Any",
+        return_type,
     )
 
 

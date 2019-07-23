@@ -11,6 +11,9 @@ from surface._base import *
 if False:  # type checking
     from typing import Dict, Set, Sequence, Any, Iterable
 
+__all__ = ["PATCH", "MINOR", "MAJOR", "compare"]
+
+
 # Semantic types
 PATCH = "patch"
 MINOR = "minor"
@@ -25,7 +28,7 @@ MAJOR = "major"
 #     MINOR:
 #         Adding new variables, functions, classes, modules, optional-keyword-arguments, *args, **kwargs
 #         Changing positional-only-argument to include keyword
-#         Changing types to be more generic, eg: List[Any] to Sequence[Any]
+#         Changing input types to be more generic, eg: List[Any] to Sequence[Any]
 #     PATCH:
 #         Renaming positional-only-arguments
 #         Changing nothing
@@ -135,7 +138,9 @@ def compare_func(basename, old_func, new_func):  # type: (str, Func, Func) -> Se
                 else MAJOR
             )
             changes.add(Change(level, "Renamed Arg: {}".format(name)))
-        if old_arg.type != new_arg.type:
+        if is_subtype(old_arg.type, new_arg.type):
+            changes.add(Change(MINOR, "Type Changed: {}".format(name)))
+        elif old_arg.type != new_arg.type:
             changes.add(Change(MAJOR, "Type Changed: {}".format(name)))
         if old_arg.kind != new_arg.kind:
             # Adding a default to an argument is not a breaking change.
@@ -180,3 +185,10 @@ def compare_func(basename, old_func, new_func):  # type: (str, Func, Func) -> Se
 
 def join(parent, child):  # type: (str, str) -> str
     return "{}.{}".format(parent, child) if parent else child
+
+
+def is_subtype(subtype, supertype):  # type: (str, str) -> bool
+    if supertype.startswith("typing.Sequence"):
+        if subtype.startswith("typing.List") or subtype.startswith("typing.Tuple"):
+            return True
+    return False

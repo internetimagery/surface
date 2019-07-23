@@ -1,5 +1,5 @@
-import re
-from importlib import import_module
+import re as _re
+from importlib import import_module as _import_module
 from surface._traversal import traverse, recurse
 from surface._compare import compare, PATCH, MINOR, MAJOR
 from surface._base import (
@@ -29,7 +29,7 @@ def get_api(name, exclude_modules=False):  # type: (str, bool) -> Tuple[Any, ...
         Returns:
             Tuple[Any, ...]: Representation of API
     """
-    mod = import_module(name)
+    mod = _import_module(name)
     API = traverse(mod, exclude_modules)
     return tuple(API)
 
@@ -72,7 +72,7 @@ def format_api(api, colour=True, indent=""):  # type: (Iterable[Any], bool, str)
 
 def bump_semantic_version(level, version):  # type: (str, str) -> str
     """ Bump version with the provided level """
-    parts = re.match(r"(\d+)\.(\d+)\.(\d+)", version)
+    parts = _re.match(r"(\d+)\.(\d+)\.(\d+)", version)
     if not parts:
         raise TypeError("Not a valid semantic version: {}".format(version))
     if level == MAJOR:

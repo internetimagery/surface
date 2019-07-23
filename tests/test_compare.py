@@ -6,8 +6,7 @@ from surface._compare import *
 
 class TestCompare(unittest.TestCase):
     def test_nothing(self):
-        api_old = {"my_api": [Var("stuff", "float")]}
-        api_new = {"my_api": [Var("stuff", "float")]}
+        api_old = api_new = {"my_api": [Var("stuff", "float")]}
         changes = compare(api_old, api_new)
         self.assertEqual(changes, set())
 
@@ -46,6 +45,12 @@ class TestCompare(unittest.TestCase):
                 ]
             ),
         )
+
+    def test_minor(self):
+        pass  # TODO: !!
+
+    def test_major(self):
+        pass  # TODO: !1
 
     def test_basic(self):
         api_old = {

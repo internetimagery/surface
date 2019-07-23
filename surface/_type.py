@@ -7,7 +7,7 @@ import sigtools
 if False:  # type checking
     from typing import Any, Tuple, List, Optional
 
-__all__ = ["get_type"]
+__all__ = ["get_type", "get_type_func"]
 
 
 def get_type(value):  # type: (Any) -> str
