@@ -79,7 +79,9 @@ class TestImporter(unittest.TestCase):
                     "typing.Any",
                 ),
                 Module(
-                    "myModule", "test_mod_basic.myModule", (Var("myVar", "typing.List[int]"),)
+                    "myModule",
+                    "test_mod_basic.myModule",
+                    (Var("myVar", "typing.List[int]"),),
                 ),
                 Var("myVar", "int"),
             ],

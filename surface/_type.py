@@ -1,5 +1,7 @@
 """ Colllect typing info """
 
+import types
+
 if False:  # type checking
     from typing import Any, Tuple, List, Optional
 
@@ -45,7 +47,7 @@ def handle_standard_type(value_type):  # type: (Any) -> Optional[str]
     # Strings
     if value_type == str:
         return "str"
-    try: # python 2
+    try:  # python 2
         if value_type == unicode:  # type: ignore
             return "unicode"
     except NameError:
@@ -81,5 +83,17 @@ def handle_container_type(value, value_type):  # type: (Any, Any) -> Optional[st
         for k, v in value.items():
             return template.format(get_live_type(k), get_live_type(v))
         return template.format("typing.Any", "typing.Any")
+
+    # Generators
+    # IMPORTANT!
+    #     Looping generator here to get the type is fine for cli usage.
+    #     But if used during a live session this would be an issue.
+    if value_type == types.GeneratorType:
+        # NOTE: Generator return value can be taken from StopIteration return value if needed.
+        template = "typing.Iterable[{}]"
+        for item in value:
+            return template.format(get_live_type(item))
+        return template.format("typing.Any")
+    # TODO: handle types.AsyncGeneratorType
 
     return None

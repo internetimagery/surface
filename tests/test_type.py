@@ -24,6 +24,7 @@ class TestLiveType(unittest.TestCase):
         self.assertEqual("typing.Tuple[int, str]", get_live_type(tuple([123, "456"])))
         self.assertEqual("typing.Dict[typing.Any, typing.Any]", get_live_type({}))
         self.assertEqual("typing.Dict[int, str]", get_live_type({123: "456"}))
+        self.assertEqual("typing.Iterable[int]", get_live_type((a for a in range(5))))
 
 
 if __name__ == "__main__":
