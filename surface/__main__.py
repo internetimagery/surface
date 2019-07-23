@@ -108,7 +108,9 @@ dump_parser.add_argument(
 dump_parser.add_argument(
     "-p", "--pythonpath", help="Additional paths to use for imports."
 )
-dump_parser.add_argument("--no-colour", action="store_true", help="Disable coloured output.")
+dump_parser.add_argument(
+    "--no-colour", action="store_true", help="Disable coloured output."
+)
 dump_parser.add_argument(
     "--exclude-modules",
     action="store_true",

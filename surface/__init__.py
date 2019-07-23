@@ -34,12 +34,12 @@ def get_api(name, exclude_modules=False):  # type: (str, bool) -> Tuple[Any, ...
     return tuple(API)
 
 
-def format_api(api, colour=True, indent=""):  # type: (Iterable[Any], str) -> str
+def format_api(api, colour=True, indent=""):  # type: (Iterable[Any], bool, str) -> str
     """ Format api into an easier to read representation """
     result = ""
-    magenta = '\033[35m{}\033[0m' if colour else "{}"
-    cyan = '\033[36m{}\033[0m' if colour else "{}"
-    green = '\033[32m{}\033[0m' if colour else "{}"
+    magenta = "\033[35m{}\033[0m" if colour else "{}"
+    cyan = "\033[36m{}\033[0m" if colour else "{}"
+    green = "\033[32m{}\033[0m" if colour else "{}"
     for item in api:
         if isinstance(item, (Class, Module)):
             result += indent + "{} {}:\n".format(
@@ -49,11 +49,17 @@ def format_api(api, colour=True, indent=""):  # type: (Iterable[Any], str) -> st
                 result += format_api(item.body, colour, indent + "    ")
         elif isinstance(item, Func):
             if item.args:
-                result += indent + "{} {}(\n".format(magenta.format("def"), cyan.format(item.name))
+                result += indent + "{} {}(\n".format(
+                    magenta.format("def"), cyan.format(item.name)
+                )
                 result += format_api(item.args, colour, indent + "    ")
                 result += indent + "): -> {}\n".format(green.format(item.returns))
             else:
-                result += indent + "{} {}(): -> {}\n".format(magenta.format("def"), cyan.format(item.name), green.format(item.returns))
+                result += indent + "{} {}(): -> {}\n".format(
+                    magenta.format("def"),
+                    cyan.format(item.name),
+                    green.format(item.returns),
+                )
         elif isinstance(item, Arg):
             name = ("*" if item.kind & VARIADIC else "") + item.name
             result += indent + "{}: {}\n".format(name, green.format(item.type))
