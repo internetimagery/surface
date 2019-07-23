@@ -16,7 +16,7 @@ setup(
     url="https://github.com/internetimagery/surface",
     packages=["surface"],
     install_requires=["sigtools"],
-    python_requires=">=2.7,>=3.6",
+    python_requires="2.7,>=3.5",
     license="MIT",
     entry_points={"console_scripts": ["surface=surface.__main__"]},
 )
