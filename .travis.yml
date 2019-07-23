@@ -5,9 +5,11 @@ python:
 install:
 - pip install --user -e ./
 - pip install --user mypy
+- pip install --user black
 script:
 - python tests
 - mypy surface
+- black --check surface
 deploy:
   provider: pypi
   skip_existing: true

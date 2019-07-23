@@ -1,6 +1,8 @@
 """ Colllect typing info """
 
 import types
+import inspect
+import sigtools
 
 if False:  # type checking
     from typing import Any, Tuple, List, Optional
@@ -13,8 +15,28 @@ def get_type(value):  # type: (Any) -> str
 
 
 def get_type_func(value):  # type: (Any) -> Tuple[List[str], str]
-    # TODO: Get function typing
-    pass
+    # TODO: Handle comment annotations as well
+    sig = sigtools.signature(value)
+    return_type = (
+        handle_live_annotation(sig.return_annotation)
+        if sig.return_annotation is not sig.empty
+        else "typing.Any"
+    )
+    parameters = []
+    for param in sig.parameters.values():
+        if param.annotation is not sig.empty:
+            # If we are given an annotation, use it
+            parameters.append(handle_live_annotation(param.annotation))
+        elif param.default is not sig.empty:
+            # If we have a default value, use that type
+            if param.default is None:
+                # Value is optional
+                parameters.append("typing.Optional[typing.Any]")
+            else:
+                parameters.append(get_live_type(param.default))
+        else:
+            parameters.append("typing.Any")
+    return parameters, return_type
 
 
 def get_comment_type(value):  # type: (Any) -> Optional[str]
@@ -29,13 +51,14 @@ def get_live_type(value):  # type: (Any) -> str
     # Standard types
     value_type = type(value)
     return (
-        handle_standard_type(value_type)
-        or handle_container_type(value, value_type)
+        handle_live_standard_type(value_type)
+        or handle_live_container_type(value, value_type)
+        or handle_live_abstract(value, value_type)
         or "typing.Any"
     )
 
 
-def handle_standard_type(value_type):  # type: (Any) -> Optional[str]
+def handle_live_standard_type(value_type):  # type: (Any) -> Optional[str]
     # Numeric
     if value_type == int:
         return "int"
@@ -56,11 +79,13 @@ def handle_standard_type(value_type):  # type: (Any) -> Optional[str]
     # Aaaaaand the rest
     if value_type == bool:
         return "bool"
+    if value_type == type(None):
+        return "None"
 
     return None
 
 
-def handle_container_type(value, value_type):  # type: (Any, Any) -> Optional[str]
+def handle_live_container_type(value, value_type):  # type: (Any, Any) -> Optional[str]
     # Sequences
     if value_type == list:
         return "typing.List[{}]".format(
@@ -86,8 +111,8 @@ def handle_container_type(value, value_type):  # type: (Any, Any) -> Optional[st
 
     # Generators
     # IMPORTANT!
-    #     Looping generator here to get the type is fine for cli usage.
-    #     But if used during a live session this would be an issue.
+    #     Taking an item out of the generator here to get the type is fine for cli usage.
+    #     But if used during a live session this would be an problem.
     if value_type == types.GeneratorType:
         # NOTE: Generator return value can be taken from StopIteration return value if needed.
         template = "typing.Iterable[{}]"
@@ -97,3 +122,26 @@ def handle_container_type(value, value_type):  # type: (Any, Any) -> Optional[st
     # TODO: handle types.AsyncGeneratorType
 
     return None
+
+
+def handle_live_abstract(value, value_type):  # type: (Any, Any) -> Optional[str]
+    if value_type == types.FunctionType:
+        params, return_type = get_type_func(value)
+        return "typing.Callable[{}, {}]".format(
+            "[{}]".format(", ".join(params)) if params else "...", return_type
+        )
+
+    return None
+
+
+# Python3 function
+def handle_live_annotation(value):  # type: (Any) -> str
+    import typing
+
+    if type(value) == typing.GenericMeta:
+        return str(value)
+    if inspect.isclass(value):
+        if value.__module__ == "builtins":
+            return value.__name__
+        return "{}.{}".format(value.__module__, value.__name__)
+    return "typing.Any"
