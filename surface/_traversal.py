@@ -83,7 +83,9 @@ def traverse(obj, exclude_modules=False):  # type: (Any, bool) -> Iterable[Any]
         # TODO: Handle recursive endless looping traversal.
 
         try:
-            if inspect.ismodule(value) and not exclude_modules:
+            if inspect.ismodule(value):
+                if exclude_modules:
+                    continue
                 yield handle_module(name, value)
             elif inspect.isclass(value):
                 yield handle_class(name, value)

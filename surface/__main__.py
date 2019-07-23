@@ -58,7 +58,7 @@ def run_dump(args):  # type: (Any) -> int
     if not args.output:
         for mod, api in module_api.items():
             sys.stdout.write("[{}]\n".format(mod))
-            sys.stdout.write(surface.format_api(api, "    "))
+            sys.stdout.write(surface.format_api(api, not args.no_colour, "    "))
         return 0
 
     with open(args.output, "wb") as handle:
@@ -108,6 +108,7 @@ dump_parser.add_argument(
 dump_parser.add_argument(
     "-p", "--pythonpath", help="Additional paths to use for imports."
 )
+dump_parser.add_argument("--no-colour", action="store_true", help="Disable coloured output.")
 dump_parser.add_argument(
     "--exclude-modules",
     action="store_true",

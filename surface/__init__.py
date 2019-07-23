@@ -34,28 +34,31 @@ def get_api(name, exclude_modules=False):  # type: (str, bool) -> Tuple[Any, ...
     return tuple(API)
 
 
-def format_api(api, indent=""):  # type: (Iterable[Any], str) -> str
+def format_api(api, colour=True, indent=""):  # type: (Iterable[Any], str) -> str
     """ Format api into an easier to read representation """
     result = ""
+    magenta = '\033[35m{}\033[0m' if colour else "{}"
+    cyan = '\033[36m{}\033[0m' if colour else "{}"
+    green = '\033[32m{}\033[0m' if colour else "{}"
     for item in api:
         if isinstance(item, (Class, Module)):
             result += indent + "{} {}:\n".format(
-                item.__class__.__name__.lower(), item.name
+                magenta.format(item.__class__.__name__.lower()), cyan.format(item.name)
             )
             if item.body:
-                result += format_api(item.body, indent + "    ")
+                result += format_api(item.body, colour, indent + "    ")
         elif isinstance(item, Func):
             if item.args:
-                result += indent + "def {}(\n".format(item.name)
-                result += format_api(item.args, indent + "    ")
-                result += indent + "): -> {}\n".format(item.returns)
+                result += indent + "{} {}(\n".format(magenta.format("def"), cyan.format(item.name))
+                result += format_api(item.args, colour, indent + "    ")
+                result += indent + "): -> {}\n".format(green.format(item.returns))
             else:
-                result += indent + "def {}(): -> {}\n".format(item.name, item.returns)
+                result += indent + "{} {}(): -> {}\n".format(magenta.format("def"), cyan.format(item.name), green.format(item.returns))
         elif isinstance(item, Arg):
             name = ("*" if item.kind & VARIADIC else "") + item.name
-            result += indent + "{}: {}\n".format(name, item.type)
+            result += indent + "{}: {}\n".format(name, green.format(item.type))
         elif isinstance(item, Var):
-            result += indent + "{}: {}\n".format(item.name, item.type)
+            result += indent + "{}: {}\n".format(item.name, green.format(item.type))
         else:
             result += indent + str(item) + "\n"
     return result
