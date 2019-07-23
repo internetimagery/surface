@@ -77,7 +77,7 @@ def run_compare(args):  # type: (Any) -> int
     highest_level = surface.PATCH
     changes = surface.compare(old_data, new_data)
     for level, note in changes:
-        if args.verbose:
+        if not args.quiet:
             LOG.info(note)
         if level == surface.MAJOR:
             highest_level = level
@@ -88,6 +88,8 @@ def run_compare(args):  # type: (Any) -> int
         sys.stdout.write(surface.bump_semantic_version(highest_level, args.bump))
     else:
         sys.stdout.write(highest_level)
+    if args.check and (args.check == highest_level or highest_level == surface.MAJOR):
+        return 1
     return 0
 
 
@@ -95,6 +97,9 @@ parser = argparse.ArgumentParser(
     description="Generate representations of publicly exposed Python API's."
 )
 parser.add_argument("--debug", action="store_true", help="Show debug messages.")
+parser.add_argument(
+    "--no-colour", action="store_true", help="Disable coloured output."
+)
 subparsers = parser.add_subparsers()
 
 dump_parser = subparsers.add_parser("dump", help="Store surface API in a file.")
@@ -109,9 +114,6 @@ dump_parser.add_argument(
     "-p", "--pythonpath", help="Additional paths to use for imports."
 )
 dump_parser.add_argument(
-    "--no-colour", action="store_true", help="Disable coloured output."
-)
-dump_parser.add_argument(
     "--exclude-modules",
     action="store_true",
     help="Exclude exposed modules in API. (default False)",
@@ -124,13 +126,19 @@ compare_parser = subparsers.add_parser(
 compare_parser.add_argument("old", help="Path to original API file.")
 compare_parser.add_argument("new", help="Path to new API file.")
 compare_parser.add_argument(
-    "-v",
-    "--verbose",
+    "-q",
+    "--quiet",
     action="store_true",
-    help="Display more information about the changes detected.",
+    help="Do not display formatted API output.",
 )
 compare_parser.add_argument(
     "-b", "--bump", help="Instead of semantic level, return the version bumped."
+)
+compare_parser.add_argument(
+    "-c",
+    "--check",
+    choices=[surface.MINOR, surface.MAJOR],
+    help="For use in a CI environment. Exit 1 if API bumps version equal or above specified.",
 )
 compare_parser.set_defaults(func=run_compare)
 
