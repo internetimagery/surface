@@ -34,37 +34,37 @@ def get_api(name, exclude_modules=False):  # type: (str, bool) -> Tuple[Any, ...
     return tuple(API)
 
 
-def format_api(api, colour=True, indent=""):  # type: (Iterable[Any], bool, str) -> str
+def format_api(api, colour=False, indent=""):  # type: (Iterable[Any], bool, str) -> str
     """ Format api into an easier to read representation """
     result = ""
-    magenta = "\033[35m{}\033[0m" if colour else "{}"
-    cyan = "\033[36m{}\033[0m" if colour else "{}"
-    green = "\033[32m{}\033[0m" if colour else "{}"
+    magenta = ("\033[35m{}\033[0m" if colour else "{}").format
+    cyan = ("\033[36m{}\033[0m" if colour else "{}").format
+    green = ("\033[32m{}\033[0m" if colour else "{}").format
     for item in api:
         if isinstance(item, (Class, Module)):
             result += indent + "{} {}:\n".format(
-                magenta.format(item.__class__.__name__.lower()), cyan.format(item.name)
+                magenta(item.__class__.__name__.lower()), cyan(item.name)
             )
             if item.body:
                 result += format_api(item.body, colour, indent + "    ")
         elif isinstance(item, Func):
             if item.args:
-                result += indent + "{} {}(\n".format(
-                    magenta.format("def"), cyan.format(item.name)
-                )
+                result += indent + "{} {}(\n".format(magenta("def"), cyan(item.name))
                 result += format_api(item.args, colour, indent + "    ")
-                result += indent + "): -> {}\n".format(green.format(item.returns))
+                result += indent + "): -> {}\n".format(green(item.returns))
             else:
                 result += indent + "{} {}(): -> {}\n".format(
-                    magenta.format("def"),
-                    cyan.format(item.name),
-                    green.format(item.returns),
+                    magenta("def"), cyan(item.name), green(item.returns)
                 )
         elif isinstance(item, Arg):
-            name = ("*" if item.kind & VARIADIC else "") + item.name
-            result += indent + "{}: {}\n".format(name, green.format(item.type))
+            name = item.name
+            if item.kind & VARIADIC:
+                name = "*" + name
+                if item.kind & KEYWORD:
+                    name = "*" + name
+            result += indent + "{}: {}\n".format(name, green(item.type))
         elif isinstance(item, Var):
-            result += indent + "{}: {}\n".format(item.name, green.format(item.type))
+            result += indent + "{}: {}\n".format(item.name, green(item.type))
         else:
             result += indent + str(item) + "\n"
     return result

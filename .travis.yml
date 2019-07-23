@@ -4,8 +4,8 @@ python:
 - '3.6'
 install:
 - pip install -e ./
-- pip install mypy
-- pip install black
+- pip3 install mypy
+- pip3 install black
 script:
 - python tests
 - mypy surface

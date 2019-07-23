@@ -56,8 +56,9 @@ def run_dump(args):  # type: (Any) -> int
             module_api[module] = api
 
     if not args.output:
+        yellow = ("{}" if args.no_colour else "\033[33m{}\033[0m").format
         for mod, api in module_api.items():
-            sys.stdout.write("[{}]\n".format(mod))
+            sys.stdout.write("[{}]\n".format(yellow(mod)))
             sys.stdout.write(surface.format_api(api, not args.no_colour, "    "))
         return 0
 
@@ -97,9 +98,7 @@ parser = argparse.ArgumentParser(
     description="Generate representations of publicly exposed Python API's."
 )
 parser.add_argument("--debug", action="store_true", help="Show debug messages.")
-parser.add_argument(
-    "--no-colour", action="store_true", help="Disable coloured output."
-)
+parser.add_argument("--no-colour", action="store_true", help="Disable coloured output.")
 subparsers = parser.add_subparsers()
 
 dump_parser = subparsers.add_parser("dump", help="Store surface API in a file.")
@@ -126,10 +125,7 @@ compare_parser = subparsers.add_parser(
 compare_parser.add_argument("old", help="Path to original API file.")
 compare_parser.add_argument("new", help="Path to new API file.")
 compare_parser.add_argument(
-    "-q",
-    "--quiet",
-    action="store_true",
-    help="Do not display formatted API output.",
+    "-q", "--quiet", action="store_true", help="Do not display formatted API output."
 )
 compare_parser.add_argument(
     "-b", "--bump", help="Instead of semantic level, return the version bumped."
