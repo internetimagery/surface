@@ -1,7 +1,10 @@
+class _descriptor(object):
+    def __get__(self, *_):
+        raise RuntimeError("more like funtime error")
+
+
 class Methods(object):
 
     ok_method = "ok"
 
-    @property
-    def err_method(self):
-        raise RuntimeError("more like funtime error")
+    err_method = _descriptor()

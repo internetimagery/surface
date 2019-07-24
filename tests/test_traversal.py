@@ -12,7 +12,6 @@ except ImportError:
 
 path = os.path.join(os.path.dirname(__file__), "testdata")
 sys.path.insert(0, path)
-import test_mod_basic
 
 
 class TestRecurse(unittest.TestCase):
@@ -33,10 +32,9 @@ class TestImporter(unittest.TestCase):
 
     maxDiff = None
 
-    def setUp(self):
-        reload(test_mod_basic)
-
     def test_basic(self):
+        import test_mod_basic
+
         data = list(APITraversal().traverse(test_mod_basic))
         self.assertEqual(
             data,
@@ -84,6 +82,23 @@ class TestImporter(unittest.TestCase):
                     (Var("myVar", "typing.List[int]"),),
                 ),
                 Var("myVar", "int"),
+            ],
+        )
+
+    def test_err_attr(self):
+        import test_mod_errors.errMethod as errMethod
+
+        data = list(APITraversal().traverse(errMethod))
+        self.assertEqual(
+            data,
+            [
+                Class(
+                    "Methods",
+                    (
+                        Unknown("err_method", "more like funtime error"),
+                        Var("ok_method", "str"),
+                    ),
+                )
             ],
         )
 
