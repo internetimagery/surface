@@ -21,6 +21,7 @@ def get_root(): # type: () -> Optional[str]
 
 def unstaged_changes(): # type: () -> bool
     """ Check for unstaged changes """
+    # git status --porcelain
     pass
 
 def get_branch(): # type: () -> str
