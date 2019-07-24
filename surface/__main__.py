@@ -109,6 +109,7 @@ parser = argparse.ArgumentParser(
 parser.add_argument("--debug", action="store_true", help="Show debug messages.")
 parser.add_argument("--no-colour", action="store_true", help="Disable coloured output.")
 parser.add_argument("-q", "--quiet", action="store_true", help="Produce less output.")
+parser.add_argument("-V", "--version", action="version", version=surface.__version__)
 
 subparsers = parser.add_subparsers()
 

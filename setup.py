@@ -1,16 +1,21 @@
 #!/usr/bin/env python
 
+import re
 import os.path
 from distutils.core import setup
-from surface import __version__
 
-with open(os.path.join(os.path.dirname(__file__), "README.md")) as handle:
+
+root = os.path.dirname(__file__)
+with open(os.path.join(root, "README.md")) as handle:
     readme = handle.read()
+
+with open(os.path.join(root, "surface", "__init__.py")) as handle:
+    version = re.search(r"__version__ *= *['\"]([^'\"]*)['\"]", handle.read()).group(1)
 
 setup(
     name="surface",
-    version=__version__,
-    description="Expose and compare representation of a public api. (WIP)",
+    version=version,
+    description="Expose and compare a representation of a modules public api.",
     long_description=readme,
     long_description_content_type="text/markdown",
     author="Jason Dixon",
