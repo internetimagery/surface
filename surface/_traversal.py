@@ -81,7 +81,9 @@ class APITraversal(object):
         attributes.sort()
 
         # Walk the surface of the object, and extract the information
-        abs_path = "{}.{}".format(inspect.getmodule(obj).__name__, obj.__name__)
+        module = inspect.getmodule(obj)
+        module = module.__name__ if module else getattr(obj, "__module__", "")
+        abs_path = "{}.{}".format(module, obj.__name__)
         for name in attributes:
             # Not sure why this is possible... but it has happened...
             if not name:
