@@ -8,7 +8,7 @@ with open(os.path.join(os.path.dirname(__file__), "README.md")) as handle:
 
 setup(
     name="surface",
-    version="0.0.1a",
+    version="0.1.0a",
     description="Expose and compare representation of a public api. (WIP)",
     long_description=readme,
     long_description_content_type="text/markdown",
