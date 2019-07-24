@@ -71,6 +71,7 @@ class APITraversal(object):
         self.all_filter = (
             all_filter
         )  # Filter exposed in the presence of __all__ (like * import)
+        self.seen = set()  # Guard against recursion
 
     def traverse(self, obj):  # type: (Any) -> Iterable[Any]
         """ Entry point to generating an API representation. """
@@ -87,13 +88,20 @@ class APITraversal(object):
                 attributes = [attr for attr in attributes if attr in whitelist]
 
         # Sort the attributes by name for readability, and diff-ability (is that a word?)
-        attributes.sort(key=lambda a: a[0])
+        attributes.sort()
 
         # Walk the surface of the object, and extract the information
+        module = inspect.getmodule(obj)
         for name in attributes:
             # Not sure why this is possible... but it has happened...
             if not name:
                 continue
+
+            full_path = "{}.{}".format(module.__name__, name)
+            if full_path in self.seen:
+                yield Unknown(name, "Infinite Recursion: {}".format(full_path))
+                continue
+            self.seen.add(full_path)
 
             # NOTE: Consider also supporting python 3 getattr_static for more passive inspection
             try:
@@ -104,7 +112,6 @@ class APITraversal(object):
                 continue
 
             # TODO: How to ensure we find the original classes and methods, and not wrappers?
-            # TODO: Handle recursive endless looping traversal.
 
             try:
                 if inspect.ismodule(value):

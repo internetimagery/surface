@@ -102,6 +102,39 @@ class TestImporter(unittest.TestCase):
             ],
         )
 
+    def test_err_attr(self):
+        import test_mod_basic.cycleA as cycleA
+
+        data = list(APITraversal().traverse(cycleA))
+        self.assertEqual(
+            data,
+            [
+                Class(
+                    "CycleA",
+                    (
+                        Class(
+                            "cycle",
+                            (
+                                Class(
+                                    "cycle",
+                                    (
+                                        Unknown(
+                                            "__init__",
+                                            "Infinite Recursion: test_mod_basic.cycleA.__init__",
+                                        ),
+                                        Unknown(
+                                            "cycle",
+                                            "Infinite Recursion: test_mod_basic.cycleA.cycle",
+                                        ),
+                                    ),
+                                ),
+                            ),
+                        ),
+                    ),
+                )
+            ],
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

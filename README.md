@@ -13,7 +13,7 @@ Sky is the limit, but work still needs to be done!
 
 Rough todo...
 - [x] Get basic functionality up and running.
-- [ ] Handle recursive imports (if nessisary).
+- [x] Handle recursive imports (if nessisary).
 - [x] Collect Live typing information from import.
 - [x] Collect annotation typing information from python3
 - [ ] Collect typing comments.
