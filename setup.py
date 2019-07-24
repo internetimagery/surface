@@ -21,7 +21,7 @@ setup(
     author="Jason Dixon",
     url="https://github.com/internetimagery/surface",
     packages=["surface"],
-    install_requires=["sigtools"],
+    install_requires=["sigtools>=2"],
     # python_requires=">=2.7,>=3.6",
     python_requires=">=2.7",
     license="MIT",
