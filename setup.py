@@ -2,13 +2,14 @@
 
 import os.path
 from distutils.core import setup
+from surface import __version__
 
 with open(os.path.join(os.path.dirname(__file__), "README.md")) as handle:
     readme = handle.read()
 
 setup(
     name="surface",
-    version="0.1.1a",
+    version=__version__,
     description="Expose and compare representation of a public api. (WIP)",
     long_description=readme,
     long_description_content_type="text/markdown",

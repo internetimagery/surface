@@ -17,6 +17,7 @@ from surface._base import (
 if False:  # Type checking
     from typing import Tuple, Iterable, Any
 
+__version__ = "0.1.1a"
 
 def get_api(
     name, exclude_modules=False, all_filter=True
