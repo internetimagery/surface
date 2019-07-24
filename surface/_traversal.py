@@ -67,28 +67,42 @@ def recurse(name):  # type: (str) -> List[str]
 
 class APITraversal(object):
     def __init__(self, exclude_modules=False, all_filter=True):
-        self.exclude_modules = exclude_modules
-        self.all_filter = all_filter
+        self.exclude_modules = exclude_modules  # Do not follow exposed modules
+        self.all_filter = (
+            all_filter
+        )  # Filter exposed in the presence of __all__ (like * import)
 
     def traverse(self, obj):  # type: (Any) -> Iterable[Any]
         """ Entry point to generating an API representation. """
-        attributes = [
-            attr for attr in inspect.getmembers(obj) if self._is_public(attr[0])
-        ]
+        # NOTE: inspect.getmembers is more comprehensive than dir
+        # NOTE: but it doesn't allow catching errors on each attribute
+        # NOTE: getattr_static is also another nice option, python3 only.
+        attributes = [attr for attr in dir(obj) if self._is_public(attr)]
+
         if self.all_filter:
             # __all__ attribute restricts import with *,
             # and displays what is intended to be public
             whitelist = getattr(obj, "__all__", [])
             if whitelist:
-                attributes = [attr for attr in attributes if attr[0] in whitelist]
+                attributes = [attr for attr in attributes if attr in whitelist]
 
         # Sort the attributes by name for readability, and diff-ability (is that a word?)
         attributes.sort(key=lambda a: a[0])
 
         # Walk the surface of the object, and extract the information
-        for name, value in attributes:
+        for name in attributes:
+            # Not sure why this is possible... but it has happened...
             if not name:
                 continue
+
+            # NOTE: Consider also supporting python 3 getattr_static for more passive inspection
+            try:
+                value = getattr(obj, name)
+            except Exception as err:
+                # If we cannot get the attribute, keep going. Just record that the attribute was there.
+                yield Unknown(name, str(err))
+                continue
+
             # TODO: How to ensure we find the original classes and methods, and not wrappers?
             # TODO: Handle recursive endless looping traversal.
 

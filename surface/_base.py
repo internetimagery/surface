@@ -24,3 +24,5 @@ Class = _nt("Class", ("name", "body"))
 Module = _nt("Module", ("name", "path", "body"))
 
 Change = _nt("Change", ("level", "info"))
+
+Unknown = _nt("Unknown", ("name", "info"))
