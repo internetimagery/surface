@@ -2,7 +2,7 @@
 
 import types
 import inspect
-import sigtools
+import sigtools # type: ignore
 
 if False:  # type checking
     from typing import Any, Tuple, List, Optional

@@ -2,7 +2,7 @@ import sys
 import os.path
 import unittest
 
-from surface._traversal import traverse, recurse
+from surface._traversal import APITraversal, recurse
 from surface._base import *
 
 try:
@@ -37,7 +37,7 @@ class TestImporter(unittest.TestCase):
         reload(test_mod_basic)
 
     def test_basic(self):
-        data = list(traverse(test_mod_basic))
+        data = list(APITraversal().traverse(test_mod_basic))
         self.assertEqual(
             data,
             [
@@ -49,7 +49,7 @@ class TestImporter(unittest.TestCase):
                             (
                                 Arg("a", "typing.Any", POSITIONAL | KEYWORD),
                                 Arg("b", "typing.Any", POSITIONAL | KEYWORD),
-                                Arg("c", "typing.Any", POSITIONAL | KEYWORD | DEFAULT),
+                                Arg("c", "int", POSITIONAL | KEYWORD | DEFAULT),
                             ),
                             "typing.Any",
                         ),

@@ -117,6 +117,11 @@ dump_parser.add_argument(
     action="store_true",
     help="Exclude exposed modules in API. (default False)",
 )
+dump_parser.add_argument(
+    "--no-all-filter",
+    action="store_true",
+    help="Disable filtering of items when an __all__ attribute is present.",
+)
 dump_parser.set_defaults(func=run_dump)
 
 compare_parser = subparsers.add_parser(

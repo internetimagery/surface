@@ -14,8 +14,8 @@ Sky is the limit, but work still needs to be done!
 Rough todo...
 [x] Get basic functionality up and running.
 [ ] Handle recursive imports (if nessisary).
-[ ] Collect Live typing information from import.
-[ ] Collect annotation typing information from python3
+[x] Collect Live typing information from import.
+[x] Collect annotation typing information from python3
 [ ] Collect typing comments.
 [ ] Reduce dependency on sigtools. It's useful but might be overkill here.
 [ ] More and more and more tests.

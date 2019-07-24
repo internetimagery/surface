@@ -1,6 +1,6 @@
 import re as _re
 from importlib import import_module as _import_module
-from surface._traversal import traverse, recurse
+from surface._traversal import APITraversal, recurse
 from surface._compare import compare, PATCH, MINOR, MAJOR
 from surface._base import (
     POSITIONAL,
@@ -18,19 +18,23 @@ if False:  # Type checking
     from typing import Tuple, Iterable, Any
 
 
-def get_api(name, exclude_modules=False):  # type: (str, bool) -> Tuple[Any, ...]
+def get_api(
+    name, exclude_modules=False, all_filter=True
+):  # type: (str, bool, bool) -> Tuple[Any, ...]
     """
         Get a representation of the provided publicly exposed API.
 
         Args:
             name (str): path to module. eg mymodule.submodule
             exclude_modules (bool): Exclude "naked" imports from API.
+            all_filter (bool): Filter API based on __all__ attribute when present.
 
         Returns:
             Tuple[Any, ...]: Representation of API
     """
     mod = _import_module(name)
-    API = traverse(mod, exclude_modules)
+    traversal = APITraversal(exclude_modules=exclude_modules, all_filter=all_filter)
+    API = traversal.traverse(mod)
     return tuple(API)
 
 
