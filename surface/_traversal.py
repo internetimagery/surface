@@ -19,7 +19,7 @@ import re
 import logging
 import os.path
 import inspect
-import sigtools # type: ignore
+import sigtools  # type: ignore
 from surface._base import *
 from surface._type import get_type, get_type_func
 from importlib import import_module
