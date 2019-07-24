@@ -14,22 +14,26 @@ if False:
 #     Then try finally, switch branch and export other API
 #     switching back in the finally block
 
-def get_root(): # type: () -> Optional[str]
+
+def get_root():  # type: () -> Optional[str]
     """ Get root from current directory """
     # git rev-parse --show-toplevel
     pass
 
-def unstaged_changes(): # type: () -> bool
+
+def unstaged_changes():  # type: () -> bool
     """ Check for unstaged changes """
     # git status --porcelain
     pass
 
-def get_branch(): # type: () -> str
+
+def get_branch():  # type: () -> str
     """ Get current branch """
     # git rev-parse --abbrev-ref HEAD
     pass
 
-def set_branch(name): # type: (str) -> None
+
+def set_branch(name):  # type: (str) -> None
     """ Set branch to named """
     # git checkout name
     pass
