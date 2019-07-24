@@ -40,8 +40,16 @@ class TestCompare(unittest.TestCase):
             changes,
             set(
                 [
-                    Change(PATCH, "Renamed Arg: my_api.thing.(rawr_args)"),
-                    Change(PATCH, "Renamed Arg: my_api.thing.(second)"),
+                    Change(
+                        PATCH,
+                        "Renamed Arg",
+                        'my_api.thing.(rawr_args), Was: "args", Now: "rawr_args"',
+                    ),
+                    Change(
+                        PATCH,
+                        "Renamed Arg",
+                        'my_api.thing.(second), Was: "first", Now: "second"',
+                    ),
                 ]
             ),
         )
@@ -66,10 +74,18 @@ class TestCompare(unittest.TestCase):
             changes,
             set(
                 [
-                    Change(MINOR, "Added: mymodule2"),
-                    Change(MAJOR, "Removed: mymodule"),
-                    Change(MAJOR, "Type Changed: othermodule.something"),
-                    Change(MAJOR, "Type Changed: othermodule.somethingelse"),
+                    Change(MINOR, "Added", "mymodule2"),
+                    Change(MAJOR, "Removed", "mymodule"),
+                    Change(
+                        MAJOR,
+                        "Type Changed",
+                        'othermodule.somethingelse, Was: "int", Now: "str"',
+                    ),
+                    Change(
+                        MAJOR,
+                        "Type Changed",
+                        '''othermodule.something, Was: "<class 'surface._base.Var'>", Now: "<class 'surface._base.Func'>"''',
+                    ),
                 ]
             ),
         )

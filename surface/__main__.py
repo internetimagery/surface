@@ -55,11 +55,13 @@ def run_dump(args):  # type: (Any) -> int
         else:
             module_api[module] = api
 
-    if not args.output:
+    if not args.quiet:
         yellow = ("{}" if args.no_colour else "\033[33m{}\033[0m").format
         for mod, api in module_api.items():
             sys.stdout.write("[{}]\n".format(yellow(mod)))
             sys.stdout.write(surface.format_api(api, not args.no_colour, "    "))
+
+    if not args.output:
         return 0
 
     with open(args.output, "wb") as handle:
@@ -69,17 +71,24 @@ def run_dump(args):  # type: (Any) -> int
 
 
 def run_compare(args):  # type: (Any) -> int
+
     with open(args.old, "rb") as handle:
         old_data = pickle.load(handle)
 
     with open(args.new, "rb") as handle:
         new_data = pickle.load(handle)
 
+    colours = {
+        surface.PATCH: ("{}" if args.no_colour else "\033[32m{}\033[0m").format,
+        surface.MINOR: ("{}" if args.no_colour else "\033[33m{}\033[0m").format,
+        surface.MAJOR: ("{}" if args.no_colour else "\033[35m{}\033[0m").format,
+    }
+
     highest_level = surface.PATCH
     changes = surface.compare(old_data, new_data)
-    for level, note in changes:
+    for level, change_type, note in changes:
         if not args.quiet:
-            LOG.info(note)
+            LOG.info("{}: {}".format(colours[level](change_type), note))
         if level == surface.MAJOR:
             highest_level = level
         elif level == surface.MINOR and highest_level != surface.MAJOR:
@@ -99,6 +108,8 @@ parser = argparse.ArgumentParser(
 )
 parser.add_argument("--debug", action="store_true", help="Show debug messages.")
 parser.add_argument("--no-colour", action="store_true", help="Disable coloured output.")
+parser.add_argument("-q", "--quiet", action="store_true", help="Produce less output.")
+
 subparsers = parser.add_subparsers()
 
 dump_parser = subparsers.add_parser("dump", help="Store surface API in a file.")
@@ -129,9 +140,6 @@ compare_parser = subparsers.add_parser(
 )
 compare_parser.add_argument("old", help="Path to original API file.")
 compare_parser.add_argument("new", help="Path to new API file.")
-compare_parser.add_argument(
-    "-q", "--quiet", action="store_true", help="Do not display formatted API output."
-)
 compare_parser.add_argument(
     "-b", "--bump", help="Instead of semantic level, return the version bumped."
 )

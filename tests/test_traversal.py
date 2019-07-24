@@ -119,12 +119,8 @@ class TestImporter(unittest.TestCase):
                                     "cycle",
                                     (
                                         Unknown(
-                                            "__init__",
-                                            "Infinite Recursion: test_mod_basic.cycleA.__init__",
-                                        ),
-                                        Unknown(
                                             "cycle",
-                                            "Infinite Recursion: test_mod_basic.cycleA.cycle",
+                                            "Infinite Recursion: test_mod_basic.cycleA.CycleA.cycle",
                                         ),
                                     ),
                                 ),

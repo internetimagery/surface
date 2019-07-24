@@ -14,11 +14,6 @@ if False:  # type checking
 __all__ = ["PATCH", "MINOR", "MAJOR", "compare"]
 
 
-# Semantic types
-PATCH = "patch"
-MINOR = "minor"
-MAJOR = "major"
-
 # Rules:
 #     MAJOR:
 #         Removing anything
@@ -29,9 +24,20 @@ MAJOR = "major"
 #         Adding new variables, functions, classes, modules, optional-keyword-arguments, *args, **kwargs
 #         Changing positional-only-argument to include keyword
 #         Changing input types to be more generic, eg: List[Any] to Sequence[Any]
+#         Unable to verify the change (ie attribute access failed / recursive object)
 #     PATCH:
 #         Renaming positional-only-arguments
 #         Changing nothing
+
+
+# Semantic types
+PATCH = "patch"
+MINOR = "minor"
+MAJOR = "major"
+
+# Templates
+_was = '{}, Was: "{}", Now: "{}"'.format
+_arg = "{}.({})".format
 
 
 def compare(
@@ -64,9 +70,9 @@ def compare_names(
     added = (name for name in new_names if name not in old_names)
 
     for name in removed:  # Removed
-        yield Change(MAJOR, "Removed: {}".format(join(basename, name)))
+        yield Change(MAJOR, "Removed", join(basename, name))
     for name in added:  # Added
-        yield Change(MINOR, "Added: {}".format(join(basename, name)))
+        yield Change(MINOR, "Added", join(basename, name))
 
 
 def compare_deep(
@@ -86,17 +92,34 @@ def compare_deep(
         if old_item is None:
             continue
         abs_name = join(basename, name)
-        if type(old_item) != type(new_item):
-            changes.add(Change(MAJOR, "Type Changed: {}".format(abs_name)))
+        if isinstance(old_item, Unknown) or isinstance(new_item, Unknown):
+            info = old_item.info if isinstance(old_item, Unknown) else new_item.info
+            changes.add(
+                Change(MINOR, "Could not verify", "{}: {}".format(abs_name, info))
+            )
+        elif type(old_item) != type(new_item):
+            changes.add(
+                Change(
+                    MAJOR,
+                    "Type Changed",
+                    _was(abs_name, type(old_item), type(new_item)),
+                )
+            )
         elif isinstance(new_item, (Class, Module)):
             changes.update(compare_deep(abs_name, old_item.body, new_item.body))
         elif isinstance(new_item, Func):
             changes.update(compare_func(abs_name, old_item, new_item))
         elif isinstance(new_item, Var):
             if old_item.type != new_item.type:
-                changes.add(Change(MAJOR, "Type Changed: {}".format(abs_name)))
+                changes.add(
+                    Change(
+                        MAJOR,
+                        "Type Changed",
+                        _was(abs_name, old_item.type, new_item.type),
+                    )
+                )
         else:
-            raise TypeError("Unknown type {}".format(type(new_item)))
+            raise TypeError("Unknown type: {}".format(type(new_item)))
 
     return changes
 
@@ -105,7 +128,13 @@ def compare_func(basename, old_func, new_func):  # type: (str, Func, Func) -> Se
     changes = set()  # type: Set[Any]
 
     if old_func.returns != new_func.returns:
-        changes.add(Change(MAJOR, "Return Type Changed: {}".format(basename)))
+        changes.add(
+            Change(
+                MAJOR,
+                "Return Type Changed",
+                _was(basename, old_func.returns, new_func.returns),
+            )
+        )
 
     # Check for changes to positional args, where order matters
     old_positional = (arg for arg in old_func.args if arg.kind & POSITIONAL)
@@ -117,18 +146,14 @@ def compare_func(basename, old_func, new_func):  # type: (str, Func, Func) -> Se
             # Adding a new optional arg (ie: arg=None) or variadic (ie *args / **kwargs)
             # is not a breaking change. Adding anything else is.
             level = MINOR if new_arg.kind & (VARIADIC | DEFAULT) else MAJOR
-            changes.add(
-                Change(level, "Added Arg: {}.({})".format(basename, new_arg.name))
-            )
+            changes.add(Change(level, "Added Arg", _arg(basename, new_arg.name)))
             continue
         elif not new_arg:
             # Removing an argument is always a breaking change.
-            changes.add(
-                Change(MAJOR, "Removed Arg: {}.({})".format(basename, old_arg.name))
-            )
+            changes.add(Change(MAJOR, "Removed Arg", _arg(basename, old_arg.name)))
             continue
 
-        name = "{}.({})".format(basename, new_arg.name)
+        name = _arg(basename, new_arg.name)
         if old_arg.name != new_arg.name:
             # It's not breaking to rename variadic or positional-only args, but is for anything else
             level = (
@@ -137,15 +162,21 @@ def compare_func(basename, old_func, new_func):  # type: (str, Func, Func) -> Se
                 and (new_arg.kind & VARIADIC or new_arg.kind == POSITIONAL)
                 else MAJOR
             )
-            changes.add(Change(level, "Renamed Arg: {}".format(name)))
+            changes.add(
+                Change(level, "Renamed Arg", _was(name, old_arg.name, new_arg.name))
+            )
         if is_subtype(old_arg.type, new_arg.type):
-            changes.add(Change(MINOR, "Type Changed: {}".format(name)))
+            changes.add(
+                Change(MINOR, "Type Changed", _was(name, old_arg.type, new_arg.type))
+            )
         elif old_arg.type != new_arg.type:
-            changes.add(Change(MAJOR, "Type Changed: {}".format(name)))
+            changes.add(
+                Change(MAJOR, "Type Changed", _was(name, old_arg.type, new_arg.type))
+            )
         if old_arg.kind != new_arg.kind:
             # Adding a default to an argument is not a breaking change.
             level = MINOR if new_arg.kind == (old_arg.kind | DEFAULT) else MAJOR
-            changes.add(Change(level, "Kind Changed: {}".format(name)))
+            changes.add(Change(level, "Kind Changed", name))
 
     # Check for changes to keyword only arguments
     old_keyword = set(
@@ -163,20 +194,20 @@ def compare_func(basename, old_func, new_func):  # type: (str, Func, Func) -> Se
         pass
     elif old_var_keyword and not new_var_keyword:
         changes.add(
-            Change(
-                MAJOR, "Removed Arg: {}.({})".format(basename, old_var_keyword[0].name)
-            )
+            Change(MAJOR, "Removed Arg", _arg(basename, old_var_keyword[0].name))
         )
     elif new_var_keyword and not old_var_keyword:
-        changes.add(
-            Change(
-                MINOR, "Added Arg: {}.({})".format(basename, new_var_keyword[0].name)
-            )
-        )
+        changes.add(Change(MINOR, "Added Arg", _arg(basename, new_var_keyword[0].name)))
     elif new_var_keyword[0].name != old_var_keyword[0].name:
         changes.add(
             Change(
-                PATCH, "Renamed Arg: {}.({})".format(basename, new_var_keyword[0].name)
+                PATCH,
+                "Renamed Arg",
+                _was(
+                    _arg(basename, new_var_keyword[0].name),
+                    old_var_keyword[0].name,
+                    new_var_keyword[0].name,
+                ),
             )
         )
 

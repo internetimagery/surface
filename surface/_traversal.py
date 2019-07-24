@@ -25,7 +25,7 @@ from surface._type import get_type, get_type_func
 from importlib import import_module
 
 if False:  # type checking
-    from typing import List, Set, Any, Iterable
+    from typing import List, Set, Any, Iterable, Optional
 
 __all__ = ["recurse", "APITraversal"]
 
@@ -71,10 +71,14 @@ class APITraversal(object):
         self.all_filter = (
             all_filter
         )  # Filter exposed in the presence of __all__ (like * import)
-        self.seen = set()  # Guard against recursion
 
-    def traverse(self, obj):  # type: (Any) -> Iterable[Any]
+    def traverse(
+        self, obj, guard=None
+    ):  # type: (Any, Optional[Set[Any]]) -> Iterable[Any]
         """ Entry point to generating an API representation. """
+        if guard is None:  # Guard against infinite recursion
+            guard = set()
+
         # NOTE: inspect.getmembers is more comprehensive than dir
         # NOTE: but it doesn't allow catching errors on each attribute
         # NOTE: getattr_static is also another nice option, python3 only.
@@ -91,17 +95,16 @@ class APITraversal(object):
         attributes.sort()
 
         # Walk the surface of the object, and extract the information
-        module = inspect.getmodule(obj)
+        abs_path = "{}.{}".format(inspect.getmodule(obj).__name__, obj.__name__)
         for name in attributes:
             # Not sure why this is possible... but it has happened...
             if not name:
                 continue
 
-            full_path = "{}.{}".format(module.__name__, name)
-            if full_path in self.seen:
+            full_path = "{}.{}".format(abs_path, name)
+            if full_path in guard:
                 yield Unknown(name, "Infinite Recursion: {}".format(full_path))
                 continue
-            self.seen.add(full_path)
 
             # NOTE: Consider also supporting python 3 getattr_static for more passive inspection
             try:
@@ -114,12 +117,15 @@ class APITraversal(object):
             # TODO: How to ensure we find the original classes and methods, and not wrappers?
 
             try:
+                # Recursable objects
                 if inspect.ismodule(value):
                     if self.exclude_modules:
                         continue
-                    yield self._handle_module(name, value)
+                    guard.add(full_path)
+                    yield self._handle_module(name, value, guard)
                 elif inspect.isclass(value):
-                    yield self._handle_class(name, value)
+                    guard.add(full_path)
+                    yield self._handle_class(name, value, guard)
                 # Python2
                 elif inspect.ismethod(value):
                     yield self._handle_method(name, value)
@@ -172,15 +178,17 @@ class APITraversal(object):
             return_type,
         )
 
-    def _handle_class(self, name, value):  # type: (str, Any) -> Class
-        return Class(name, tuple(self.traverse(value)))
+    def _handle_class(self, name, value, guard):  # type: (str, Any, Set[Any]) -> Class
+        return Class(name, tuple(self.traverse(value, guard=guard)))
 
     @staticmethod
     def _handle_variable(name, value):  # type: (str, Any) -> Var
         return Var(name, get_type(value))
 
-    def _handle_module(self, name, value):  # type: (str, Any) -> Module
-        return Module(name, value.__name__, tuple(self.traverse(value)))
+    def _handle_module(
+        self, name, value, guard
+    ):  # type: (str, Any, Set[Any]) -> Module
+        return Module(name, value.__name__, tuple(self.traverse(value, guard=guard)))
 
     @staticmethod
     def _is_public(name):  # type: (str) -> bool
