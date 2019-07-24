@@ -5,6 +5,8 @@ _This is very much a Work In Progress. Don't rely on it in production. (That sai
 
 The goal of this project is to pull out the exposed public api from a given module, and check against it.
 
+https://semver.org/
+
 The result of which can be used for operations like comparisons. Helping determine semantic versioning, etc.
 
 Such comparisons can also be useful as CI jobs on rapidly changing projects, where you cannot afford to accidently bump the Major version, for instance.
