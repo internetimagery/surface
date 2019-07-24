@@ -18,7 +18,7 @@ if False:  # Type checking
     from typing import Tuple, Iterable, Any
 
 
-__version__ = "0.2.0"
+__version__ = "0.2.1"
 
 
 def get_api(
