@@ -5,6 +5,7 @@ import re
 import logging
 import os.path
 import inspect
+import traceback
 import sigtools  # type: ignore
 from surface._base import *
 from surface._type import get_type, get_type_func
@@ -85,7 +86,7 @@ class APITraversal(object):
         # as a submodule can have the same name as a class in the parent module.
         module = inspect.getmodule(obj)
         module = module.__name__ if module else getattr(obj, "__module__", "")
-        abs_path = module + ":" if inspect.ismodule(obj) else "." + obj.__name__
+        abs_path = module + (":" if inspect.ismodule(obj) else ".") + obj.__name__
         for name in attributes:
             # Not sure why this is possible... but it has happened...
             if not name:
@@ -101,37 +102,40 @@ class APITraversal(object):
                 value = getattr(obj, name)
             except Exception as err:
                 # If we cannot get the attribute, keep going. Just record that the attribute was there.
+                LOG.debug(traceback.format_exc())
                 yield Unknown(name, str(err))
                 continue
 
-            # TODO: How to ensure we find the original classes and methods, and not wrappers?
-
-            try:
-                # Recursable objects
-                if inspect.ismodule(value):
-                    if self.exclude_modules:
-                        continue
-                    guard.add(full_path)
-                    yield self._handle_module(name, value, guard)
-                elif inspect.isclass(value):
-                    guard.add(full_path)
-                    yield self._handle_class(name, value, guard)
-                # Python2
-                elif inspect.ismethod(value):
+            # Recursable objects
+            if inspect.ismodule(value):
+                if self.exclude_modules:
+                    continue
+                guard.add(full_path)
+                yield self._handle_module(name, value, guard)
+            elif inspect.isclass(value):
+                guard.add(full_path)
+                yield self._handle_class(name, value, guard)
+            # Python2
+            elif inspect.ismethod(value):
+                yield self._handle_method(name, value)
+            elif inspect.isfunction(value):
+                # python3
+                if inspect.isclass(obj):
                     yield self._handle_method(name, value)
-                elif inspect.isfunction(value):
-                    # python3
-                    if inspect.isclass(obj):
-                        yield self._handle_method(name, value)
-                    else:
-                        yield self._handle_function(name, value)
-                elif name != "__init__":
-                    yield self._handle_variable(name, value)
-            except SyntaxError as err:
-                LOG.warn("Failed to parse {} {}.\n{}".format(name, value, err))
+                else:
+                    yield self._handle_function(name, value)
+            elif name != "__init__":
+                yield self._handle_variable(name, value)
 
     def _handle_function(self, name, value):  # type: (str, Any) -> Func
-        sig = sigtools.signature(value)
+        # TODO: Ensure we find the original classes and methods, and not wrappers.
+        # TODO: Though sigtools helps with this somewhat.
+        try:
+            sig = sigtools.signature(value)
+        except SyntaxError as err:
+            LOG.debug(traceback.format_exc())
+            return Unknown(name, str(err))
+
         param_types, return_type = get_type_func(value)
         return Func(
             name,
@@ -148,7 +152,12 @@ class APITraversal(object):
         )
 
     def _handle_method(self, name, value):  # type: (str, Any) -> Func
-        sig = sigtools.signature(value)
+        try:
+            sig = sigtools.signature(value)
+        except SyntaxError as err:
+            LOG.debug(traceback.format_exc())
+            return Unknown(name, str(err))
+
         params = list(sig.parameters.items())
         param_types, return_type = get_type_func(value)
         if not "@staticmethod" in inspect.getsource(value):

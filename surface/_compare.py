@@ -92,7 +92,9 @@ def compare_deep(
         if old_item is None:
             continue
         abs_name = join(basename, name)
-        if isinstance(old_item, Unknown) or isinstance(new_item, Unknown):
+        if old_item == new_item:
+            continue
+        elif isinstance(old_item, Unknown) or isinstance(new_item, Unknown):
             info = old_item.info if isinstance(old_item, Unknown) else new_item.info
             changes.add(
                 Change(MINOR, "Could not verify", "{}: {}".format(abs_name, info))
