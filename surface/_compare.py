@@ -78,7 +78,7 @@ def compare_names(
 def compare_deep(
     basename, old_items, new_items
 ):  # type: (str, Iterable[Any], Iterable[Any]) -> Set[Any]
-    changes = set()  # type: Set[Any]
+    changes = set()  # type: Set[Change]
     # Map by name
     old_map = {item.name: item for item in old_items}
     new_map = {item.name: item for item in new_items}
@@ -127,7 +127,7 @@ def compare_deep(
 
 
 def compare_func(basename, old_func, new_func):  # type: (str, Func, Func) -> Set[Any]
-    changes = set()  # type: Set[Any]
+    changes = set()  # type: Set[Change]
 
     if old_func.returns != new_func.returns:
         changes.add(
