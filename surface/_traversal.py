@@ -12,7 +12,7 @@ from surface._type import get_type, get_type_func
 from importlib import import_module
 
 if False:  # type checking
-    from typing import List, Set, Any, Iterable, Optional
+    from typing import List, Set, Any, Iterable, Optional, Union
 
 __all__ = ["recurse", "APITraversal"]
 
@@ -85,8 +85,8 @@ class APITraversal(object):
         # In storing a path, make a distinction between modules and their contents
         # as a submodule can have the same name as a class in the parent module.
         module = inspect.getmodule(obj)
-        module = module.__name__ if module else getattr(obj, "__module__", "")
-        abs_path = module + (":" if inspect.ismodule(obj) else ".") + obj.__name__
+        module_name = module.__name__ if module else getattr(obj, "__module__", "")
+        abs_path = module_name + (":" if inspect.ismodule(obj) else ".") + obj.__name__
         for name in attributes:
             # Not sure why this is possible... but it has happened...
             if not name:
@@ -127,7 +127,7 @@ class APITraversal(object):
             elif name != "__init__":
                 yield self._handle_variable(name, value)
 
-    def _handle_function(self, name, value):  # type: (str, Any) -> Func
+    def _handle_function(self, name, value):  # type: (str, Any) -> Union[Func, Unknown]
         # TODO: Ensure we find the original classes and methods, and not wrappers.
         # TODO: Though sigtools helps with this somewhat.
         try:
@@ -151,7 +151,7 @@ class APITraversal(object):
             return_type,
         )
 
-    def _handle_method(self, name, value):  # type: (str, Any) -> Func
+    def _handle_method(self, name, value):  # type: (str, Any) -> Union[Func, Unknown]
         try:
             sig = sigtools.signature(value)
         except SyntaxError as err:
