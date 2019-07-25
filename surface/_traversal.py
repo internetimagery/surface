@@ -61,7 +61,7 @@ class APITraversal(object):
 
     def traverse(
         self, obj, guard=None
-    ):  # type: (Any, Optional[Any], Optional[Set[Any]]) -> Iterable[Any]
+    ):  # type: (Any, Optional[Set[Any]]) -> Iterable[Any]
         """ Entry point to generating an API representation. """
         if guard is None:  # Guard against infinite recursion
             guard = set()

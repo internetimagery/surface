@@ -18,15 +18,17 @@ def get_type(value, name="", parent=None):  # type: (Any, str, Any) -> str
     )
 
 
-def get_type_func(value, name="", parent=None):  # type: (Any, str, Any) -> Tuple[List[str], str]
+def get_type_func(
+    value, name="", parent=None
+):  # type: (Any, str, Any) -> Tuple[List[str], str]
     return get_comment_type_func(value) or get_annotate_type_func(value)
 
 
 def get_comment_type_func(value):  # type: (Any) -> Optional[Tuple[List[str], str]]
-    return
+    return None
 
 
-def get_annotate_type_func(value):  # type: (Any) -> Optional[Tuple[List[str], str]]
+def get_annotate_type_func(value):  # type: (Any) -> Tuple[List[str], str]
     sig = sigtools.signature(value)
     return_type = (
         handle_live_annotation(sig.return_annotation)
