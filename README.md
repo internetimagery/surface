@@ -18,6 +18,8 @@ Rough todo...
 - [x] Handle recursive imports (if nessisary).
 - [x] Collect Live typing information from import.
 - [x] Collect annotation typing information from python3
-- [ ] Collect typing comments.
+- [ ] Try use typing comments.
+- [ ] Try use pyi files if present.
+- [ ] Normalize typing to be absolute paths or relative paths only.
 - [ ] Reduce dependency on sigtools. It's useful but might be overkill here.
 - [ ] More and more and more tests.

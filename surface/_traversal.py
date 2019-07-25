@@ -61,7 +61,7 @@ class APITraversal(object):
 
     def traverse(
         self, obj, guard=None
-    ):  # type: (Any, Optional[Set[Any]]) -> Iterable[Any]
+    ):  # type: (Any, Optional[Any], Optional[Set[Any]]) -> Iterable[Any]
         """ Entry point to generating an API representation. """
         if guard is None:  # Guard against infinite recursion
             guard = set()
@@ -111,23 +111,25 @@ class APITraversal(object):
                 if self.exclude_modules:
                     continue
                 guard.add(full_path)
-                yield self._handle_module(name, value, guard)
+                yield self._handle_module(name, value, obj, guard)
             elif inspect.isclass(value):
                 guard.add(full_path)
-                yield self._handle_class(name, value, guard)
+                yield self._handle_class(name, value, obj, guard)
             # Python2
             elif inspect.ismethod(value):
-                yield self._handle_method(name, value)
+                yield self._handle_method(name, value, obj)
             elif inspect.isfunction(value):
                 # python3
                 if inspect.isclass(obj):
-                    yield self._handle_method(name, value)
+                    yield self._handle_method(name, value, obj)
                 else:
-                    yield self._handle_function(name, value)
+                    yield self._handle_function(name, value, obj)
             elif name != "__init__":
-                yield self._handle_variable(name, value)
+                yield self._handle_variable(name, value, obj)
 
-    def _handle_function(self, name, value):  # type: (str, Any) -> Union[Func, Unknown]
+    def _handle_function(
+        self, name, value, parent
+    ):  # type: (str, Any, Any) -> Union[Func, Unknown]
         # TODO: Ensure we find the original classes and methods, and not wrappers.
         # TODO: Though sigtools helps with this somewhat.
         try:
@@ -136,7 +138,7 @@ class APITraversal(object):
             LOG.debug(traceback.format_exc())
             return Unknown(name, str(err))
 
-        param_types, return_type = get_type_func(value)
+        param_types, return_type = get_type_func(value, name, parent)
         return Func(
             name,
             tuple(
@@ -151,7 +153,9 @@ class APITraversal(object):
             return_type,
         )
 
-    def _handle_method(self, name, value):  # type: (str, Any) -> Union[Func, Unknown]
+    def _handle_method(
+        self, name, value, parent
+    ):  # type: (str, Any, Any) -> Union[Func, Unknown]
         try:
             sig = sigtools.signature(value)
         except SyntaxError as err:
@@ -159,7 +163,7 @@ class APITraversal(object):
             return Unknown(name, str(err))
 
         params = list(sig.parameters.items())
-        param_types, return_type = get_type_func(value)
+        param_types, return_type = get_type_func(value, name, parent)
         if not "@staticmethod" in inspect.getsource(value):
             params = params[1:]
             param_types = param_types[1:]
@@ -177,16 +181,18 @@ class APITraversal(object):
             return_type,
         )
 
-    def _handle_class(self, name, value, guard):  # type: (str, Any, Set[Any]) -> Class
+    def _handle_class(
+        self, name, value, _, guard
+    ):  # type: (str, Any, Any, Set[Any]) -> Class
         return Class(name, tuple(self.traverse(value, guard=guard)))
 
     @staticmethod
-    def _handle_variable(name, value):  # type: (str, Any) -> Var
-        return Var(name, get_type(value))
+    def _handle_variable(name, value, parent):  # type: (str, Any, Any) -> Var
+        return Var(name, get_type(value, name, parent))
 
     def _handle_module(
-        self, name, value, guard
-    ):  # type: (str, Any, Set[Any]) -> Module
+        self, name, value, _, guard
+    ):  # type: (str, Any, Any, Set[Any]) -> Module
         return Module(name, value.__name__, tuple(self.traverse(value, guard=guard)))
 
     @staticmethod

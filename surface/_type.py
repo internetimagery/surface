@@ -10,12 +10,23 @@ if False:  # type checking
 __all__ = ["get_type", "get_type_func"]
 
 
-def get_type(value):  # type: (Any) -> str
-    return get_comment_type(value) or get_annotate_type(value) or get_live_type(value)
+def get_type(value, name="", parent=None):  # type: (Any, str, Any) -> str
+    return (
+        get_comment_type(value, name, parent)
+        or get_annotate_type(value, name, parent)
+        or get_live_type(value)
+    )
 
 
-def get_type_func(value):  # type: (Any) -> Tuple[List[str], str]
-    # TODO: Handle comment annotations as well
+def get_type_func(value, name="", parent=None):  # type: (Any, str, Any) -> Tuple[List[str], str]
+    return get_comment_type_func(value) or get_annotate_type_func(value)
+
+
+def get_comment_type_func(value):  # type: (Any) -> Optional[Tuple[List[str], str]]
+    return
+
+
+def get_annotate_type_func(value):  # type: (Any) -> Optional[Tuple[List[str], str]]
     sig = sigtools.signature(value)
     return_type = (
         handle_live_annotation(sig.return_annotation)
@@ -39,11 +50,11 @@ def get_type_func(value):  # type: (Any) -> Tuple[List[str], str]
     return parameters, return_type
 
 
-def get_comment_type(value):  # type: (Any) -> Optional[str]
+def get_comment_type(value, name, parent):  # type: (Any, str, Any) -> Optional[str]
     pass
 
 
-def get_annotate_type(value):  # type: (Any) -> Optional[str]
+def get_annotate_type(value, name, parent):  # type: (Any, str, Any) -> Optional[str]
     pass
 
 
