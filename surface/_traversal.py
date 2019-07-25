@@ -108,10 +108,10 @@ class APITraversal(object):
                 if self.exclude_modules:
                     continue
                 guard.add(value_id)
-                yield self._handle_module(name, value, obj, set(guard))
+                yield self._handle_module(name, value, obj, guard.copy())
             elif inspect.isclass(value):
                 guard.add(value_id)
-                yield self._handle_class(name, value, obj, set(guard))
+                yield self._handle_class(name, value, obj, guard.copy())
             # Python2
             elif inspect.ismethod(value):
                 yield self._handle_method(name, value, obj)
