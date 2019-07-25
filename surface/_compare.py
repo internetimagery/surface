@@ -9,7 +9,7 @@ except ImportError:
 from surface._base import *
 
 if False:  # type checking
-    from typing import Dict, Set, Sequence, Any, Iterable
+    from typing import Mapping, Set, Sequence, Any, Iterable
 
 __all__ = ["PATCH", "MINOR", "MAJOR", "compare"]
 
@@ -41,8 +41,8 @@ _arg = "{}.({})".format
 
 
 def compare(
-    api_old,  # type: Dict[str, Sequence[Any]]
-    api_new,  # type: Dict[str, Sequence[Any]]
+    api_old,  # type: Mapping[str, Iterable[Any]]
+    api_new,  # type: Mapping[str, Iterable[Any]]
 ):  # type: (...) -> Set[Change]
     """
         Compare two API's, and return resulting changes.
@@ -51,7 +51,7 @@ def compare(
         minor: version when you add functionality in a backwards-compatible manner.
         major: version when you make incompatible API changes.
     """
-    changes = set()  # type: Set[Any]
+    changes = set()  # type: Set[Change]
     # Check for renamed modules
     changes.update(compare_names("", api_old, api_new))
 

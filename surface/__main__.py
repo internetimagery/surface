@@ -4,16 +4,12 @@ from __future__ import print_function
 
 import re
 import sys
+import json
 import os.path
 import argparse
 import surface
 import logging
 import functools
-
-try:
-    import cPickle as pickle  # type: ignore
-except ImportError:
-    import pickle  # type: ignore
 
 if False:
     from typing import Any
@@ -64,19 +60,24 @@ def run_dump(args):  # type: (Any) -> int
     if not args.output:
         return 0
 
-    with open(args.output, "wb") as handle:
-        pickle.dump(module_api, handle)
+    with open(args.output, "w") as handle:
+        serialize = {k: [surface.to_dict(n) for n in v] for k, v in module_api.items()}
+        json.dump(serialize, handle, indent=2)
     LOG.info("Saved API to {}".format(args.output))
     return 0
 
 
 def run_compare(args):  # type: (Any) -> int
 
-    with open(args.old, "rb") as handle:
-        old_data = pickle.load(handle)
+    with open(args.old, "r") as handle:
+        old_data = {
+            k: [surface.from_dict(n) for n in v] for k, v in json.load(handle).items()
+        }
 
-    with open(args.new, "rb") as handle:
-        new_data = pickle.load(handle)
+    with open(args.new, "r") as handle:
+        new_data = {
+            k: [surface.from_dict(n) for n in v] for k, v in json.load(handle).items()
+        }
 
     colours = {
         surface.PATCH: ("{}" if args.no_colour else "\033[32m{}\033[0m").format,

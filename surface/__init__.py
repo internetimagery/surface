@@ -12,6 +12,8 @@ from surface._base import (
     Func,
     Class,
     Module,
+    to_dict,
+    from_dict,
 )
 
 if False:  # Type checking
