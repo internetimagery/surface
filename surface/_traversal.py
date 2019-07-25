@@ -61,7 +61,7 @@ class APITraversal(object):
 
     def traverse(
         self, obj, guard=None
-    ):  # type: (Any, Optional[Set[Any]]) -> Iterable[Any]
+    ):  # type: (Any, Optional[Set[int]]) -> Iterable[Any]
         """ Entry point to generating an API representation. """
         if guard is None:  # Guard against infinite recursion
             guard = set()
@@ -84,17 +84,9 @@ class APITraversal(object):
         # Walk the surface of the object, and extract the information
         # In storing a path, make a distinction between modules and their contents
         # as a submodule can have the same name as a class in the parent module.
-        module = inspect.getmodule(obj)
-        module_name = module.__name__ if module else getattr(obj, "__module__", "")
-        abs_path = module_name + (":" if inspect.ismodule(obj) else ".") + obj.__name__
         for name in attributes:
             # Not sure why this is possible... but it has happened...
             if not name:
-                continue
-
-            full_path = "{}.{}".format(abs_path, name)
-            if full_path in guard:
-                yield Unknown(name, "Infinite Recursion: {}".format(full_path))
                 continue
 
             # NOTE: Consider also supporting python 3 getattr_static for more passive inspection
@@ -106,15 +98,29 @@ class APITraversal(object):
                 yield Unknown(name, str(err))
                 continue
 
+            value_id = id(value)
+            if value_id in guard:
+                module = inspect.getmodule(value)
+                yield Unknown(
+                    name,
+                    "Infinite Recursion: {}.{}".format(
+                        module.__name__
+                        if module
+                        else getattr(value, "__module__", "?"),
+                        name,
+                    ),
+                )
+                continue
+
             # Recursable objects
             if inspect.ismodule(value):
                 if self.exclude_modules:
                     continue
-                guard.add(full_path)
-                yield self._handle_module(name, value, obj, guard)
+                guard.add(value_id)
+                yield self._handle_module(name, value, obj, set(guard))
             elif inspect.isclass(value):
-                guard.add(full_path)
-                yield self._handle_class(name, value, obj, guard)
+                guard.add(value_id)
+                yield self._handle_class(name, value, obj, set(guard))
             # Python2
             elif inspect.ismethod(value):
                 yield self._handle_method(name, value, obj)
