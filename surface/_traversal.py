@@ -81,9 +81,11 @@ class APITraversal(object):
         attributes.sort()
 
         # Walk the surface of the object, and extract the information
+        # In storing a path, make a distinction between modules and their contents
+        # as a submodule can have the same name as a class in the parent module.
         module = inspect.getmodule(obj)
         module = module.__name__ if module else getattr(obj, "__module__", "")
-        abs_path = "{}.{}".format(module, obj.__name__)
+        abs_path = module + ":" if inspect.ismodule(obj) else "." + obj.__name__
         for name in attributes:
             # Not sure why this is possible... but it has happened...
             if not name:
