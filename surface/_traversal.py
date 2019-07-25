@@ -100,16 +100,7 @@ class APITraversal(object):
 
             value_id = id(value)
             if value_id in guard:
-                module = inspect.getmodule(value)
-                yield Unknown(
-                    name,
-                    "Infinite Recursion: {}.{}".format(
-                        module.__name__
-                        if module
-                        else getattr(value, "__module__", "?"),
-                        name,
-                    ),
-                )
+                yield Unknown(name, "Infinite Recursion: {}".format(repr(value)))
                 continue
 
             # Recursable objects
