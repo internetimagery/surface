@@ -57,7 +57,12 @@ def get_comment_type(value, name, parent):  # type: (Any, str, Any) -> Optional[
 
 
 def get_annotate_type(value, name, parent):  # type: (Any, str, Any) -> Optional[str]
-    pass
+    if type(value) == types.FunctionType:
+        params, return_type = get_annotate_type_func(value)
+        return "typing.Callable[{}, {}]".format(
+            "[{}]".format(", ".join(params)) if params else "...", return_type
+        )
+    return None
 
 
 def get_live_type(value):  # type: (Any) -> str
@@ -157,4 +162,6 @@ def handle_live_annotation(value):  # type: (Any) -> str
         if value.__module__ == "builtins":
             return value.__name__
         return "{}.{}".format(value.__module__, value.__name__)
+    if type(value) == types.FunctionType:
+        return get_live_type(value)
     return "typing.Any"

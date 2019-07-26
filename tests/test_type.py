@@ -1,6 +1,12 @@
+import sys
+import os.path
 import unittest
 
-from surface._type import get_live_type
+from surface._type import get_live_type, get_annotate_type
+
+path = os.path.join(os.path.dirname(__file__), "testdata")
+if path not in sys.path:
+    sys.path.insert(0, path)
 
 
 class TestLiveType(unittest.TestCase):
@@ -39,26 +45,27 @@ class TestLiveType(unittest.TestCase):
             "typing.Callable[[typing.Any, typing.Optional[typing.Any]], typing.Any]",
             get_live_type(test),
         )
-        try:
-            import typing
-            from surface._base import Func
 
-            exec(
-                "def test2(a: int, b: typing.List[int]) -> int: pass",
-                locals(),
-                globals(),
-            )
-            exec("def test3(a: Func, b=None) -> int: pass", locals(), globals())
-        except (ImportError, SyntaxError):
-            pass  # Python 2
-        else:
-            self.assertEqual(
-                "typing.Callable[[int, typing.List[int]], int]", get_live_type(test2)
-            )  # type: ignore
-            self.assertEqual(
-                "typing.Callable[[surface._base.Func, typing.Optional[typing.Any]], int]",
-                get_live_type(test3),
-            )  # type: ignore
+
+unittest.skipIf(sys.version_info.major < 3, "annotations not available")
+
+
+class TestAnnotations(unittest.TestCase):
+    def test_function(self):
+        import test_annotation
+
+        self.assertEqual(
+            get_annotate_type(test_annotation.func1, "func1", test_annotation),
+            "typing.Callable[[int, str], bool]",
+        )
+        self.assertEqual(
+            get_annotate_type(test_annotation.func2, "func2", test_annotation),
+            "typing.Callable[[typing.Callable[[int, str], bool], typing.List[str]], typing.List[bool]]",
+        )
+        self.assertEqual(
+            get_annotate_type(test_annotation.func3, "func3", test_annotation),
+            "typing.Callable[[test_annotation.Obj], bool]",
+        )
 
 
 if __name__ == "__main__":

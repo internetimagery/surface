@@ -11,7 +11,8 @@ except ImportError:
     pass
 
 path = os.path.join(os.path.dirname(__file__), "testdata")
-sys.path.insert(0, path)
+if path not in sys.path:
+    sys.path.insert(0, path)
 
 
 class TestRecurse(unittest.TestCase):
