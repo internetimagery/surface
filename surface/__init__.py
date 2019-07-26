@@ -2,6 +2,7 @@ import re as _re
 from importlib import import_module as _import_module
 from surface._traversal import APITraversal, recurse
 from surface._compare import compare, PATCH, MINOR, MAJOR
+from surface._type import UNKNOWN
 from surface._base import (
     POSITIONAL,
     KEYWORD,

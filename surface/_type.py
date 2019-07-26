@@ -9,6 +9,10 @@ if False:  # type checking
 
 __all__ = ["get_type", "get_type_func", "UNKNOWN"]
 
+# Type used when actual type cannot be determined.
+# While typing.Any could be used here, and would be valid
+# we need a distinction between explicitly added typing.Any
+# so typing additions can be treated differently to typing changes.
 UNKNOWN = "~unknown"
 
 
@@ -23,10 +27,18 @@ def get_type(value, name="", parent=None):  # type: (Any, str, Any) -> str
 def get_type_func(
     value, name="", parent=None
 ):  # type: (Any, str, Any) -> Tuple[List[str], str]
-    return get_comment_type_func(value) or get_annotate_type_func(value)
+    return (
+        get_comment_type_func(value)
+        or get_docstring_type_func(value)
+        or get_annotate_type_func(value)
+    )
 
 
 def get_comment_type_func(value):  # type: (Any) -> Optional[Tuple[List[str], str]]
+    return None
+
+
+def get_docstring_type_func(value):  # type: (Any) -> Optional[Tuple[List[str], str]]
     return None
 
 
@@ -64,6 +76,10 @@ def get_annotate_type(value, name, parent):  # type: (Any, str, Any) -> Optional
         return "typing.Callable[{}, {}]".format(
             "[{}]".format(", ".join(params)) if params else "...", return_type
         )
+    elif inspect.isclass(parent) or inspect.ismodule(parent):
+        annotation = getattr(parent, "__annotations__", {})
+        if name in annotation:
+            return handle_live_annotation(annotation[name])
     return None
 
 

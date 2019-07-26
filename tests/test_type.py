@@ -62,7 +62,15 @@ class TestAnnotations(unittest.TestCase):
         )
         self.assertEqual(
             get_annotate_type(test_annotation.func3, "func3", test_annotation),
-            "typing.Callable[[test_annotation.Obj], bool]",
+            "typing.Callable[[test_annotation.Obj1], bool]",
+        )
+        self.assertEqual(
+            get_annotate_type(test_annotation.Obj1.attr1, "attr1", test_annotation.Obj1),
+            "typing.List[int]",
+        )
+        self.assertEqual(
+            get_annotate_type(test_annotation.variable1, "variable1", test_annotation),
+            "typing.List[str]",
         )
 
 

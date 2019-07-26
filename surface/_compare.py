@@ -20,14 +20,15 @@ __all__ = ["PATCH", "MINOR", "MAJOR", "compare"]
 #         Removing anything
 #         Renaming keyword-arguments
 #         Adding positional-arguments
-#         Changing types (except where types become more generic)
+#         Changing types (except where input types become generics)
 #     MINOR:
 #         Adding new variables, functions, classes, modules, optional-keyword-arguments, *args, **kwargs
 #         Changing positional-only-argument to include keyword
-#         Changing input types to be more generic, eg: List[Any] to Sequence[Any]
+#         Changing input types to be generics, eg: List to Sequence, Dict to Mapping etc
 #         Unable to verify the change (ie attribute access failed / recursive object)
 #     PATCH:
 #         Renaming positional-only-arguments
+#         Adding new typing information
 #         Changing nothing
 
 
@@ -115,14 +116,8 @@ def compare_deep(
             changes.update(compare_func(abs_name, old_item, new_item))
         elif isinstance(new_item, Var):
             if old_item.type != new_item.type:
-                if old_item.type == UNKNOWN: # We didn't know the type before.
-                    changes.add(
-                        Change(
-                            PATCH,
-                            "Added Type",
-                            abs_name,
-                        )
-                    )
+                if old_item.type == UNKNOWN:  # We didn't know the type before.
+                    changes.add(Change(PATCH, "Added Type", abs_name))
                 else:
                     changes.add(
                         Change(
