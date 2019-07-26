@@ -7,6 +7,7 @@ except ImportError:
     from itertools import izip_longest as zip_longest  # type: ignore
 
 from surface._base import *
+from surface._type import UNKNOWN
 
 if False:  # type checking
     from typing import Mapping, Set, Sequence, Any, Iterable
@@ -92,6 +93,7 @@ def compare_deep(
         if old_item is None:
             continue
         abs_name = join(basename, name)
+
         if old_item == new_item:
             continue
         elif isinstance(old_item, Unknown) or isinstance(new_item, Unknown):
@@ -113,13 +115,22 @@ def compare_deep(
             changes.update(compare_func(abs_name, old_item, new_item))
         elif isinstance(new_item, Var):
             if old_item.type != new_item.type:
-                changes.add(
-                    Change(
-                        MAJOR,
-                        "Type Changed",
-                        _was(abs_name, old_item.type, new_item.type),
+                if old_item.type == UNKNOWN: # We didn't know the type before.
+                    changes.add(
+                        Change(
+                            PATCH,
+                            "Added Type",
+                            abs_name,
+                        )
                     )
-                )
+                else:
+                    changes.add(
+                        Change(
+                            MAJOR,
+                            "Type Changed",
+                            _was(abs_name, old_item.type, new_item.type),
+                        )
+                    )
         else:
             raise TypeError("Unknown type: {}".format(type(new_item)))
 

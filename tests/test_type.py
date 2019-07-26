@@ -23,26 +23,26 @@ class TestLiveType(unittest.TestCase):
             pass
 
     def test_collections(self):
-        self.assertEqual("typing.List[typing.Any]", get_live_type([]))
+        self.assertEqual("typing.List[~unknown]", get_live_type([]))
         self.assertEqual("typing.List[int]", get_live_type([123, 456]))
-        self.assertEqual("typing.Set[typing.Any]", get_live_type(set()))
+        self.assertEqual("typing.Set[~unknown]", get_live_type(set()))
         self.assertEqual("typing.Set[int]", get_live_type(set([123, 456])))
-        self.assertEqual("typing.Tuple[typing.Any, ...]", get_live_type(tuple()))
+        self.assertEqual("typing.Tuple[~unknown, ...]", get_live_type(tuple()))
         self.assertEqual("typing.Tuple[int, str]", get_live_type(tuple([123, "456"])))
-        self.assertEqual("typing.Dict[typing.Any, typing.Any]", get_live_type({}))
+        self.assertEqual("typing.Dict[~unknown, ~unknown]", get_live_type({}))
         self.assertEqual("typing.Dict[int, str]", get_live_type({123: "456"}))
         self.assertEqual("typing.Iterable[int]", get_live_type((a for a in range(5))))
 
     def test_abstract(self):
         self.assertEqual(
-            "typing.Callable[[typing.Any], typing.Any]", get_live_type(lambda x: 123)
+            "typing.Callable[[~unknown], ~unknown]", get_live_type(lambda x: 123)
         )
 
         def test(a, b=None):
             pass
 
         self.assertEqual(
-            "typing.Callable[[typing.Any, typing.Optional[typing.Any]], typing.Any]",
+            "typing.Callable[[~unknown, typing.Optional[~unknown]], ~unknown]",
             get_live_type(test),
         )
 

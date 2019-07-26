@@ -2,6 +2,7 @@ import unittest
 
 from surface._base import *
 from surface._compare import *
+from surface._type import UNKNOWN
 
 
 class TestCompare(unittest.TestCase):
@@ -13,6 +14,7 @@ class TestCompare(unittest.TestCase):
     def test_patch(self):
         api_old = {
             "my_api": [
+                Var("unknown", UNKNOWN),
                 Func(
                     "thing",
                     [
@@ -20,11 +22,12 @@ class TestCompare(unittest.TestCase):
                         Arg("args", "int", POSITIONAL | VARIADIC),
                     ],
                     "int",
-                )
+                ),
             ]
         }
         api_new = {
             "my_api": [
+                Var("unknown", "int"),
                 Func(
                     "thing",
                     [
@@ -32,7 +35,7 @@ class TestCompare(unittest.TestCase):
                         Arg("rawr_args", "int", POSITIONAL | VARIADIC),
                     ],
                     "int",
-                )
+                ),
             ]
         }
         changes = compare(api_old, api_new)
@@ -40,6 +43,7 @@ class TestCompare(unittest.TestCase):
             changes,
             set(
                 [
+                    Change(PATCH, "Added Type", "my_api.unknown"),
                     Change(
                         PATCH,
                         "Renamed Arg",

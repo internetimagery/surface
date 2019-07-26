@@ -7,7 +7,9 @@ import sigtools  # type: ignore
 if False:  # type checking
     from typing import Any, Tuple, List, Optional
 
-__all__ = ["get_type", "get_type_func"]
+__all__ = ["get_type", "get_type_func", "UNKNOWN"]
+
+UNKNOWN = "~unknown"
 
 
 def get_type(value, name="", parent=None):  # type: (Any, str, Any) -> str
@@ -33,7 +35,7 @@ def get_annotate_type_func(value):  # type: (Any) -> Tuple[List[str], str]
     return_type = (
         handle_live_annotation(sig.return_annotation)
         if sig.return_annotation is not sig.empty
-        else "typing.Any"
+        else UNKNOWN
     )
     parameters = []
     for param in sig.parameters.values():
@@ -44,11 +46,11 @@ def get_annotate_type_func(value):  # type: (Any) -> Tuple[List[str], str]
             # If we have a default value, use that type
             if param.default is None:
                 # Value is optional
-                parameters.append("typing.Optional[typing.Any]")
+                parameters.append("typing.Optional[{}]".format(UNKNOWN))
             else:
                 parameters.append(get_live_type(param.default))
         else:
-            parameters.append("typing.Any")
+            parameters.append(UNKNOWN)
     return parameters, return_type
 
 
@@ -72,7 +74,7 @@ def get_live_type(value):  # type: (Any) -> str
         handle_live_standard_type(value_type)
         or handle_live_container_type(value, value_type)
         or handle_live_abstract(value, value_type)
-        or "typing.Any"
+        or UNKNOWN
     )
 
 
@@ -106,13 +108,11 @@ def handle_live_standard_type(value_type):  # type: (Any) -> Optional[str]
 def handle_live_container_type(value, value_type):  # type: (Any, Any) -> Optional[str]
     # Sequences
     if value_type == list:
-        return "typing.List[{}]".format(
-            get_live_type(value[0]) if value else "typing.Any"
-        )
+        return "typing.List[{}]".format(get_live_type(value[0]) if value else UNKNOWN)
     if value_type == tuple:
         internals = [get_live_type(item) for item in value]
         if not internals:
-            internals = ["typing.Any, ..."]
+            internals = ["{}, ...".format(UNKNOWN)]
         return "typing.Tuple[{}]".format(", ".join(internals))
 
     # Hashies!
@@ -120,12 +120,12 @@ def handle_live_container_type(value, value_type):  # type: (Any, Any) -> Option
         template = "typing.Set[{}]"
         for item in value:
             return template.format(get_live_type(item))
-        return template.format("typing.Any")
+        return template.format(UNKNOWN)
     if value_type == dict:
         template = "typing.Dict[{}, {}]"
         for k, v in value.items():
             return template.format(get_live_type(k), get_live_type(v))
-        return template.format("typing.Any", "typing.Any")
+        return template.format(UNKNOWN, UNKNOWN)
 
     # Generators
     # IMPORTANT!
@@ -136,7 +136,7 @@ def handle_live_container_type(value, value_type):  # type: (Any, Any) -> Option
         template = "typing.Iterable[{}]"
         for item in value:
             return template.format(get_live_type(item))
-        return template.format("typing.Any")
+        return template.format(UNKNOWN)
     # TODO: handle types.AsyncGeneratorType
 
     return None
@@ -164,4 +164,4 @@ def handle_live_annotation(value):  # type: (Any) -> str
         return "{}.{}".format(value.__module__, value.__name__)
     if type(value) == types.FunctionType:
         return get_live_type(value)
-    return "typing.Any"
+    return UNKNOWN
