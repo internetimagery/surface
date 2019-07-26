@@ -1,7 +1,12 @@
 """ Colllect typing info """
 
+import re
+import ast
 import types
+import token
 import inspect
+import tokenize
+import itertools
 import sigtools  # type: ignore
 
 if False:  # type checking
@@ -14,6 +19,9 @@ __all__ = ["get_type", "get_type_func", "UNKNOWN"]
 # we need a distinction between explicitly added typing.Any
 # so typing additions can be treated differently to typing changes.
 UNKNOWN = "~unknown"
+
+type_comment_reg = re.compile(r"# +type: ([\w ,\[\]\.]+)")
+type_comment_sig_reg = re.compile(r"# +type: \(([\w ,\[\]\.]*)\) +-> +([\w ,\[\]\.]+)")
 
 
 def get_type(value, name="", parent=None):  # type: (Any, str, Any) -> str
@@ -30,11 +38,56 @@ def get_type_func(
     return (
         get_comment_type_func(value)
         or get_docstring_type_func(value)
-        or get_annotate_type_func(value)
+        or get_annotate_type_func(value, name)
     )
 
 
 def get_comment_type_func(value):  # type: (Any) -> Optional[Tuple[List[str], str]]
+    if inspect.isfunction(value):
+        try:
+            source = inspect.getsource(value)
+        except IOError:
+            return None
+        params = []
+        sig_comment = None
+        in_sig = False
+        tokenizer = tokenize.generate_tokens(iter(source.splitlines(True)).__next__)
+        for tok in tokenizer:
+            if not in_sig and tok.type == token.NAME and tok.string == "def":
+                in_sig = True
+            elif in_sig and tok.type == token.NEWLINE:
+                tok = next(tokenizer)
+                sig_comment = sig_comment or type_comment_sig_reg.match(tok.string)
+                break
+            elif in_sig and tok.type == tokenize.COMMENT:
+                param = type_comment_reg.match(tok.string)
+                if param:
+                    params.append(param.group(1).strip())
+                sig_comment = sig_comment or type_comment_sig_reg.match(tok.string)
+        if not sig_comment:
+            return None
+
+        # TODO: Validate the same number of params as comment params
+
+        return_type = sig_comment.group(2)
+        param_comment = sig_comment.group(1).strip()
+        if param_comment and param_comment != "...":
+            param_ast = ast.parse(param_comment).body[0].value  # type: ignore
+            if isinstance(param_ast, ast.Tuple) and param_ast.elts:
+                params = [
+                    param_comment[
+                        param_ast.elts[i].col_offset : param_ast.elts[i + 1].col_offset
+                    ]
+                    .rsplit(",", 1)[0]
+                    .strip()
+                    for i in range(len(param_ast.elts) - 1)
+                ]
+                params.append(param_comment[param_ast.elts[-1].col_offset :].strip())
+            else:
+                params = [param_comment]
+        if return_type:
+            return params, return_type
+
     return None
 
 
@@ -42,13 +95,15 @@ def get_docstring_type_func(value):  # type: (Any) -> Optional[Tuple[List[str], 
     return None
 
 
-def get_annotate_type_func(value):  # type: (Any) -> Tuple[List[str], str]
+def get_annotate_type_func(value, name):  # type: (Any, str) -> Tuple[List[str], str]
     sig = sigtools.signature(value)
     return_type = (
         handle_live_annotation(sig.return_annotation)
         if sig.return_annotation is not sig.empty
         else UNKNOWN
     )
+    if return_type == UNKNOWN and name == "__init__":
+        return_type = "None"
     parameters = []
     for param in sig.parameters.values():
         if param.annotation is not sig.empty:
@@ -67,12 +122,19 @@ def get_annotate_type_func(value):  # type: (Any) -> Tuple[List[str], str]
 
 
 def get_comment_type(value, name, parent):  # type: (Any, str, Any) -> Optional[str]
-    pass
+    if inspect.isfunction(value):
+        result = get_comment_type_func(value)
+        if result:
+            params, return_type = result
+            return "typing.Callable[{}, {}]".format(
+                "[{}]".format(", ".join(params)) if params else "...", return_type
+            )
+    return None
 
 
 def get_annotate_type(value, name, parent):  # type: (Any, str, Any) -> Optional[str]
     if type(value) == types.FunctionType:
-        params, return_type = get_annotate_type_func(value)
+        params, return_type = get_annotate_type_func(value, name)
         return "typing.Callable[{}, {}]".format(
             "[{}]".format(", ".join(params)) if params else "...", return_type
         )

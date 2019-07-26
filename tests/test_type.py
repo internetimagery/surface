@@ -2,7 +2,7 @@ import sys
 import os.path
 import unittest
 
-from surface._type import get_live_type, get_annotate_type
+from surface._type import get_live_type, get_annotate_type, get_comment_type
 
 path = os.path.join(os.path.dirname(__file__), "testdata")
 if path not in sys.path:
@@ -65,12 +65,32 @@ class TestAnnotations(unittest.TestCase):
             "typing.Callable[[test_annotation.Obj1], bool]",
         )
         self.assertEqual(
-            get_annotate_type(test_annotation.Obj1.attr1, "attr1", test_annotation.Obj1),
+            get_annotate_type(
+                test_annotation.Obj1.attr1, "attr1", test_annotation.Obj1
+            ),
             "typing.List[int]",
         )
         self.assertEqual(
             get_annotate_type(test_annotation.variable1, "variable1", test_annotation),
             "typing.List[str]",
+        )
+
+
+class TestComments(unittest.TestCase):
+    def test_function(self):
+        import test_comments
+
+        self.assertEqual(
+            get_comment_type(test_comments.func1, "func1", test_comments),
+            "typing.Callable[[int, str, Dict[str, List[str]]], None]",
+        )
+        self.assertEqual(
+            get_comment_type(test_comments.func2, "func2", test_comments),
+            "typing.Callable[..., None]",
+        )
+        self.assertEqual(
+            get_comment_type(test_comments.func3, "func3", test_comments),
+            "typing.Callable[[int, List[str], Dict[str, List[str]]], None]",
         )
 
 

@@ -2,6 +2,7 @@ from typing import List
 
 variable1: List[str] = []
 
+
 class Obj1(object):
     attr1: List[int] = []
 
