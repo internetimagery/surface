@@ -47,9 +47,7 @@ class TestLiveType(unittest.TestCase):
         )
 
 
-unittest.skipIf(sys.version_info.major < 3, "annotations not available")
-
-
+@unittest.skipIf(sys.version_info.major < 3, "annotations not available")
 class TestAnnotations(unittest.TestCase):
     def test_function(self):
         import test_annotation
