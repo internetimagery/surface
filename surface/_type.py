@@ -9,6 +9,8 @@ import tokenize
 import itertools
 import sigtools  # type: ignore
 
+from surface._doc import parse_docstring
+
 if False:  # type checking
     from typing import Any, Tuple, List, Optional
 
@@ -94,7 +96,17 @@ def get_comment_type_func(value):  # type: (Any) -> Optional[Tuple[List[str], st
 
 
 def get_docstring_type_func(value):  # type: (Any) -> Optional[Tuple[List[str], str]]
-    return None
+    doc = inspect.getdoc(value)
+    if not doc:
+        return None
+    result = parse_docstring(doc)
+    if not result:
+        return None
+    params, return_type = result
+    if params:
+        sig = sigtools.signature(value)
+        params = [params.get(name, UNKNOWN) for name in sig.parameters]
+    return params, return_type
 
 
 def get_annotate_type_func(value, name):  # type: (Any, str) -> Tuple[List[str], str]
@@ -121,6 +133,19 @@ def get_annotate_type_func(value, name):  # type: (Any, str) -> Tuple[List[str],
         else:
             parameters.append(UNKNOWN)
     return parameters, return_type
+
+
+def get_docstring_type(value, name, parent):  # type: (Any, str, Any) -> Optional[str]
+    if inspect.isfunction(value):
+        result = get_docstring_type_func(value)
+        if result:
+            params, return_type = result
+            return "typing.Callable[{}, {}]".format(
+                "[{}]".format(", ".join(params)) if params else "...", return_type
+            )
+    return None
+
+
 
 
 def get_comment_type(value, name, parent):  # type: (Any, str, Any) -> Optional[str]

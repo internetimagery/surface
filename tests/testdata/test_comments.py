@@ -2,6 +2,8 @@
 def func1(a, b, c):  # type: (int, str, Dict[str, List[str]]) -> None
     return
 
+var = 123 # type: int # Variable comment types not functioning just yet
+
 def func2(
 
 ): # type: () -> None
