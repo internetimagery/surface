@@ -43,53 +43,52 @@ def get_type_func(
 
 
 def get_comment_type_func(value):  # type: (Any) -> Optional[Tuple[List[str], str]]
-    if inspect.isfunction(value):
-        try:
-            source = inspect.getsource(value)
-        except IOError:
-            return None
-        params = []
-        sig_comment = None
-        in_sig = False
+    try:
+        source = inspect.getsource(value)
+    except IOError:
+        return None
+    params = []
+    sig_comment = None
+    in_sig = False
 
-        lines = iter(source.splitlines(True))
-        readline = lambda: next(lines)
-        tokenizer = tokenize.generate_tokens(readline)
-        for tok in tokenizer:
-            if not in_sig and tok[0] == token.NAME and tok[1] == "def":
-                in_sig = True
-            elif in_sig and tok[0] == token.NEWLINE:
-                tok = next(tokenizer)
-                sig_comment = sig_comment or type_comment_sig_reg.match(tok[1])
-                break
-            elif in_sig and tok[0] == tokenize.COMMENT:
-                param = type_comment_reg.match(tok[1])
-                if param:
-                    params.append(param.group(1).strip())
-                sig_comment = sig_comment or type_comment_sig_reg.match(tok[1])
-        if not sig_comment:
-            return None
+    lines = iter(source.splitlines(True))
+    readline = lambda: next(lines)
+    tokenizer = tokenize.generate_tokens(readline)
+    for tok in tokenizer:
+        if not in_sig and tok[0] == token.NAME and tok[1] == "def":
+            in_sig = True
+        elif in_sig and tok[0] == token.NEWLINE:
+            tok = next(tokenizer)
+            sig_comment = sig_comment or type_comment_sig_reg.match(tok[1])
+            break
+        elif in_sig and tok[0] == tokenize.COMMENT:
+            param = type_comment_reg.match(tok[1])
+            if param:
+                params.append(param.group(1).strip())
+            sig_comment = sig_comment or type_comment_sig_reg.match(tok[1])
+    if not sig_comment:
+        return None
 
-        # TODO: Validate the same number of params as comment params
+    # TODO: Validate the same number of params as comment params?
 
-        return_type = sig_comment.group(2)
-        param_comment = sig_comment.group(1).strip()
-        if param_comment and param_comment != "...":
-            param_ast = ast.parse(param_comment).body[0].value  # type: ignore
-            if isinstance(param_ast, ast.Tuple) and param_ast.elts:
-                params = [
-                    param_comment[
-                        param_ast.elts[i].col_offset : param_ast.elts[i + 1].col_offset
-                    ]
-                    .rsplit(",", 1)[0]
-                    .strip()
-                    for i in range(len(param_ast.elts) - 1)
+    return_type = sig_comment.group(2)
+    param_comment = sig_comment.group(1).strip()
+    if param_comment and param_comment != "...":
+        param_ast = ast.parse(param_comment).body[0].value  # type: ignore
+        if isinstance(param_ast, ast.Tuple) and param_ast.elts:
+            params = [
+                param_comment[
+                    param_ast.elts[i].col_offset : param_ast.elts[i + 1].col_offset
                 ]
-                params.append(param_comment[param_ast.elts[-1].col_offset :].strip())
-            else:
-                params = [param_comment]
-        if return_type:
-            return params, return_type
+                .rsplit(",", 1)[0]
+                .strip()
+                for i in range(len(param_ast.elts) - 1)
+            ]
+            params.append(param_comment[param_ast.elts[-1].col_offset :].strip())
+        else:
+            params = [param_comment]
+    if return_type:
+        return params, return_type
 
     return None
 
