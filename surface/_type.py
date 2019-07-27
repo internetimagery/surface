@@ -53,7 +53,9 @@ def get_comment_type_func(value):  # type: (Any) -> Optional[Tuple[List[str], st
         sig_comment = None
         in_sig = False
 
-        tokenizer = tokenize.generate_tokens(functools.partial(next, iter(source.splitlines(True)))) # type: ignore
+        tokenizer = tokenize.generate_tokens(
+            functools.partial(next, iter(source.splitlines(True)))
+        )  # type: ignore
         for tok in tokenizer:
             if not in_sig and tok[0] == token.NAME and tok[1] == "def":
                 in_sig = True
