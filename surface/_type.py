@@ -7,7 +7,6 @@ import token
 import inspect
 import tokenize
 import itertools
-import functools
 import sigtools  # type: ignore
 
 if False:  # type checking
@@ -53,9 +52,9 @@ def get_comment_type_func(value):  # type: (Any) -> Optional[Tuple[List[str], st
         sig_comment = None
         in_sig = False
 
-        tokenizer = tokenize.generate_tokens(
-            functools.partial(next, iter(source.splitlines(True)))
-        )  # type: ignore
+        lines = iter(source.splitlines(True))
+        readline = lambda: next(lines)
+        tokenizer = tokenize.generate_tokens(readline)
         for tok in tokenizer:
             if not in_sig and tok[0] == token.NAME and tok[1] == "def":
                 in_sig = True
