@@ -1,5 +1,3 @@
-
-
 def func1(a, b, c):
     """ This function does something
 
@@ -12,6 +10,7 @@ def func1(a, b, c):
             None: returns nothing
     """
     pass
+
 
 def func2(text):
     """ Get them letters!

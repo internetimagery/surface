@@ -3,7 +3,7 @@
 import re
 
 if False:
-    from typing import Optional, Dict, List, Union
+    from typing import Optional, Dict, List, Union, Tuple
 
 
 def parse_docstring(docstring):  # type: (str) -> Optional[Tuple[Dict[str, str], str]]
@@ -16,7 +16,7 @@ def handle_google(docstring):  # type: (str) -> Optional[Tuple[Dict[str, str], s
     header = re.search(r"^([ \t]*)[a-zA-Z]+:\s*$", docstring, re.M)
     if not header:
         return None
-    params = []
+    params = {}  # type: Dict[str, str]
     return_type = None
     header_indent = header.group(1)
     headers = [

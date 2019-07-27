@@ -102,10 +102,12 @@ def get_docstring_type_func(value):  # type: (Any) -> Optional[Tuple[List[str], 
     result = parse_docstring(doc)
     if not result:
         return None
-    params, return_type = result
-    if params:
+    params_dict, return_type = result
+    if params_dict:
         sig = sigtools.signature(value)
-        params = [params.get(name, UNKNOWN) for name in sig.parameters]
+        params = [params_dict.get(name, UNKNOWN) for name in sig.parameters]
+    else:
+        params = []
     return params, return_type
 
 
@@ -144,8 +146,6 @@ def get_docstring_type(value, name, parent):  # type: (Any, str, Any) -> Optiona
                 "[{}]".format(", ".join(params)) if params else "...", return_type
             )
     return None
-
-
 
 
 def get_comment_type(value, name, parent):  # type: (Any, str, Any) -> Optional[str]
