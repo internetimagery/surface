@@ -3,7 +3,7 @@
 from collections import namedtuple as _nt
 
 if False:
-    from typing import Any, Dict
+    from typing import Any, Dict, Tuple, List
 
 # fmt: off
 
@@ -16,19 +16,19 @@ DEFAULT    = 0b1000
 
 # Structs
 
-Var     = _nt("Var",     ("name", "type"))
+Var     = _nt("Var",     ("name", "type")) # type: Tuple[str, str]
 
-Arg     = _nt("Arg",     ("name", "type", "kind"))
+Arg     = _nt("Arg",     ("name", "type", "kind")) # type: Tuple[str, str, int]
 
-Func    = _nt("Func",    ("name", "args", "returns"))
+Func    = _nt("Func",    ("name", "args", "returns")) # type: Tuple[str, List[Arg], str]
 
-Class   = _nt("Class",   ("name", "body"))
+Class   = _nt("Class",   ("name", "body")) # type: Tuple[str, List[Any]]
 
-Module  = _nt("Module",  ("name", "path", "body"))
+Module  = _nt("Module",  ("name", "path", "body")) # type: Tuple[str, str, List[Any]]
 
-Unknown = _nt("Unknown", ("name", "info"))
+Unknown = _nt("Unknown", ("name", "info")) # type: Tuple[str, str]
 
-Change  = _nt("Change",  ("level", "type", "info"))
+Change  = _nt("Change",  ("level", "type", "info")) # type: Tuple[str, str, str]
 
 # Helper method
 
