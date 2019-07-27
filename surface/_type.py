@@ -7,6 +7,7 @@ import token
 import inspect
 import tokenize
 import itertools
+import functools
 import sigtools  # type: ignore
 
 if False:  # type checking
@@ -51,19 +52,20 @@ def get_comment_type_func(value):  # type: (Any) -> Optional[Tuple[List[str], st
         params = []
         sig_comment = None
         in_sig = False
-        tokenizer = tokenize.generate_tokens(iter(source.splitlines(True)).__next__)
+
+        tokenizer = tokenize.generate_tokens(functools.partial(next, iter(source.splitlines(True))))
         for tok in tokenizer:
-            if not in_sig and tok.type == token.NAME and tok.string == "def":
+            if not in_sig and tok[0] == token.NAME and tok[1] == "def":
                 in_sig = True
-            elif in_sig and tok.type == token.NEWLINE:
+            elif in_sig and tok[0] == token.NEWLINE:
                 tok = next(tokenizer)
-                sig_comment = sig_comment or type_comment_sig_reg.match(tok.string)
+                sig_comment = sig_comment or type_comment_sig_reg.match(tok[1])
                 break
-            elif in_sig and tok.type == tokenize.COMMENT:
-                param = type_comment_reg.match(tok.string)
+            elif in_sig and tok[0] == tokenize.COMMENT:
+                param = type_comment_reg.match(tok[1])
                 if param:
                     params.append(param.group(1).strip())
-                sig_comment = sig_comment or type_comment_sig_reg.match(tok.string)
+                sig_comment = sig_comment or type_comment_sig_reg.match(tok[1])
         if not sig_comment:
             return None
 
