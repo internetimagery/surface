@@ -20,6 +20,7 @@ setup(
     long_description_content_type="text/markdown",
     author="Jason Dixon",
     url="https://github.com/internetimagery/surface",
+    keywords=["development", "typing", "api", "semantic", "versioning"],
     packages=["surface"],
     install_requires=["sigtools>=2"],
     # python_requires=">=2.7,>=3.6",

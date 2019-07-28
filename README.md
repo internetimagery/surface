@@ -1,7 +1,8 @@
 
-## Bring your API to the surface!
+## Surface those API breaking changes!
 
 _This is very much a Work In Progress. Don't rely on it in production. (That said, feel free to test and report findings)._
+
 
 The goal of this project is to pull out the exposed public api from a given module, and check against it.
 
