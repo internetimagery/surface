@@ -43,7 +43,7 @@ def handle_google(docstring):  # type: (str) -> Optional[Tuple[Dict[str, str], s
             )
         elif header_name in ("yield", "yields", "return", "returns"):
             returns = re.search(
-                r"^{}[ \t]+([\w\-\[\]\., ]+) *:".format(header_indent),
+                r"^{}[ \t]+([\w\-\[\]\., ]+) *:?".format(header_indent),
                 docstring[header.end() :],
                 re.M,
             )

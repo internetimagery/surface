@@ -16,10 +16,9 @@ Sky is the limit, but work still needs to be done!
 Rough todo...
 - [x] Get basic functionality up and running.
 - [x] Handle recursive imports (if nessisary).
-- [x] Collect Live typing information from import.
-- [x] Collect annotation typing information from python3
-- [ ] Try use typing comments.
-- [ ] Try use pyi files if present.
-- [ ] Normalize typing to be absolute paths or relative paths only.
+- [x] Collect Live typing information.
+- [x] Collect annotation typing information.
+- [x] Partial support for typing comments.
+- [x] Partial support for docstring typing (google style only, currently)
 - [ ] Reduce dependency on sigtools. It's useful but might be overkill here.
 - [ ] More and more and more tests.

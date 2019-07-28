@@ -22,3 +22,10 @@ def func2(text):
             str: characters
     """
     return (char for char in a)
+
+def func3(text):
+    """ Gimmie a number
+        Returns:
+            int
+    """
+    return 123
