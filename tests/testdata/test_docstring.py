@@ -23,6 +23,7 @@ def func2(text):
     """
     return (char for char in a)
 
+
 def func3(text):
     """ Gimmie a number
         Returns:

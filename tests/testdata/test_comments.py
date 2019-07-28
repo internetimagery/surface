@@ -2,7 +2,8 @@
 def func1(a, b, c):  # type: (int, str, Dict[str, List[str]]) -> None
     return
 
-var = 123 # type: int # Variable comment types not functioning just yet
+# Assignment comment types not supported yet
+var = 123 # type: int
 
 def func2(
 

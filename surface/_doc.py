@@ -28,8 +28,9 @@ def handle_google(docstring):  # type: (str) -> Optional[Tuple[Dict[str, str], s
     for i, header in enumerate(headers):
         header_name = header.group(1).lower()
         if header_name in ("arg", "args", "arguments", "parameters"):
-            params = dict(
-                re.findall(
+            params = {
+                p.group(1): p.group(2).strip()
+                for p in re.finditer(
                     r"^{}[ \t]+([\w\-]+) *(?:\(([\w\-\[\]\., ]+)\) *):".format(
                         header_indent
                     ),
@@ -40,7 +41,7 @@ def handle_google(docstring):  # type: (str) -> Optional[Tuple[Dict[str, str], s
                     ],
                     re.M,
                 )
-            )
+            }
         elif header_name in ("yield", "yields", "return", "returns"):
             returns = re.search(
                 r"^{}[ \t]+([\w\-\[\]\., ]+) *:?".format(header_indent),
@@ -48,7 +49,7 @@ def handle_google(docstring):  # type: (str) -> Optional[Tuple[Dict[str, str], s
                 re.M,
             )
             if returns:
-                return_type = returns.group(1)
+                return_type = returns.group(1).strip()
                 if "yield" in header_name:
                     return_type = "typing.Iterable[{}]".format(return_type)
     if return_type:
