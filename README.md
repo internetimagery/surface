@@ -33,14 +33,16 @@ The goal of this project is to assist in following semantic versioning. https://
 
 To that end, it can pick up on changes to the API and suggest (or check for on CI) version bumps. eg patch, minor, major
 
-To do so, simply run:
+To do so, dump a copy of the old and new api to a temporary location and run a diff. Example:
 
 ```sh
-# current public API
+# current "live" public API
 >>> surface dump test_module -o /tmp/old_api.json
-# change to environment with new API
->>> surface dump test_module -o /tmp/new_api.json
+# add new WIP module to path and dump that API
+>>> surface dump test_module -o /tmp/new_api.json -p /path/to/dev/module -b 1.2.3
 >>> surface compare /tmp/old_api.json /tmp/old_api.json
+Added Function: test_module.someExample
+2.0.0
 ```
 
 _This is very much a Work In Progress. Don't rely on it in production. (That said, feel free to test and report findings)._
