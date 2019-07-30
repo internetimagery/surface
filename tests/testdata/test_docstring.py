@@ -31,6 +31,7 @@ def func3():
     """
     return 123
 
+
 def func4(num):
     """ print number
         Args:
