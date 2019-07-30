@@ -20,6 +20,11 @@ def func3(a, *args, **kwargs):
     return a + sum(args) + sum(kwargs.values())
 
 
+def func4(a=43):  # type: (int) -> int
+    """ positional / keyword / optional """
+    return a
+
+
 class Failer(object):
     ohno = "success"
     new_attr = "also success"

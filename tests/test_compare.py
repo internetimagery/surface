@@ -53,6 +53,8 @@ class TestCompare(unittest.TestCase):
             changes,
             set(
                 [
+                    Change("minor", "Added Arg", "minorA.func3.(kwargs)"),
+                    Change("minor", "Kind Changed", "minorA.func4.(a)"),
                     Change("minor", "Added", "minorA.NewClass"),
                     Change("minor", "Added Arg", "minorA.func3.(args)"),
                     Change(
@@ -79,9 +81,24 @@ class TestCompare(unittest.TestCase):
         majorA = self.get_module("majorA")
         majorB = self.get_module("majorB", "majorA")
         changes = compare(majorA, majorB)
-        # TODO: Finish this test round
-        # self.assertEqual(
-        #     changes, set())
+        self.assertEqual(
+            changes,
+            set(
+                [
+                    Change("major", "Removed Arg", "majorA.func4.(b)"),
+                    Change(
+                        "major", "Renamed Arg", 'majorA.func4.(c), Was: "a", Now: "c"'
+                    ),
+                    Change("major", "Removed Arg", "majorA.func1.(b)"),
+                    Change("major", "Removed", "majorA.MyClass1.myMethod"),
+                    Change(
+                        "major",
+                        "Type Changed",
+                        'majorA.func2.(a), Was: "int", Now: "str"',
+                    ),
+                ]
+            ),
+        )
 
 
 if __name__ == "__main__":

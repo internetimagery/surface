@@ -19,6 +19,11 @@ def func3(a):
     return a
 
 
+def func4(a):  # type: (int) -> int
+    """ positional / keyword """
+    return a
+
+
 class _FAIL(object):
     def __get__(self, *_):
         raise RuntimeError("CANT GET THIS")

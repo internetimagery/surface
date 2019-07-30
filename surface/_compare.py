@@ -204,8 +204,12 @@ def compare_func(basename, old_func, new_func):  # type: (str, Func, Func) -> Se
     changes.update(compare_names(basename, old_keyword, new_keyword))
 
     # Finally, check variadic keyword (eg **kwargs)
-    old_var_keyword = [arg for arg in old_func.args if arg.kind & (KEYWORD | VARIADIC)]
-    new_var_keyword = [arg for arg in new_func.args if arg.kind & (KEYWORD | VARIADIC)]
+    old_var_keyword = [
+        arg for arg in old_func.args if arg.kind & KEYWORD and arg.kind & VARIADIC
+    ]
+    new_var_keyword = [
+        arg for arg in new_func.args if arg.kind & KEYWORD and arg.kind & VARIADIC
+    ]
     if new_var_keyword == old_var_keyword:
         pass
     elif old_var_keyword and not new_var_keyword:
@@ -235,6 +239,7 @@ def join(parent, child):  # type: (str, str) -> str
 
 
 # TODO: Flesh this out some more.
+# TODO: Probably want to support List Dict etc, as local imports
 def is_subtype(subtype, supertype):  # type: (str, str) -> bool
     # Sequences
     match = re.match("typing\.(List|Tuple|MutableSequence)", subtype)
