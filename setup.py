@@ -6,8 +6,8 @@ from distutils.core import setup
 
 
 root = os.path.dirname(__file__)
-with open(os.path.join(root, "README.md")) as handle:
-    readme = handle.read()
+# with open(os.path.join(root, "README.md")) as handle:
+#     readme = handle.read()
 
 with open(os.path.join(root, "surface", "__init__.py")) as handle:
     version = re.search(r"__version__ *= *['\"]([^'\"]*)['\"]", handle.read()).group(1)
@@ -16,7 +16,8 @@ setup(
     name="surface",
     version=version,
     description="Expose and compare a representation of a modules public api.",
-    long_description=readme,
+    long_description="See https://github.com/internetimagery/surface",
+#    long_description=readme,
 #    long_description_content_type="text/markdown",
     long_description_content_type="text/plain",
     author="Jason Dixon",
