@@ -76,37 +76,12 @@ class TestCompare(unittest.TestCase):
         )
 
     def test_major(self):
-        pass  # TODO: !1
-
-    def test_basic(self):
-        api_old = {
-            "mymodule": [Var("something", "type")],
-            "othermodule": [Var("something", "type"), Var("somethingelse", "int")],
-        }
-        api_new = {
-            "mymodule2": [Var("something", "type")],
-            "othermodule": [Func("something", [], "type"), Var("somethingelse", "str")],
-        }
-        changes = compare(api_old, api_new)
-        self.assertEqual(
-            changes,
-            set(
-                [
-                    Change(MINOR, "Added", "mymodule2"),
-                    Change(MAJOR, "Removed", "mymodule"),
-                    Change(
-                        MAJOR,
-                        "Type Changed",
-                        'othermodule.somethingelse, Was: "int", Now: "str"',
-                    ),
-                    Change(
-                        MAJOR,
-                        "Type Changed",
-                        '''othermodule.something, Was: "<class 'surface._base.Var'>", Now: "<class 'surface._base.Func'>"''',
-                    ),
-                ]
-            ),
-        )
+        majorA = self.get_module("majorA")
+        majorB = self.get_module("majorB", "majorA")
+        changes = compare(majorA, majorB)
+        # TODO: Finish this test round
+        # self.assertEqual(
+        #     changes, set())
 
 
 if __name__ == "__main__":

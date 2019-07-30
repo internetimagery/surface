@@ -159,11 +159,19 @@ class APITraversal(object):
             LOG.debug(traceback.format_exc())
             return Unknown(name, str(err))
 
+        # We want to ignore "self" and "cls", as those are implementation details
+        # and are not relevant for API comparisons
+        # It seems sigtools removes "cls" for us in class methods...
         params = list(sig.parameters.items())
         param_types, return_type = get_type_func(value, name, parent)
-        if not "@staticmethod" in inspect.getsource(value):
-            params = params[1:]
-            param_types = param_types[1:]
+        try:
+            source = inspect.getsource(value)
+        except IOError:
+            pass
+        else:
+            if not "@staticmethod" in source and not "@classmethod" in source:
+                params = params[1:]
+                param_types = param_types[1:]
         return Func(
             name,
             tuple(

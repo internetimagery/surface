@@ -5,3 +5,12 @@ def func1(a, b):
             a (int): first arg
     """
     return a + b
+
+
+class MyClass(object):
+    def myMethod1(self, a):
+        return None
+
+    @classmethod
+    def myMethod2(cls, a):
+        return None

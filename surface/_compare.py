@@ -234,6 +234,7 @@ def join(parent, child):  # type: (str, str) -> str
     return "{}.{}".format(parent, child) if parent else child
 
 
+# TODO: Flesh this out some more.
 def is_subtype(subtype, supertype):  # type: (str, str) -> bool
     # Sequences
     match = re.match("typing\.(List|Tuple|MutableSequence)", subtype)
