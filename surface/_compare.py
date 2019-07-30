@@ -135,9 +135,10 @@ def compare_func(basename, old_func, new_func):  # type: (str, Func, Func) -> Se
     changes = set()  # type: Set[Change]
 
     if old_func.returns != new_func.returns:
+        level = PATCH if old_func.returns == UNKNOWN else MAJOR
         changes.add(
             Change(
-                MAJOR,
+                level,
                 "Return Type Changed",
                 _was(basename, old_func.returns, new_func.returns),
             )
@@ -177,8 +178,9 @@ def compare_func(basename, old_func, new_func):  # type: (str, Func, Func) -> Se
                 Change(MINOR, "Type Changed", _was(name, old_arg.type, new_arg.type))
             )
         elif old_arg.type != new_arg.type:
+            level = PATCH if old_arg.type == UNKNOWN else MAJOR
             changes.add(
-                Change(MAJOR, "Type Changed", _was(name, old_arg.type, new_arg.type))
+                Change(level, "Type Changed", _was(name, old_arg.type, new_arg.type))
             )
         if old_arg.kind != new_arg.kind:
             # Adding a default to an argument is not a breaking change.

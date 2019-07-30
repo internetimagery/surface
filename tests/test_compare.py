@@ -1,58 +1,45 @@
+import imp
+import os.path
 import unittest
 
 from surface._base import *
 from surface._compare import *
-from surface._type import UNKNOWN
+from surface._traversal import APITraversal
+
+root = os.path.join(os.path.dirname(__file__), "testdata", "test_mod_compare")
 
 
 class TestCompare(unittest.TestCase):
-    def test_nothing(self):
-        api_old = api_new = {"my_api": [Var("stuff", "float")]}
-        changes = compare(api_old, api_new)
+    @staticmethod
+    def get_module(name, rename=""):
+        module = imp.load_source(
+            rename or name, os.path.join(root, "{}.py".format(name))
+        )
+        api = {rename or name: list(APITraversal().traverse(module))}
+        return api
+
+    def test_no_change(self):
+        patchA = self.get_module("patchA")
+        changes = compare(patchA, patchA)
         self.assertEqual(changes, set())
 
     def test_patch(self):
-        api_old = {
-            "my_api": [
-                Var("unknown", UNKNOWN),
-                Func(
-                    "thing",
-                    [
-                        Arg("first", "int", POSITIONAL),
-                        Arg("args", "int", POSITIONAL | VARIADIC),
-                    ],
-                    "int",
-                ),
-            ]
-        }
-        api_new = {
-            "my_api": [
-                Var("unknown", "int"),
-                Func(
-                    "thing",
-                    [
-                        Arg("second", "int", POSITIONAL),
-                        Arg("rawr_args", "int", POSITIONAL | VARIADIC),
-                    ],
-                    "int",
-                ),
-            ]
-        }
-        changes = compare(api_old, api_new)
+        patchA = self.get_module("patchA")
+        patchB = self.get_module("patchB", "patchA")
+        changes = compare(patchA, patchB)
         self.assertEqual(
             changes,
             set(
                 [
-                    Change(PATCH, "Added Type", "my_api.unknown"),
                     Change(
                         PATCH,
-                        "Renamed Arg",
-                        'my_api.thing.(rawr_args), Was: "args", Now: "rawr_args"',
+                        "Type Changed",
+                        'patchA.func1.(b), Was: "~unknown", Now: "int"',
                     ),
                     Change(
                         PATCH,
-                        "Renamed Arg",
-                        'my_api.thing.(second), Was: "first", Now: "second"',
+                        "Return Type Changed",
+                        'patchA.func1, Was: "~unknown", Now: "int"',
                     ),
                 ]
             ),
