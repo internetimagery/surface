@@ -9,18 +9,13 @@ import tokenize
 import itertools
 import sigtools  # type: ignore
 
+from surface._base import UNKNOWN
 from surface._doc import parse_docstring
 
 if False:  # type checking
     from typing import Any, Tuple, List, Optional
 
 __all__ = ["get_type", "get_type_func", "UNKNOWN"]
-
-# Type used when actual type cannot be determined.
-# While typing.Any could be used here, and would be valid
-# we need a distinction between explicitly added typing.Any
-# so typing additions can be treated differently to typing changes.
-UNKNOWN = "~unknown"
 
 type_comment_reg = re.compile(r"# +type: ([\w ,\[\]\.]+)")
 type_comment_sig_reg = re.compile(r"# +type: \(([\w ,\[\]\.]*)\) +-> +([\w ,\[\]\.]+)")

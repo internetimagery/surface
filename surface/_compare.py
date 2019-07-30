@@ -7,7 +7,6 @@ except ImportError:
     from itertools import izip_longest as zip_longest  # type: ignore
 
 from surface._base import *
-from surface._type import UNKNOWN
 
 if False:  # type checking
     from typing import Mapping, Set, Sequence, Any, Iterable

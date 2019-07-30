@@ -1,6 +1,7 @@
 """ Parse typing information out of docstrings """
 
 import re
+from surface._base import UNKNOWN
 
 if False:
     from typing import Optional, Dict, List, Union, Tuple
@@ -36,7 +37,7 @@ def handle_google(docstring):  # type: (str) -> Optional[Tuple[Dict[str, str], s
                     ),
                     docstring[
                         header.end() : headers[i + 1].start()
-                        if i < len(headers)
+                        if i < len(headers) - 1
                         else len(docstring)
                     ],
                     re.M,
@@ -52,6 +53,6 @@ def handle_google(docstring):  # type: (str) -> Optional[Tuple[Dict[str, str], s
                 return_type = returns.group(1).strip()
                 if "yield" in header_name:
                     return_type = "typing.Iterable[{}]".format(return_type)
-    if return_type:
-        return params, return_type
+    if params or return_type:
+        return params, return_type or UNKNOWN
     return None

@@ -24,9 +24,16 @@ def func2(text):
     return (char for char in a)
 
 
-def func3(text):
+def func3():
     """ Gimmie a number
         Returns:
             int
     """
     return 123
+
+def func4(num):
+    """ print number
+        Args:
+            num (int): some number
+    """
+    print(num)

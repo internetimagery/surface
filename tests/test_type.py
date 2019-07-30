@@ -120,6 +120,10 @@ class TestDocstring(unittest.TestCase):
             get_docstring_type(test_docstring.func3, "func3", test_docstring),
             "typing.Callable[..., int]",
         )
+        self.assertEqual(
+            get_docstring_type(test_docstring.func4, "func4", test_docstring),
+            "typing.Callable[[int], ~unknown]",
+        )
 
 
 if __name__ == "__main__":

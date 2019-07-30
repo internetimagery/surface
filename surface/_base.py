@@ -7,6 +7,12 @@ if False:
 
 # fmt: off
 
+# Type used when actual type cannot be determined.
+# While typing.Any could be used here, and would be valid
+# we need a distinction between explicitly added typing.Any
+# so typing additions can be treated differently to typing changes.
+UNKNOWN = "~unknown"
+
 # Arg kind types
 
 POSITIONAL = 0b0001
