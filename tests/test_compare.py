@@ -46,7 +46,34 @@ class TestCompare(unittest.TestCase):
         )
 
     def test_minor(self):
-        pass  # TODO: !!
+        minorA = self.get_module("minorA")
+        minorB = self.get_module("minorB", "minorA")
+        changes = compare(minorA, minorB)
+        self.assertEqual(
+            changes,
+            set(
+                [
+                    Change("minor", "Added", "minorA.NewClass"),
+                    Change("minor", "Added Arg", "minorA.func3.(args)"),
+                    Change(
+                        "minor", "Could not verify", "minorA.Failer.ohno: CANT GET THIS"
+                    ),
+                    Change("minor", "Added", "minorA.var2"),
+                    Change("minor", "Added Arg", "minorA.func1.(b)"),
+                    Change("minor", "Added", "minorA.Failer.new_attr"),
+                    Change(
+                        "minor",
+                        "Return Type Changed",
+                        'minorA.func2, Was: "typing.Dict[str, str]", Now: "typing.Mapping[str, str]"',
+                    ),
+                    Change(
+                        "minor",
+                        "Type Changed",
+                        'minorA.func2.(a), Was: "typing.List[str]", Now: "typing.Sequence[str]"',
+                    ),
+                ]
+            ),
+        )
 
     def test_major(self):
         pass  # TODO: !1

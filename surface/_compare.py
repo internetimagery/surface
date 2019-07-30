@@ -1,6 +1,7 @@
 """ Compare two API's """
 
-# TODO: Better formatted output diff
+import re
+
 try:
     from itertools import zip_longest  # type: ignore
 except ImportError:
@@ -135,7 +136,13 @@ def compare_func(basename, old_func, new_func):  # type: (str, Func, Func) -> Se
     changes = set()  # type: Set[Change]
 
     if old_func.returns != new_func.returns:
-        level = PATCH if old_func.returns == UNKNOWN else MAJOR
+        level = (
+            PATCH
+            if old_func.returns == UNKNOWN
+            else MINOR
+            if is_subtype(old_func.returns, new_func.returns)
+            else MAJOR
+        )
         changes.add(
             Change(
                 level,
@@ -228,7 +235,14 @@ def join(parent, child):  # type: (str, str) -> str
 
 
 def is_subtype(subtype, supertype):  # type: (str, str) -> bool
-    if supertype.startswith("typing.Sequence"):
-        if subtype.startswith("typing.List") or subtype.startswith("typing.Tuple"):
-            return True
+    # Sequences
+    match = re.match("typing\.(List|Tuple|MutableSequence)", subtype)
+    if match and supertype.startswith("typing.Sequence"):
+        return True
+
+    # Mapping
+    match = re.match("typing\.(Dict|MutableMapping)", subtype)
+    if match and supertype.startswith("typing.Mapping"):
+        return True
+
     return False
