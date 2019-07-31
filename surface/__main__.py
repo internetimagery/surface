@@ -84,17 +84,18 @@ def run_compare(args):  # type: (Any) -> int
             k: [surface.from_dict(n) for n in v] for k, v in json.load(handle).items()
         }
 
+    purple = ("{}" if args.no_colour else "\033[35m{}\033[0m").format
     colours = {
-        surface.PATCH: ("{}" if args.no_colour else "\033[32m{}\033[0m").format,
-        surface.MINOR: ("{}" if args.no_colour else "\033[33m{}\033[0m").format,
-        surface.MAJOR: ("{}" if args.no_colour else "\033[35m{}\033[0m").format,
+        surface.PATCH: ("{}" if args.no_colour else "\033[36m{}\033[0m").format,
+        surface.MINOR: ("{}" if args.no_colour else "\033[32m{}\033[0m").format,
+        surface.MAJOR: ("{}" if args.no_colour else "\033[31m{}\033[0m").format,
     }
 
     highest_level = surface.PATCH
     changes = surface.compare(old_data, new_data)
     for level, change_type, note in changes:
         if not args.quiet:
-            LOG.info("{}: {}".format(colours[level](change_type), note))
+            LOG.info("[{}] {}: {}".format(colours[level](level), purple(change_type), note))
         if level == surface.MAJOR:
             highest_level = level
         elif level == surface.MINOR and highest_level != surface.MAJOR:
