@@ -49,6 +49,19 @@ typing_reg = re.compile(r"typing\.(\w+)")
 subtype_map = {
     "Sequence": ("List", "Tuple", "MutableSequence"),
     "Mapping": ("Dict", "MutableMapping"),
+    "Set": ("MutableSet",),
+    "FrozenSet": ("Set", "MutableSet"),
+    "Sized": (
+        "Dict",
+        "List",
+        "Set",
+        "Sequence",
+        "Mapping",
+        "MutableSequence",
+        "MutableMapping",
+        "MutableSet",
+        "FrozenSet",
+    ),
 }
 
 
@@ -260,7 +273,9 @@ def is_subtype(subtype, supertype):  # type: (str, str) -> bool
     # Structure is the same, compare matching types.
     # It's all or nothing. If one type is a subtype, but others aren't
     # it still needs to be considered false.
-    for subt, supert in zip(typing_reg.finditer(subtype), typing_reg.finditer(supertype)):
+    for subt, supert in zip(
+        typing_reg.finditer(subtype), typing_reg.finditer(supertype)
+    ):
         if subt.group(1) == supert.group(1):
             continue
         subtypes = subtype_map.get(supert.group(1))
