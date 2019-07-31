@@ -62,7 +62,7 @@ subtype_map = {
         "MutableSet",
         "FrozenSet",
     ),
-} # type: Dict[str, Tuple[str, ...]]
+}  # type: Dict[str, Tuple[str, ...]]
 
 
 def compare(
