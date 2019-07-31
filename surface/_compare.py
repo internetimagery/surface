@@ -43,6 +43,14 @@ MAJOR = "major"
 _was = '{}, Was: "{}", Now: "{}"'.format
 _arg = "{}.({})".format
 
+typing_reg = re.compile(r"typing\.(\w+)")
+
+# Subtype mapping
+subtype_map = {
+    "Sequence": ("List", "Tuple", "MutableSequence"),
+    "Mapping": ("Dict", "MutableMapping"),
+}
+
 
 def compare(
     api_old,  # type: Mapping[str, Iterable[Any]]
@@ -240,17 +248,24 @@ def join(parent, child):  # type: (str, str) -> str
     return "{}.{}".format(parent, child) if parent else child
 
 
-# TODO: Flesh this out some more.
-# TODO: Probably want to support List Dict etc, as local imports
 def is_subtype(subtype, supertype):  # type: (str, str) -> bool
-    # Sequences
-    match = re.match("typing\.(List|Tuple|MutableSequence)", subtype)
-    if match and supertype.startswith("typing.Sequence"):
-        return True
+    # If they are the same, nothing to do
+    if subtype == supertype:
+        return False
 
-    # Mapping
-    match = re.match("typing\.(Dict|MutableMapping)", subtype)
-    if match and supertype.startswith("typing.Mapping"):
-        return True
+    # First check structure
+    if typing_reg.sub("~", subtype) != typing_reg.sub("~", supertype):
+        return False
 
-    return False
+    # Structure is the same, compare matching types.
+    # It's all or nothing. If one type is a subtype, but others aren't
+    # it still needs to be considered false.
+    for subt, supert in zip(typing_reg.finditer(subtype), typing_reg.finditer(supertype)):
+        if subt.group(1) == supert.group(1):
+            continue
+        subtypes = subtype_map.get(supert.group(1))
+        if not subtypes:
+            return False
+        if subt.group(1) not in subtypes:
+            return False
+    return True
