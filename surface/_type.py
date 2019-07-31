@@ -75,7 +75,7 @@ __all__ = ["get_type", "get_type_func", "UNKNOWN"]
 type_comment_reg = re.compile(r"# +type: ([\w ,\[\]\.]+)")
 type_comment_sig_reg = re.compile(r"# +type: \(([\w ,\[\]\.]*)\) +-> +([\w ,\[\]\.]+)")
 type_attr_reg = re.compile(
-    r"(?:^|(?<=[, \[]))(?:typing\.)?({})".format("|".join(typing_attrs))
+    r"(?:^|(?<=[, \[]))(?:typing\.)?({})\b".format("|".join(typing_attrs))
 )
 
 
