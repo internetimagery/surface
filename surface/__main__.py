@@ -42,7 +42,7 @@ def run_dump(args):  # type: (Any) -> int
     for module in modules:
         start = time.time()
         try:
-            api = surface.get_api(module, args.exclude_modules)
+            api = surface.get_api(module, args.exclude_modules, args.all_filter)
         except ImportError as err:
             LOG.info(
                 (
@@ -136,9 +136,9 @@ dump_parser.add_argument(
     help="Exclude exposed modules in API. (default False)",
 )
 dump_parser.add_argument(
-    "--no-all-filter",
+    "--all-filter",
     action="store_true",
-    help="Disable filtering of items when an __all__ attribute is present.",
+    help="Where available, filter API by __all__, same as if imported with *",
 )
 dump_parser.set_defaults(func=run_dump)
 

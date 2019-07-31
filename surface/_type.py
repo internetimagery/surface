@@ -70,7 +70,7 @@ typing_attrs = (
 )
 
 
-__all__ = ["get_type", "get_type_func", "UNKNOWN"]
+__all__ = ["get_type", "get_type_func"]
 
 type_comment_reg = re.compile(r"# +type: ([\w ,\[\]\.]+)")
 type_comment_sig_reg = re.compile(r"# +type: \(([\w ,\[\]\.]*)\) +-> +([\w ,\[\]\.]+)")

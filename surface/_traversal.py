@@ -53,11 +53,9 @@ def recurse(name):  # type: (str) -> List[str]
 
 
 class APITraversal(object):
-    def __init__(self, exclude_modules=False, all_filter=True):
+    def __init__(self, exclude_modules=False, all_filter=False):
         self.exclude_modules = exclude_modules  # Do not follow exposed modules
-        self.all_filter = (
-            all_filter
-        )  # Filter exposed in the presence of __all__ (like * import)
+        self.all_filter = all_filter  # Mimic "import *"
 
     def traverse(
         self, obj, guard=None

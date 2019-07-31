@@ -4,7 +4,6 @@ import unittest
 
 from surface._traversal import APITraversal, recurse
 from surface._base import *
-from surface._type import UNKNOWN
 
 try:
     from importlib import reload

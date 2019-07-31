@@ -9,7 +9,6 @@ import re as _re
 from importlib import import_module as _import_module
 from surface._traversal import APITraversal, recurse
 from surface._compare import compare, PATCH, MINOR, MAJOR
-from surface._type import UNKNOWN
 from surface._base import (
     POSITIONAL,
     KEYWORD,
@@ -22,11 +21,12 @@ from surface._base import (
     Module,
     to_dict,
     from_dict,
+    UNKNOWN,
 )
 
 
 def get_api(
-    name, exclude_modules=False, all_filter=True
+    name, exclude_modules=False, all_filter=False
 ):  # type: (str, bool, bool) -> Tuple[Any, ...]
     """
         Get a representation of the provided publicly exposed API.
