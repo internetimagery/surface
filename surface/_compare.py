@@ -62,7 +62,7 @@ subtype_map = {
         "MutableSet",
         "FrozenSet",
     ),
-}
+} # type: Dict[str, Tuple[str, ...]]
 
 
 def compare(
@@ -279,7 +279,7 @@ def is_subtype(subtype, supertype):  # type: (str, str) -> bool
         if subt.group(1) == supert.group(1):
             continue
         subtypes = subtype_map.get(supert.group(1))
-        if not subtypes:
+        if subtypes is None:
             return False
         if subt.group(1) not in subtypes:
             return False
