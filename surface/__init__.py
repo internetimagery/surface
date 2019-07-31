@@ -1,3 +1,10 @@
+""" Tools to expose and work with a modules public API """
+
+if False:  # type checking
+    from typing import *
+
+__version__ = "0.3.2"
+
 import re as _re
 from importlib import import_module as _import_module
 from surface._traversal import APITraversal, recurse
@@ -16,12 +23,6 @@ from surface._base import (
     to_dict,
     from_dict,
 )
-
-if False:  # Type checking
-    from typing import Tuple, Iterable, Any
-
-
-__version__ = "0.3.2"
 
 
 def get_api(

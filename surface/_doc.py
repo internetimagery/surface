@@ -1,10 +1,10 @@
 """ Parse typing information out of docstrings """
 
+if False:  # type checking
+    from typing import *
+
 import re
 from surface._base import UNKNOWN
-
-if False:
-    from typing import Optional, Dict, List, Union, Tuple
 
 
 def parse_docstring(docstring):  # type: (str) -> Optional[Tuple[Dict[str, str], str]]

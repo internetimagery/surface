@@ -1,9 +1,11 @@
 """ Common base types """
 
+if False:  # type checking
+    from typing import *
+
+
 from collections import namedtuple as _nt
 
-if False:
-    from typing import Any, Dict, Tuple, List
 
 # fmt: off
 

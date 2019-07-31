@@ -1,5 +1,9 @@
 """ Compare two API's """
 
+if False:  # type checking
+    from typing import *
+
+
 import re
 
 try:
@@ -9,8 +13,6 @@ except ImportError:
 
 from surface._base import *
 
-if False:  # type checking
-    from typing import Mapping, Set, Sequence, Any, Iterable
 
 __all__ = ["PATCH", "MINOR", "MAJOR", "compare"]
 

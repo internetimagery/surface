@@ -1,5 +1,7 @@
 """ Traverse an API heirarchy """
 
+if False:  # type checking
+    from typing import *
 
 import re
 import logging
@@ -11,8 +13,6 @@ from surface._base import *
 from surface._type import get_type, get_type_func
 from importlib import import_module
 
-if False:  # type checking
-    from typing import List, Set, Any, Iterable, Optional, Union
 
 __all__ = ["recurse", "APITraversal"]
 

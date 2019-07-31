@@ -1,5 +1,9 @@
 """ Colllect typing info """
 
+if False:  # type checking
+    from typing import *
+
+
 import re
 import ast
 import types
@@ -57,14 +61,12 @@ except ImportError:
         "Type",
         "ValuesView",
         "_Protocol",
-    )
+    )  # type: Tuple[str, ...]
 else:
-    typing_attrs = [
+    typing_attrs = tuple(
         at for at in dir(typing) if isinstance(getattr(typing, at), typing.GenericMeta)
-    ]
+    )
 
-if False:  # type checking
-    from typing import Any, Tuple, List, Optional
 
 __all__ = ["get_type", "get_type_func", "UNKNOWN"]
 

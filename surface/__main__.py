@@ -2,6 +2,10 @@
 
 from __future__ import print_function
 
+if False:  # type checking
+    from typing import *
+
+
 import re
 import sys
 import json
@@ -12,8 +16,6 @@ import surface
 import logging
 import functools
 
-if False:
-    from typing import Any
 
 # Prevent pyc files from being generated
 sys.dont_write_bytecode = True
