@@ -1,9 +1,3 @@
-#         Removing anything
-#         Renaming keyword-arguments
-#         Adding positional-arguments
-#         Changing types (except where input types become generics)
-
-
 def func1(a):
     return "nothing!"
 

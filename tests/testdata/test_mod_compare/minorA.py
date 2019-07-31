@@ -1,5 +1,5 @@
 if False:
-    import typing
+    from typing import *
 
 var1 = 123
 
@@ -9,7 +9,7 @@ def func1(a):
     return a
 
 
-def func2(a):  # type: (typing.List[str]) -> typing.Dict[str, str]
+def func2(a):  # type: (List[str]) -> Dict[str, str]
     """ Characters n stuff """
     return {b: b for b in a}
 

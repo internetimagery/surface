@@ -12,6 +12,57 @@ import sigtools  # type: ignore
 from surface._base import UNKNOWN
 from surface._doc import parse_docstring
 
+try:
+    import typing
+except ImportError:
+    typing_attrs = (
+        "AbstractSet",
+        "AsyncIterable",
+        "AsyncIterator",
+        "Awaitable",
+        "BinaryIO",
+        "ByteString",
+        "Callable",
+        "Collection",
+        "Container",
+        "ContextManager",
+        "Coroutine",
+        "DefaultDict",
+        "Dict",
+        "FrozenSet",
+        "Generator",
+        "Generic",
+        "IO",
+        "ItemsView",
+        "Iterable",
+        "Iterator",
+        "KeysView",
+        "List",
+        "Mapping",
+        "MappingView",
+        "MutableMapping",
+        "MutableSequence",
+        "MutableSet",
+        "Reversible",
+        "Sequence",
+        "Set",
+        "SupportsAbs",
+        "SupportsBytes",
+        "SupportsComplex",
+        "SupportsFloat",
+        "SupportsInt",
+        "SupportsRound",
+        "TextIO",
+        "Tuple",
+        "Type",
+        "ValuesView",
+        "_Protocol",
+    )
+else:
+    typing_attrs = [
+        at for at in dir(typing) if isinstance(getattr(typing, at), typing.GenericMeta)
+    ]
+
 if False:  # type checking
     from typing import Any, Tuple, List, Optional
 
@@ -19,6 +70,7 @@ __all__ = ["get_type", "get_type_func", "UNKNOWN"]
 
 type_comment_reg = re.compile(r"# +type: ([\w ,\[\]\.]+)")
 type_comment_sig_reg = re.compile(r"# +type: \(([\w ,\[\]\.]*)\) +-> +([\w ,\[\]\.]+)")
+type_attr_reg = re.compile(r"(?:typing\.)?({})".format("|".join(typing_attrs)))
 
 
 def get_type(value, name="", parent=None):  # type: (Any, str, Any) -> str
@@ -61,12 +113,12 @@ def get_comment_type_func(value):  # type: (Any) -> Optional[Tuple[List[str], st
         elif in_sig and tok[0] == tokenize.COMMENT:
             param = type_comment_reg.match(tok[1])
             if param:
-                params.append(param.group(1).strip())
+                params.append(normalize(param.group(1).strip()))
             sig_comment = sig_comment or type_comment_sig_reg.match(tok[1])
     if not sig_comment:
         return None
 
-    # TODO: Validate the same number of params as comment params?
+    # Validate the same number of params as comment params? Assume mypy etc will do it for us?
 
     return_type = sig_comment.group(2)
     param_comment = sig_comment.group(1).strip()
@@ -74,18 +126,22 @@ def get_comment_type_func(value):  # type: (Any) -> Optional[Tuple[List[str], st
         param_ast = ast.parse(param_comment).body[0].value  # type: ignore
         if isinstance(param_ast, ast.Tuple) and param_ast.elts:
             params = [
-                param_comment[
-                    param_ast.elts[i].col_offset : param_ast.elts[i + 1].col_offset
-                ]
+                normalize(
+                    param_comment[
+                        param_ast.elts[i].col_offset : param_ast.elts[i + 1].col_offset
+                    ]
+                )
                 .rsplit(",", 1)[0]
                 .strip()
                 for i in range(len(param_ast.elts) - 1)
             ]
-            params.append(param_comment[param_ast.elts[-1].col_offset :].strip())
+            params.append(
+                normalize(param_comment[param_ast.elts[-1].col_offset :].strip())
+            )
         else:
-            params = [param_comment]
+            params = [normalize(param_comment)]
     if return_type:
-        return params, return_type
+        return params, normalize(return_type)
 
     return None
 
@@ -138,7 +194,10 @@ def get_docstring_type(value, name, parent):  # type: (Any, str, Any) -> Optiona
         if result:
             params, return_type = result
             return "typing.Callable[{}, {}]".format(
-                "[{}]".format(", ".join(params)) if params else "...", return_type
+                "[{}]".format(", ".join(normalize(p) for p in params))
+                if params
+                else "...",
+                normalize(return_type),
             )
     return None
 
@@ -265,3 +324,11 @@ def handle_live_annotation(value):  # type: (Any) -> str
     if type(value) == types.FunctionType:
         return get_live_type(value)
     return UNKNOWN
+
+
+# This is a bit of a brute force way of ensuring typing declarations are abspath.
+# It does not take into account locally overidding names in typing module
+# It is also not making arbitrary types absolute.
+# Could be improved with a lot of static parsing, but for now this should be ok!
+def normalize(type_string):  # type: (str) -> str
+    return type_attr_reg.sub(r"typing.\1", type_string)

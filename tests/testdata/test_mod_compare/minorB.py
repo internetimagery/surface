@@ -1,5 +1,5 @@
 if False:
-    import typing
+    from typing import *
 
 var1 = 123
 var2 = 456
@@ -10,7 +10,7 @@ def func1(a, b=42):
     return a + b
 
 
-def func2(a):  # type: (typing.Sequence[str]) -> typing.Mapping[str, str]
+def func2(a):  # type: (Sequence[str]) -> Mapping[str, str]
     """ Characters n stuff """
     return {b: b for b in a}
 

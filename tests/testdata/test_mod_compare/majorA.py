@@ -1,8 +1,3 @@
-#         Removing anything
-#         Renaming keyword-arguments
-#         Adding positional-arguments
-#         Changing types (except where input types become generics)
-
 var1 = "begone"
 
 

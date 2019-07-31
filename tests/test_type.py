@@ -92,7 +92,7 @@ class TestComments(unittest.TestCase):
 
         self.assertEqual(
             get_comment_type(test_comments.func1, "func1", test_comments),
-            "typing.Callable[[int, str, Dict[str, List[str]]], None]",
+            "typing.Callable[[int, str, typing.Dict[str, typing.List[str]]], None]",
         )
         self.assertEqual(
             get_comment_type(test_comments.func2, "func2", test_comments),
@@ -100,7 +100,7 @@ class TestComments(unittest.TestCase):
         )
         self.assertEqual(
             get_comment_type(test_comments.func3, "func3", test_comments),
-            "typing.Callable[[int, List[str], Dict[str, List[str]]], None]",
+            "typing.Callable[[int, typing.List[str], typing.Dict[str, typing.List[str]]], None]",
         )
 
 
@@ -110,7 +110,7 @@ class TestDocstring(unittest.TestCase):
 
         self.assertEqual(
             get_docstring_type(test_docstring.func1, "func1", test_docstring),
-            "typing.Callable[[int, str, Dict[str, bool]], None]",
+            "typing.Callable[[int, str, typing.Dict[str, bool]], None]",
         )
         self.assertEqual(
             get_docstring_type(test_docstring.func2, "func2", test_docstring),
