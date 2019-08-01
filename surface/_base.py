@@ -40,6 +40,11 @@ Change  = _nt("Change",  ("level", "type", "info")) # type: Tuple[str, str, str]
 
 # Helper method
 
+# TODO: xml might be a better representation for this data?
+# https://docs.python.org/2/library/xml.etree.elementtree.html#module-xml.etree.ElementTree
+# can include comments as well, which would be helpful for creation dates etc.
+
+
 def to_dict(node): # type: (Any) -> Any
     """ Break a node structure (above types)
         into a dict representation for serialization."""
