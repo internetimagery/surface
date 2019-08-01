@@ -95,7 +95,9 @@ def run_compare(args):  # type: (Any) -> int
     changes = surface.compare(old_data, new_data)
     for level, change_type, note in changes:
         if not args.quiet:
-            LOG.info("[{}] {}: {}".format(colours[level](level), purple(change_type), note))
+            LOG.info(
+                "[{}] {}: {}".format(colours[level](level), purple(change_type), note)
+            )
         if level == surface.MAJOR:
             highest_level = level
         elif level == surface.MINOR and highest_level != surface.MAJOR:
