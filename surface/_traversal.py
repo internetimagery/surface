@@ -14,6 +14,13 @@ from surface._type import get_type, get_type_func
 from importlib import import_module
 
 
+# TODO: Static and Live traversal.
+# Two related classes
+# static traversal, traverse "scope"
+# provide methods to enter a new scope, to follow live traversal
+# static to determine types in comments and docstrings
+# maybe annotations too? Maybe not...
+
 __all__ = ["recurse", "APITraversal"]
 
 LOG = logging.getLogger(__name__)
