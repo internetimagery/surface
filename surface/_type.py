@@ -11,6 +11,7 @@ import token
 import logging
 import inspect
 import tokenize
+import traceback
 import itertools
 import sigtools  # type: ignore
 
@@ -104,23 +105,29 @@ def get_comment_type_func(value):  # type: (Any) -> Optional[Tuple[List[str], st
     try:
         source = inspect.getsource(value)
     except IOError:
+        LOG.debug(traceback.format_exc())
         return None
     except TypeError as err:
         LOG.debug(err)
         return None
+
+    lines = iter(source.splitlines(True))
+    readline = lambda: next(lines)
+    try:
+        tokens = list(tokenize.generate_tokens(readline))
+    except tokenize.TokenError:
+        LOG.debug(traceback.format_exc())
+        return None
+
     params = []
     sig_comment = None
     in_sig = False
 
-    lines = iter(source.splitlines(True))
-    readline = lambda: next(lines)
-    tokenizer = tokenize.generate_tokens(readline)
-    for tok in tokenizer:
+    for i, tok in enumerate(tokens):
         if not in_sig and tok[0] == token.NAME and tok[1] == "def":
             in_sig = True
-        elif in_sig and tok[0] == token.NEWLINE:
-            tok = next(tokenizer)
-            sig_comment = sig_comment or type_comment_sig_reg.match(tok[1])
+        elif in_sig and tok[0] == token.NEWLINE and i < len(tokens) - 1:
+            sig_comment = sig_comment or type_comment_sig_reg.match(tokens[i+1][1])
             break
         elif in_sig and tok[0] == tokenize.COMMENT:
             param = type_comment_reg.match(tok[1])
