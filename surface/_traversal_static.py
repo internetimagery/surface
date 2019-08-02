@@ -17,21 +17,23 @@ class Tokens(collections.Sequence):
         self._tokens = tuple(tokenize.generate_tokens(reader))
         self._pos_map = {self._tokens[i][2]: i  for i in range(len(self._tokens))}
 
-    def __getitem__(self, item):
+    def __getitem__(self, item): # type: (Union[int, Tuple[int, int]]) -> Any
         if isinstance(item, int):
             return self._tokens[item]
         return self._tokens[self._pos_map[item]]
 
-    def __len__(self):
+    def __len__(self): # type: () -> int
         return len(self._tokens)
 
 
 class Scope(object):
+    """ Scope of static code """
 
     _cache = {}
 
-    def __init__(self):
-        pass
+    def __init__(self, source):
+        self._ast, self._tokens = self._get_map(source)
+
 
     @classmethod
     def _get_map(cls, filename): # type: (str) -> Tuple[Any, Tokens]
