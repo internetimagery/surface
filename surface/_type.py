@@ -8,6 +8,7 @@ import re
 import ast
 import types
 import token
+import logging
 import inspect
 import tokenize
 import itertools
@@ -15,6 +16,8 @@ import sigtools  # type: ignore
 
 from surface._base import UNKNOWN
 from surface._doc import parse_docstring
+
+LOG = logging.getLogger(__name__)
 
 typing_attrs = (
     "AbstractSet",
@@ -101,6 +104,9 @@ def get_comment_type_func(value):  # type: (Any) -> Optional[Tuple[List[str], st
     try:
         source = inspect.getsource(value)
     except IOError:
+        return None
+    except TypeError as err:
+        LOG.debug(err)
         return None
     params = []
     sig_comment = None

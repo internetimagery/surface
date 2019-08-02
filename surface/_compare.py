@@ -83,7 +83,7 @@ def compare(
     # Check for changes within modules
     for name, new_mod in api_new.items():
         old_mod = api_old.get(name)
-        if old_mod:
+        if old_mod is not None:
             changes.update(compare_deep(name, old_mod, new_mod))
     return changes
 

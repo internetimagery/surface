@@ -11,6 +11,7 @@ import traceback
 import sigtools  # type: ignore
 from surface._base import *
 from surface._type import get_type, get_type_func
+from surface._utils import clean_err
 from importlib import import_module
 
 
@@ -93,7 +94,7 @@ class APITraversal(object):
             except Exception as err:
                 # If we cannot get the attribute, keep going. Just record that the attribute was there.
                 LOG.debug(traceback.format_exc())
-                yield Unknown(name, str(err))
+                yield Unknown(name, clean_err(err))
                 continue
 
             value_id = id(value)
@@ -129,9 +130,9 @@ class APITraversal(object):
         # TODO: Though sigtools helps with this somewhat.
         try:
             sig = sigtools.signature(value)
-        except SyntaxError as err:
+        except (SyntaxError, ValueError) as err:
             LOG.debug(traceback.format_exc())
-            return Unknown(name, str(err))
+            return Unknown(name, clean_err(err))
 
         param_types, return_type = get_type_func(value, name, parent)
         return Func(
@@ -153,9 +154,9 @@ class APITraversal(object):
     ):  # type: (str, Any, Any) -> Union[Func, Unknown]
         try:
             sig = sigtools.signature(value)
-        except SyntaxError as err:
+        except (SyntaxError, ValueError) as err:
             LOG.debug(traceback.format_exc())
-            return Unknown(name, str(err))
+            return Unknown(name, clean_err(err))
 
         # We want to ignore "self" and "cls", as those are implementation details
         # and are not relevant for API comparisons
@@ -165,6 +166,9 @@ class APITraversal(object):
         try:
             source = inspect.getsource(value)
         except IOError:
+            pass
+        except TypeError as err:
+            LOG.debug(err)
             pass
         else:
             if not "@staticmethod" in source and not "@classmethod" in source:

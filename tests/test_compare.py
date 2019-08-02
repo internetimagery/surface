@@ -76,6 +76,10 @@ class TestCompare(unittest.TestCase):
                 ]
             ),
         )
+        minorC = self.get_module("minorC")
+        minorD = self.get_module("minorD", "minorC")
+        changes = compare(minorC, minorD)
+        self.assertEqual(changes, set([Change("minor", "Added", "minorC.something")]))
 
     def test_major(self):
         majorA = self.get_module("majorA")
