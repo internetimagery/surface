@@ -115,7 +115,7 @@ class APITraversal(object):
 
             value_id = id(value)
             if value_id in guard:
-                yield Unknown(name, "Infinite Recursion: {}".format(repr(value)))
+                yield Unknown(name, "Circular Reference: {}".format(repr(value)))
                 continue
 
             if value is None:

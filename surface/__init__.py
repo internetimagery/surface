@@ -20,6 +20,7 @@ from surface._base import (
     Func,
     Class,
     Module,
+    Unknown,
     to_dict,
     from_dict,
     UNKNOWN,
@@ -52,6 +53,7 @@ def get_api(
 def format_api(api, colour=False, indent=""):  # type: (Iterable[Any], bool, str) -> str
     """ Format api into an easier to read representation """
     result = ""
+    yellow = ("\033[33m{}\033[0m" if colour else "{}").format
     magenta = ("\033[35m{}\033[0m" if colour else "{}").format
     cyan = ("\033[36m{}\033[0m" if colour else "{}").format
     green = ("\033[32m{}\033[0m" if colour else "{}").format
@@ -80,6 +82,8 @@ def format_api(api, colour=False, indent=""):  # type: (Iterable[Any], bool, str
             result += indent + "{}: {}\n".format(name, green(item.type))
         elif isinstance(item, Var):
             result += indent + "{}: {}\n".format(item.name, green(item.type))
+        elif isinstance(item, Unknown):
+            result += indent + "{}? {}\n".format(item.name, yellow(item.info))
         else:
             result += indent + str(item) + "\n"
     return result
