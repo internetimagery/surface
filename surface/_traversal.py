@@ -120,7 +120,7 @@ class APITraversal(object):
 
             if value is None:
                 yield Var(name, "None")
-            if value in builtin_types:
+            elif value in builtin_types:
                 yield Var(name, value.__name__)
             # Recursable objects
             elif inspect.ismodule(value):
