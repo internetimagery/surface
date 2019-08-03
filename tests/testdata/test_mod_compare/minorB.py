@@ -43,7 +43,7 @@ class NewMethArgs(object):
     def new_meth_kwarg_var(self, a, **b):
         pass
 
-    def change_meth_arg_opt(a=0):  # type: (int) -> None
+    def change_meth_arg_opt(self, a=0):  # type: (int) -> None
         pass
 
 

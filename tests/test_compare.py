@@ -29,23 +29,19 @@ class TestCompare(unittest.TestCase):
         patchA = self.get_module("patchA")
         patchB = self.get_module("patchB", "patchA")
         changes = compare(patchA, patchB)
+        # fmt: off
         self.assertEqual(
             changes,
-            set(
-                [
-                    Change(
-                        PATCH,
-                        "Type Changed",
-                        'patchA.func1.(b), Was: "~unknown", Now: "int"',
-                    ),
-                    Change(
-                        PATCH,
-                        "Return Type Changed",
-                        'patchA.func1, Was: "~unknown", Now: "int"',
-                    ),
-                ]
-            ),
+            set([
+                Change('patch', 'Renamed Arg', 'patchA.rename_args_var.(b), Was: "a", Now: "b"'),
+                Change('patch', 'Renamed Arg', 'patchA.rename_kwargs_var.(b), Was: "a", Now: "b"'),
+                Change('patch', 'Renamed Arg', 'patchA.MethRenameVar.rename_meth_args_var.(b), Was: "a", Now: "b"'),
+                Change('patch', 'Renamed Arg', 'patchA.MethRenameVar.rename_meth_kwargs_var.(b), Was: "a", Now: "b"'),
+                Change('patch', 'Type Changed', 'patchA.add_new_types.(a), Was: "~unknown", Now: "str"'),
+                Change('patch', 'Return Type Changed', 'patchA.add_new_types, Was: "~unknown", Now: "None"'),
+            ]),
         )
+        # fmt: on
 
     def test_minor(self):
         minorA = self.get_module("minorA")
@@ -54,25 +50,23 @@ class TestCompare(unittest.TestCase):
         # fmt: off
         self.assertEqual(
             changes,
-            set(
-                [
-                    Change('minor', 'Added', 'minorA.new_var'),
-                    Change('minor', 'Added', 'minorA.new_func'),
-                    Change('minor', 'Added', 'minorA.NewClass'),
-                    Change('minor', 'Added', 'minorA.NewMeth.new_method'),
-                    Change('minor', 'Added Arg', 'minorA.new_kwarg_opt.(b)'),
-                    Change('minor', 'Added Arg', 'minorA.new_arg_var.(b)'),
-                    Change('minor', 'Added Arg', 'minorA.new_kwarg_var.(b)'),
-                    Change('minor', 'Kind Changed', 'minorA.change_arg_opt.(a)'),
-                    Change('minor', 'Added Arg', 'minorA.NewMethArgs.new_meth_kwarg_opt.(b)'),
-                    Change('minor', 'Added Arg', 'minorA.NewMethArgs.new_meth_arg_var.(b)'),
-                    Change('minor', 'Added Arg', 'minorA.NewMethArgs.new_meth_kwarg_var.(b)'),
-                    Change('minor', 'Kind Changed', 'minorA.NewMethArgs.change_meth_arg_opt.(a)'),
-                    Change('minor', 'Type Changed', 'minorA.type_changed.(a), Was: "typing.Dict[str, str]", Now: "typing.Mapping[str, str]"'),
-                    Change('minor', 'Return Type Changed', 'minorA.type_changed, Was: "typing.List[str]", Now: "typing.Sequence[str]"'),
-                    Change('minor', 'Could not verify', 'minorA.UnknownChange.ohno: ERROR'),
-                ]
-            ),
+            set([
+                Change('minor', 'Added', 'minorA.new_var'),
+                Change('minor', 'Added', 'minorA.new_func'),
+                Change('minor', 'Added', 'minorA.NewClass'),
+                Change('minor', 'Added', 'minorA.NewMeth.new_method'),
+                Change('minor', 'Added Arg', 'minorA.new_kwarg_opt.(b)'),
+                Change('minor', 'Added Arg', 'minorA.new_arg_var.(b)'),
+                Change('minor', 'Added Arg', 'minorA.new_kwarg_var.(b)'),
+                Change('minor', 'Kind Changed', 'minorA.change_arg_opt.(a)'),
+                Change('minor', 'Added Arg', 'minorA.NewMethArgs.new_meth_kwarg_opt.(b)'),
+                Change('minor', 'Added Arg', 'minorA.NewMethArgs.new_meth_arg_var.(b)'),
+                Change('minor', 'Added Arg', 'minorA.NewMethArgs.new_meth_kwarg_var.(b)'),
+                Change('minor', 'Kind Changed', 'minorA.NewMethArgs.change_meth_arg_opt.(a)'),
+                Change('minor', 'Type Changed', 'minorA.type_changed.(a), Was: "typing.Dict[str, str]", Now: "typing.Mapping[str, str]"'),
+                Change('minor', 'Return Type Changed', 'minorA.type_changed, Was: "typing.List[str]", Now: "typing.Sequence[str]"'),
+                Change('minor', 'Could not verify', 'minorA.UnknownChange.ohno: ERROR'),
+            ]),
         )
         # fmt: on
         minorC = self.get_module("minorC")
@@ -87,31 +81,33 @@ class TestCompare(unittest.TestCase):
         # fmt: off
         self.assertEqual(
             changes,
-            set(
-                [
-                    Change("major", "Renamed Arg", 'majorA.arg_rename.(b), Was: "a", Now: "b"'),
-                    Change("major", "Renamed Arg", 'majorA.opt_arg_rename.(c), Was: "b", Now: "c"'),
-                    Change('major', 'Added Arg', 'majorA.arg_new.(b)'),
-                    Change('major', 'Removed Arg', 'majorA.arg_gone.(b)'),
-                    Change('major', 'Removed Arg', 'majorA.opt_arg_gone.(b)'),
-                    Change('major', 'Removed Arg', 'majorA.var_arg_gone.(b)'),
-                    Change("major", "Removed", "majorA.func_gone"),
-                    Change("major", "Removed", "majorA.ClassGone"),
-                    Change('major', 'Removed', 'majorA.MethGone.method_gone'),
-                    Change("major", "Removed", "majorA.var_gone"),
-                    Change("major", "Type Changed", 'majorA.type_change, Was: "str", Now: "int"'),
-                    Change('major', 'Type Changed', 'majorA.arg_type_change.(a), Was: "int", Now: "bool"'),
-                    Change('major', 'Type Changed', 'majorA.arg_type_change.(b), Was: "str", Now: "int"'),
-                    Change('major', 'Type Changed', 'majorA.arg_type_change.(c), Was: "bool", Now: "str"'),
-                    Change('major', 'Return Type Changed', 'majorA.arg_type_change, Was: "int", Now: "bool"'),
-                    Change('major', 'Type Changed', 'majorA.MethTypeChange.meth_type_change.(a), Was: "int", Now: "bool"'),
-                    Change('major', 'Type Changed', 'majorA.MethTypeChange.meth_type_change.(b), Was: "str", Now: "int"'),
-                    Change('major', 'Type Changed', 'majorA.MethTypeChange.meth_type_change.(c), Was: "bool", Now: "str"'),
-                    Change('major', 'Return Type Changed', 'majorA.MethTypeChange.meth_type_change, Was: "int", Now: "bool"'),
-                ]
-            ),
+            set([
+                Change("major", "Renamed Arg", 'majorA.arg_rename.(b), Was: "a", Now: "b"'),
+                Change("major", "Renamed Arg", 'majorA.opt_arg_rename.(c), Was: "b", Now: "c"'),
+                Change('major', 'Added Arg', 'majorA.arg_new.(b)'),
+                Change('major', 'Removed Arg', 'majorA.arg_gone.(b)'),
+                Change('major', 'Removed Arg', 'majorA.opt_arg_gone.(b)'),
+                Change('major', 'Removed Arg', 'majorA.var_arg_gone.(b)'),
+                Change("major", "Removed", "majorA.func_gone"),
+                Change("major", "Removed", "majorA.ClassGone"),
+                Change('major', 'Removed', 'majorA.MethGone.method_gone'),
+                Change("major", "Removed", "majorA.var_gone"),
+                Change("major", "Type Changed", 'majorA.type_change, Was: "str", Now: "int"'),
+                Change('major', 'Type Changed', 'majorA.arg_type_change.(a), Was: "int", Now: "bool"'),
+                Change('major', 'Type Changed', 'majorA.arg_type_change.(b), Was: "str", Now: "int"'),
+                Change('major', 'Type Changed', 'majorA.arg_type_change.(c), Was: "bool", Now: "str"'),
+                Change('major', 'Return Type Changed', 'majorA.arg_type_change, Was: "int", Now: "bool"'),
+                Change('major', 'Type Changed', 'majorA.MethTypeChange.meth_type_change.(a), Was: "int", Now: "bool"'),
+                Change('major', 'Type Changed', 'majorA.MethTypeChange.meth_type_change.(b), Was: "str", Now: "int"'),
+                Change('major', 'Type Changed', 'majorA.MethTypeChange.meth_type_change.(c), Was: "bool", Now: "str"'),
+                Change('major', 'Return Type Changed', 'majorA.MethTypeChange.meth_type_change, Was: "int", Now: "bool"'),
+            ]),
         )
         # fmt: on
+        majorC = self.get_module("majorC")
+        majorD = self.get_module("majorD", "majorC")
+        changes = compare(majorC, majorD)
+        self.assertEqual(changes, set([Change("major", "Removed", "majorC.var_gone")]))
 
 
 if __name__ == "__main__":

@@ -26,6 +26,7 @@ __all__ = ["PATCH", "MINOR", "MAJOR", "compare"]
 #     MINOR:
 #         Adding new variables, functions, classes, modules, optional-keyword-arguments, *args, **kwargs
 #         Changing positional-only-argument to include keyword
+#         Provide a default to a positional argument
 #         Changing input types to be generics, eg: List to Sequence, Dict to Mapping etc
 #         Unable to verify the change (ie attribute access failed / recursive object)
 #     PATCH:
