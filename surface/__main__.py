@@ -9,19 +9,17 @@ if False:  # type checking
 import re
 import sys
 import json
-import time
+import surface
 import os.path
 import argparse
-import surface
 import logging
 import functools
 
+# Global logger
+LOG = logging.getLogger()
 
 # Prevent pyc files from being generated
 sys.dont_write_bytecode = True
-
-LOG = logging.getLogger(__name__)
-LOG.addHandler(logging.StreamHandler(sys.stderr))
 
 
 def run_dump(args):  # type: (Any) -> int
@@ -40,7 +38,6 @@ def run_dump(args):  # type: (Any) -> int
 
     module_api = {}
     for module in modules:
-        start = time.time()
         try:
             api = surface.get_api(module, args.exclude_modules, args.all_filter)
         except ImportError as err:
@@ -53,13 +50,12 @@ def run_dump(args):  # type: (Any) -> int
             )
             return 1
         else:
-            elapsed = time.time() - start
             module_api[module] = api
 
     if not args.quiet:
         yellow = ("{}" if args.no_colour else "\033[33m{}\033[0m").format
         for mod, api in module_api.items():
-            sys.stdout.write("[{}]({}s)\n".format(yellow(mod), round(elapsed, 2)))
+            sys.stdout.write("[{}]({}s)\n".format(yellow(mod), round(surface.import_times.get(mod, 0), 2)))
             sys.stdout.write(surface.format_api(api, not args.no_colour, "    "))
 
     if not args.output:
@@ -162,5 +158,7 @@ compare_parser.add_argument(
 compare_parser.set_defaults(func=run_compare)
 
 args = parser.parse_args()
+LOG.addHandler(logging.StreamHandler(sys.stderr))
 LOG.setLevel(logging.DEBUG if args.debug else logging.INFO)
+LOG.debug("Debug on!")
 sys.exit(args.func(args))
