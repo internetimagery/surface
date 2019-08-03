@@ -1,34 +1,55 @@
 if False:
     from typing import *
 
-var1 = 123
-var2 = 456
+new_var = 123
 
 
-def func1(a, b=42):
-    """ Less boring function """
-    return a + b
-
-
-def func2(a):  # type: (Sequence[str]) -> Mapping[str, str]
-    """ Characters n stuff """
-    return {b: b for b in a}
-
-
-def func3(a, *args, **kwargs):
-    """ Multi item """
-    return a + sum(args) + sum(kwargs.values())
-
-
-def func4(a=43):  # type: (int) -> int
-    """ positional / keyword / optional """
-    return a
-
-
-class Failer(object):
-    ohno = "success"
-    new_attr = "also success"
+def new_func(a):
+    pass
 
 
 class NewClass(object):
     pass
+
+
+class NewMeth(object):
+    def new_method(a):
+        pass
+
+
+def new_kwarg_opt(a, b=None):
+    pass
+
+
+def new_arg_var(a, *b):
+    pass
+
+
+def new_kwarg_var(a, **b):
+    pass
+
+
+def change_arg_opt(a=0):  # type: (int) -> None
+    pass
+
+
+class NewMethArgs(object):
+    def new_meth_kwarg_opt(self, a, b=None):
+        pass
+
+    def new_meth_arg_var(self, a, *b):
+        pass
+
+    def new_meth_kwarg_var(self, a, **b):
+        pass
+
+    def change_meth_arg_opt(a=0):  # type: (int) -> None
+        pass
+
+
+def type_changed(a):  # type: (Mapping[str, str]) -> Sequence[str]
+    return []
+
+
+class UnknownChange(object):
+    ohno = "no error"

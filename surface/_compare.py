@@ -31,6 +31,7 @@ __all__ = ["PATCH", "MINOR", "MAJOR", "compare"]
 #     PATCH:
 #         Renaming positional-only-arguments
 #         Adding new typing information
+#         Unknown type remains Unknown
 #         Changing nothing
 
 

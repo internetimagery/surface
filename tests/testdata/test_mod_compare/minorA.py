@@ -1,33 +1,57 @@
 if False:
     from typing import *
 
-var1 = 123
+# new_var = 123
+
+# def new_func(a):
+#     pass
+
+# class NewClass(object):
+#     pass
 
 
-def func1(a):
-    """ Boring function """
-    return a
+class NewMeth(object):
+    pass
 
 
-def func2(a):  # type: (List[str]) -> Dict[str, str]
-    """ Characters n stuff """
-    return {b: b for b in a}
+def new_kwarg_opt(a):
+    pass
 
 
-def func3(a):
-    """ Single item """
-    return a
+def new_arg_var(a):
+    pass
 
 
-def func4(a):  # type: (int) -> int
-    """ positional / keyword """
-    return a
+def new_kwarg_var(a):
+    pass
 
 
-class _FAIL(object):
+def change_arg_opt(a):  # type: (int) -> None
+    pass
+
+
+class NewMethArgs(object):
+    def new_meth_kwarg_opt(self, a):
+        pass
+
+    def new_meth_arg_var(self, a):
+        pass
+
+    def new_meth_kwarg_var(self, a):
+        pass
+
+    def change_meth_arg_opt(a):  # type: (int) -> None
+        pass
+
+
+def type_changed(a):  # type: (Dict[str, str]) -> List[str]
+    return []
+
+
+class _make_error(object):
     def __get__(self, *_):
-        raise RuntimeError("CANT GET THIS")
+        raise RuntimeError("ERROR")
 
 
-class Failer(object):
-    ohno = _FAIL()
+class UnknownChange(object):
+    ohno = _make_error()

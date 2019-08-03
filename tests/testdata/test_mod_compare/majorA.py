@@ -1,8 +1,16 @@
+if False:
+    from typing import *
+
+
 def arg_rename(a):
     pass
 
 
 def opt_arg_rename(a, b=""):
+    pass
+
+
+def arg_new(a):
     pass
 
 
@@ -38,6 +46,7 @@ type_change = "123"
 
 def arg_type_change(a, b="", *c):  # type: (int, str, bool) -> int
     return 0
+
 
 class MethTypeChange(object):
     def meth_type_change(self, a, b="", *c):  # type: (int, str, bool) -> int

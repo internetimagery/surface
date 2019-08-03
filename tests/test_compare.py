@@ -51,33 +51,30 @@ class TestCompare(unittest.TestCase):
         minorA = self.get_module("minorA")
         minorB = self.get_module("minorB", "minorA")
         changes = compare(minorA, minorB)
+        # fmt: off
         self.assertEqual(
             changes,
             set(
                 [
-                    Change("minor", "Added Arg", "minorA.func3.(kwargs)"),
-                    Change("minor", "Kind Changed", "minorA.func4.(a)"),
-                    Change("minor", "Added", "minorA.NewClass"),
-                    Change("minor", "Added Arg", "minorA.func3.(args)"),
-                    Change(
-                        "minor", "Could not verify", "minorA.Failer.ohno: CANT GET THIS"
-                    ),
-                    Change("minor", "Added", "minorA.var2"),
-                    Change("minor", "Added Arg", "minorA.func1.(b)"),
-                    Change("minor", "Added", "minorA.Failer.new_attr"),
-                    Change(
-                        "minor",
-                        "Return Type Changed",
-                        'minorA.func2, Was: "typing.Dict[str, str]", Now: "typing.Mapping[str, str]"',
-                    ),
-                    Change(
-                        "minor",
-                        "Type Changed",
-                        'minorA.func2.(a), Was: "typing.List[str]", Now: "typing.Sequence[str]"',
-                    ),
+                    Change('minor', 'Added', 'minorA.new_var'),
+                    Change('minor', 'Added', 'minorA.new_func'),
+                    Change('minor', 'Added', 'minorA.NewClass'),
+                    Change('minor', 'Added', 'minorA.NewMeth.new_method'),
+                    Change('minor', 'Added Arg', 'minorA.new_kwarg_opt.(b)'),
+                    Change('minor', 'Added Arg', 'minorA.new_arg_var.(b)'),
+                    Change('minor', 'Added Arg', 'minorA.new_kwarg_var.(b)'),
+                    Change('minor', 'Kind Changed', 'minorA.change_arg_opt.(a)'),
+                    Change('minor', 'Added Arg', 'minorA.NewMethArgs.new_meth_kwarg_opt.(b)'),
+                    Change('minor', 'Added Arg', 'minorA.NewMethArgs.new_meth_arg_var.(b)'),
+                    Change('minor', 'Added Arg', 'minorA.NewMethArgs.new_meth_kwarg_var.(b)'),
+                    Change('minor', 'Kind Changed', 'minorA.NewMethArgs.change_meth_arg_opt.(a)'),
+                    Change('minor', 'Type Changed', 'minorA.type_changed.(a), Was: "typing.Dict[str, str]", Now: "typing.Mapping[str, str]"'),
+                    Change('minor', 'Return Type Changed', 'minorA.type_changed, Was: "typing.List[str]", Now: "typing.Sequence[str]"'),
+                    Change('minor', 'Could not verify', 'minorA.UnknownChange.ohno: ERROR'),
                 ]
             ),
         )
+        # fmt: on
         minorC = self.get_module("minorC")
         minorD = self.get_module("minorD", "minorC")
         changes = compare(minorC, minorD)
@@ -94,6 +91,7 @@ class TestCompare(unittest.TestCase):
                 [
                     Change("major", "Renamed Arg", 'majorA.arg_rename.(b), Was: "a", Now: "b"'),
                     Change("major", "Renamed Arg", 'majorA.opt_arg_rename.(c), Was: "b", Now: "c"'),
+                    Change('major', 'Added Arg', 'majorA.arg_new.(b)'),
                     Change('major', 'Removed Arg', 'majorA.arg_gone.(b)'),
                     Change('major', 'Removed Arg', 'majorA.opt_arg_gone.(b)'),
                     Change('major', 'Removed Arg', 'majorA.var_arg_gone.(b)'),
@@ -114,6 +112,7 @@ class TestCompare(unittest.TestCase):
             ),
         )
         # fmt: on
+
 
 if __name__ == "__main__":
     unittest.main()
