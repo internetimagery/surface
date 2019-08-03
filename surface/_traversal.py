@@ -198,8 +198,9 @@ class APITraversal(object):
             pass
         else:
             if not "@staticmethod" in source and not "@classmethod" in source:
+                if len(param_types) == len(params):
+                    param_types = param_types[1:]
                 params = params[1:]
-                param_types = param_types[1:]
         return Func(
             name,
             tuple(

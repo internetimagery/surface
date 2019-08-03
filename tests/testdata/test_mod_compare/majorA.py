@@ -1,26 +1,44 @@
-var1 = "begone"
-
-
-def func1(a, b):
-    return "nothing!"
-
-
-def func2(a, b):  # type: (int, str) -> None
-    return None
-
-
-def func3(a):
-    return "OK"
-
-
-def func4(a=None, b=None):
-    return 123
-
-
-class MyClass1(object):
-    def myMethod(self, a):
-        return "Nothing"
-
-
-class MyClass2(object):
+def arg_rename(a):
     pass
+
+
+def opt_arg_rename(a, b=""):
+    pass
+
+
+def arg_gone(a, b):
+    pass
+
+
+def opt_arg_gone(a, b=None):
+    pass
+
+
+def var_arg_gone(a, *b):
+    pass
+
+
+def func_gone(a):
+    pass
+
+
+class ClassGone(object):
+    pass
+
+
+class MethGone(object):
+    def method_gone(a):
+        pass
+
+
+var_gone = "begone"
+
+type_change = "123"
+
+
+def arg_type_change(a, b="", *c):  # type: (int, str, bool) -> int
+    return 0
+
+class MethTypeChange(object):
+    def meth_type_change(self, a, b="", *c):  # type: (int, str, bool) -> int
+        return 0

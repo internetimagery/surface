@@ -85,25 +85,33 @@ class TestCompare(unittest.TestCase):
         majorA = self.get_module("majorA")
         majorB = self.get_module("majorB", "majorA")
         changes = compare(majorA, majorB)
+        # fmt: off
         self.assertEqual(
             changes,
             set(
                 [
-                    Change("major", "Removed Arg", "majorA.func4.(b)"),
-                    Change(
-                        "major", "Renamed Arg", 'majorA.func4.(c), Was: "a", Now: "c"'
-                    ),
-                    Change("major", "Removed Arg", "majorA.func1.(b)"),
-                    Change("major", "Removed", "majorA.MyClass1.myMethod"),
-                    Change(
-                        "major",
-                        "Type Changed",
-                        'majorA.func2.(a), Was: "int", Now: "str"',
-                    ),
+                    Change("major", "Renamed Arg", 'majorA.arg_rename.(b), Was: "a", Now: "b"'),
+                    Change("major", "Renamed Arg", 'majorA.opt_arg_rename.(c), Was: "b", Now: "c"'),
+                    Change('major', 'Removed Arg', 'majorA.arg_gone.(b)'),
+                    Change('major', 'Removed Arg', 'majorA.opt_arg_gone.(b)'),
+                    Change('major', 'Removed Arg', 'majorA.var_arg_gone.(b)'),
+                    Change("major", "Removed", "majorA.func_gone"),
+                    Change("major", "Removed", "majorA.ClassGone"),
+                    Change('major', 'Removed', 'majorA.MethGone.method_gone'),
+                    Change("major", "Removed", "majorA.var_gone"),
+                    Change("major", "Type Changed", 'majorA.type_change, Was: "str", Now: "int"'),
+                    Change('major', 'Type Changed', 'majorA.arg_type_change.(a), Was: "int", Now: "bool"'),
+                    Change('major', 'Type Changed', 'majorA.arg_type_change.(b), Was: "str", Now: "int"'),
+                    Change('major', 'Type Changed', 'majorA.arg_type_change.(c), Was: "bool", Now: "str"'),
+                    Change('major', 'Return Type Changed', 'majorA.arg_type_change, Was: "int", Now: "bool"'),
+                    Change('major', 'Type Changed', 'majorA.MethTypeChange.meth_type_change.(a), Was: "int", Now: "bool"'),
+                    Change('major', 'Type Changed', 'majorA.MethTypeChange.meth_type_change.(b), Was: "str", Now: "int"'),
+                    Change('major', 'Type Changed', 'majorA.MethTypeChange.meth_type_change.(c), Was: "bool", Now: "str"'),
+                    Change('major', 'Return Type Changed', 'majorA.MethTypeChange.meth_type_change, Was: "int", Now: "bool"'),
                 ]
             ),
         )
-
+        # fmt: on
 
 if __name__ == "__main__":
     unittest.main()
