@@ -55,7 +55,11 @@ def run_dump(args):  # type: (Any) -> int
     if not args.quiet:
         yellow = ("{}" if args.no_colour else "\033[33m{}\033[0m").format
         for mod, api in module_api.items():
-            sys.stdout.write("[{}]({}s)\n".format(yellow(mod), round(surface.import_times.get(mod, 0), 2)))
+            sys.stdout.write(
+                "[{}]({}s)\n".format(
+                    yellow(mod), round(surface.import_times.get(mod, 0), 2)
+                )
+            )
             sys.stdout.write(surface.format_api(api, not args.no_colour, "    "))
 
     if not args.output:

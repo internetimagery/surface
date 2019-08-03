@@ -127,7 +127,7 @@ def get_comment_type_func(value):  # type: (Any) -> Optional[Tuple[List[str], st
         if not in_sig and tok[0] == token.NAME and tok[1] == "def":
             in_sig = True
         elif in_sig and tok[0] == token.NEWLINE and i < len(tokens) - 1:
-            sig_comment = sig_comment or type_comment_sig_reg.match(tokens[i+1][1])
+            sig_comment = sig_comment or type_comment_sig_reg.match(tokens[i + 1][1])
             break
         elif in_sig and tok[0] == tokenize.COMMENT:
             param = type_comment_reg.match(tok[1])
