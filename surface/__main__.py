@@ -39,7 +39,9 @@ def run_dump(args):  # type: (Any) -> int
     module_api = {}
     for module in modules:
         try:
-            api = surface.get_api(module, args.exclude_modules, args.all_filter)
+            api = surface.get_api(
+                module, args.exclude_modules, args.all_filter, args.depth
+            )
         except ImportError as err:
             LOG.info(
                 (
@@ -143,6 +145,9 @@ dump_parser.add_argument(
     action="store_true",
     help="Where available, filter API by __all__, same as if imported with *",
 )
+dump_parser.add_argument(
+    "--depth", type=int, default=10, help="Limit the spidering to this depth."
+)
 dump_parser.set_defaults(func=run_dump)
 
 compare_parser = subparsers.add_parser(
@@ -165,4 +170,7 @@ args = parser.parse_args()
 LOG.addHandler(logging.StreamHandler(sys.stderr))
 LOG.setLevel(logging.DEBUG if args.debug else logging.INFO)
 LOG.debug("Debug on!")
-sys.exit(args.func(args))
+try:
+    sys.exit(args.func(args))
+except KeyboardInterrupt:
+    sys.exit(0)

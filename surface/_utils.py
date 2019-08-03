@@ -1,14 +1,16 @@
 """ Useful utilities """
 
+if False:
+    from typing import *
+
 import re
 import time
 import logging
 import importlib
-from importlib import import_module
 
 LOG = logging.getLogger(__name__)
 
-import_times = {}
+import_times = {}  # type: Dict[str, float]
 
 
 def import_module(name):

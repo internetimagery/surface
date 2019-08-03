@@ -27,8 +27,8 @@ from surface._base import (
 
 
 def get_api(
-    name, exclude_modules=False, all_filter=False
-):  # type: (str, bool, bool) -> Tuple[Any, ...]
+    name, exclude_modules=False, all_filter=False, depth=10
+):  # type: (str, bool, bool, int) -> Tuple[Any, ...]
     """
         Get a representation of the provided publicly exposed API.
 
@@ -36,12 +36,15 @@ def get_api(
             name (str): path to module. eg mymodule.submodule
             exclude_modules (bool): Exclude "naked" imports from API.
             all_filter (bool): Filter API based on __all__ attribute when present.
+            depth (int): Limit how far to spider out into the modules.
 
         Returns:
             Tuple[Any, ...]: Representation of API
     """
     mod = _import_module(name)
-    traversal = APITraversal(exclude_modules=exclude_modules, all_filter=all_filter)
+    traversal = APITraversal(
+        exclude_modules=exclude_modules, all_filter=all_filter, depth=depth
+    )
     API = traversal.traverse(mod)
     return tuple(API)
 

@@ -13,12 +13,18 @@ from surface._base import *
 from surface._type import get_type, get_type_func
 from surface._utils import clean_err, import_module
 
+try:
+    import builtins  # type: ignore
+except ImportError:
+    import __builtin__ as builtins  # type: ignore
 
 __all__ = ["recurse", "APITraversal"]
 
 LOG = logging.getLogger(__name__)
 
 import_reg = re.compile(r"__init__\.(py[cd]?|so)$")
+
+builtin_types = tuple(b for b in builtins.__dict__.values() if isinstance(b, type))
 
 
 def recurse(name):  # type: (str) -> List[str]
@@ -29,7 +35,6 @@ def recurse(name):  # type: (str) -> List[str]
 
     while stack:
         import_name = stack.pop()
-        LOG.debug("Importing: {}".format(import_name))
         module = import_module(import_name)
         paths.append(import_name)
         try:
@@ -54,9 +59,15 @@ def recurse(name):  # type: (str) -> List[str]
 
 
 class APITraversal(object):
-    def __init__(self, exclude_modules=False, all_filter=False):
+    def __init__(self, exclude_modules=False, all_filter=False, depth=10):
         self.exclude_modules = exclude_modules  # Do not follow exposed modules
         self.all_filter = all_filter  # Mimic "import *"
+        self.depth = depth  # How far down the rabbit hole do we go?
+        LOG.debug(
+            "APITraversal created with exclude_modules={}, all_filter={}, depth={}".format(
+                exclude_modules, all_filter, depth
+            )
+        )
 
     def traverse(
         self, obj, guard=None
@@ -64,6 +75,9 @@ class APITraversal(object):
         """ Entry point to generating an API representation. """
         if guard is None:  # Guard against infinite recursion
             guard = set()
+        if len(guard) > self.depth:
+            LOG.debug("Exceeded Depth, {}".format(obj))
+            return
 
         LOG.debug("Traversing: {}".format(obj))
 
@@ -104,8 +118,12 @@ class APITraversal(object):
                 yield Unknown(name, "Infinite Recursion: {}".format(repr(value)))
                 continue
 
+            if value is None:
+                yield Var(name, "None")
+            if value in builtin_types:
+                yield Var(name, value.__name__)
             # Recursable objects
-            if inspect.ismodule(value):
+            elif inspect.ismodule(value):
                 if self.exclude_modules:
                     continue
                 guard.add(value_id)
