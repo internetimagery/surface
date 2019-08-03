@@ -123,6 +123,13 @@ class TestImporter(unittest.TestCase):
             ],
         )
 
+    def test_stdlib(self):
+        # Run through standard lib to see if anything breaks
+        modules = sys.builtin_module_names
+        for module in modules:
+            data = list(APITraversal().traverse(module))
+            self.assertTrue(len(data))
+
 
 if __name__ == "__main__":
     unittest.main()

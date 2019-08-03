@@ -5,6 +5,7 @@ if False:  # type checking
 
 import re
 import sys
+import types
 import logging
 import os.path
 import inspect
@@ -117,9 +118,7 @@ class APITraversal(object):
             value_id = id(value)
             if value_id in guard:
                 yield Unknown(name, "Circular Reference: {}".format(repr(value)))
-                continue
-
-            if value is None:
+            elif value is None:
                 yield Var(name, "None")
             elif value in builtin_types:
                 yield Var(name, value.__name__)
@@ -144,6 +143,9 @@ class APITraversal(object):
                     yield self._handle_method(name, value, obj)
                 else:
                     yield self._handle_function(name, value, obj)
+            elif isinstance(value, types.GetSetDescriptorType):
+                # TODO: Any way to get the result type of value.__get__?
+                yield Var(name, UNKNOWN)
             elif name != "__init__":
                 yield self._handle_variable(name, value, obj)
 
