@@ -1,4 +1,5 @@
 import imp
+import sys
 import os.path
 import unittest
 
@@ -16,6 +17,7 @@ class TestCompare(unittest.TestCase):
             rename or name, os.path.join(root, "{}.py".format(name))
         )
         api = {rename or name: list(APITraversal().traverse(module))}
+        del sys.modules[rename or name]
         return api
 
     def test_no_change(self):
