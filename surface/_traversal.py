@@ -4,6 +4,8 @@ if False:  # type checking
     from typing import *
 
 import re
+import sys
+import types
 import logging
 import os.path
 import inspect
@@ -11,8 +13,12 @@ import traceback
 import sigtools  # type: ignore
 from surface._base import *
 from surface._type import get_type, get_type_func
-from importlib import import_module
+from surface._utils import clean_err, import_module
 
+try:
+    import builtins  # type: ignore
+except ImportError:
+    import __builtin__ as builtins  # type: ignore
 
 # TODO: Static and Live traversal.
 # Two related classes
@@ -26,6 +32,8 @@ __all__ = ["recurse", "APITraversal"]
 LOG = logging.getLogger(__name__)
 
 import_reg = re.compile(r"__init__\.(py[cd]?|so)$")
+
+builtin_types = tuple(b for b in builtins.__dict__.values() if isinstance(b, type))
 
 
 def recurse(name):  # type: (str) -> List[str]
@@ -60,9 +68,15 @@ def recurse(name):  # type: (str) -> List[str]
 
 
 class APITraversal(object):
-    def __init__(self, exclude_modules=False, all_filter=False):
+    def __init__(self, exclude_modules=False, all_filter=False, depth=10):
         self.exclude_modules = exclude_modules  # Do not follow exposed modules
         self.all_filter = all_filter  # Mimic "import *"
+        self.depth = depth  # How far down the rabbit hole do we go?
+        LOG.debug(
+            "APITraversal created with exclude_modules={}, all_filter={}, depth={}".format(
+                exclude_modules, all_filter, depth
+            )
+        )
 
     def traverse(
         self, obj, guard=None
@@ -70,6 +84,11 @@ class APITraversal(object):
         """ Entry point to generating an API representation. """
         if guard is None:  # Guard against infinite recursion
             guard = set()
+        if len(guard) > self.depth:
+            LOG.debug("Exceeded Depth, {}".format(obj))
+            return
+
+        LOG.debug("Traversing: {}".format(obj))
 
         # NOTE: inspect.getmembers is more comprehensive than dir
         # NOTE: but it doesn't allow catching errors on each attribute
@@ -100,20 +119,25 @@ class APITraversal(object):
             except Exception as err:
                 # If we cannot get the attribute, keep going. Just record that the attribute was there.
                 LOG.debug(traceback.format_exc())
-                yield Unknown(name, str(err))
+                yield Unknown(name, clean_err(err))
                 continue
 
             value_id = id(value)
             if value_id in guard:
-                yield Unknown(name, "Infinite Recursion: {}".format(repr(value)))
-                continue
-
+                yield Unknown(name, "Circular Reference: {}".format(repr(value)))
+            elif value is None:
+                yield Var(name, "None")
+            elif value in builtin_types:
+                yield Var(name, value.__name__)
             # Recursable objects
-            if inspect.ismodule(value):
+            elif inspect.ismodule(value):
                 if self.exclude_modules:
                     continue
-                guard.add(value_id)
-                yield self._handle_module(name, value, obj, guard.copy())
+                if name in sys.builtin_module_names:
+                    yield Module(name, value.__name__, tuple())
+                else:
+                    guard.add(value_id)
+                    yield self._handle_module(name, value, obj, guard.copy())
             elif inspect.isclass(value):
                 guard.add(value_id)
                 yield self._handle_class(name, value, obj, guard.copy())
@@ -126,6 +150,9 @@ class APITraversal(object):
                     yield self._handle_method(name, value, obj)
                 else:
                     yield self._handle_function(name, value, obj)
+            elif isinstance(value, types.GetSetDescriptorType):
+                # TODO: Any way to get the result type of value.__get__?
+                yield Var(name, UNKNOWN)
             elif name != "__init__":
                 yield self._handle_variable(name, value, obj)
 
@@ -136,9 +163,9 @@ class APITraversal(object):
         # TODO: Though sigtools helps with this somewhat.
         try:
             sig = sigtools.signature(value)
-        except SyntaxError as err:
+        except (SyntaxError, ValueError) as err:
             LOG.debug(traceback.format_exc())
-            return Unknown(name, str(err))
+            return Unknown(name, clean_err(err))
 
         param_types, return_type = get_type_func(value, name, parent)
         return Func(
@@ -160,9 +187,9 @@ class APITraversal(object):
     ):  # type: (str, Any, Any) -> Union[Func, Unknown]
         try:
             sig = sigtools.signature(value)
-        except SyntaxError as err:
+        except (SyntaxError, ValueError) as err:
             LOG.debug(traceback.format_exc())
-            return Unknown(name, str(err))
+            return Unknown(name, clean_err(err))
 
         # We want to ignore "self" and "cls", as those are implementation details
         # and are not relevant for API comparisons
@@ -172,6 +199,9 @@ class APITraversal(object):
         try:
             source = inspect.getsource(value)
         except IOError:
+            pass
+        except TypeError as err:
+            LOG.debug(err)
             pass
         else:
             if not "@staticmethod" in source and not "@classmethod" in source:

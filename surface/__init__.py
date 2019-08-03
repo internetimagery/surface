@@ -3,10 +3,11 @@
 if False:  # type checking
     from typing import *
 
-__version__ = "0.3.4"
+__version__ = "0.3.5"
+
 
 import re as _re
-from importlib import import_module as _import_module
+from surface._utils import import_module as _import_module, import_times
 from surface._traversal import APITraversal, recurse
 from surface._compare import compare, PATCH, MINOR, MAJOR
 from surface._base import (
@@ -19,6 +20,7 @@ from surface._base import (
     Func,
     Class,
     Module,
+    Unknown,
     to_dict,
     from_dict,
     UNKNOWN,
@@ -26,8 +28,8 @@ from surface._base import (
 
 
 def get_api(
-    name, exclude_modules=False, all_filter=False
-):  # type: (str, bool, bool) -> Tuple[Any, ...]
+    name, exclude_modules=False, all_filter=False, depth=10
+):  # type: (str, bool, bool, int) -> Tuple[Any, ...]
     """
         Get a representation of the provided publicly exposed API.
 
@@ -35,12 +37,15 @@ def get_api(
             name (str): path to module. eg mymodule.submodule
             exclude_modules (bool): Exclude "naked" imports from API.
             all_filter (bool): Filter API based on __all__ attribute when present.
+            depth (int): Limit how far to spider out into the modules.
 
         Returns:
             Tuple[Any, ...]: Representation of API
     """
     mod = _import_module(name)
-    traversal = APITraversal(exclude_modules=exclude_modules, all_filter=all_filter)
+    traversal = APITraversal(
+        exclude_modules=exclude_modules, all_filter=all_filter, depth=depth
+    )
     API = traversal.traverse(mod)
     return tuple(API)
 
@@ -48,6 +53,7 @@ def get_api(
 def format_api(api, colour=False, indent=""):  # type: (Iterable[Any], bool, str) -> str
     """ Format api into an easier to read representation """
     result = ""
+    yellow = ("\033[33m{}\033[0m" if colour else "{}").format
     magenta = ("\033[35m{}\033[0m" if colour else "{}").format
     cyan = ("\033[36m{}\033[0m" if colour else "{}").format
     green = ("\033[32m{}\033[0m" if colour else "{}").format
@@ -76,6 +82,8 @@ def format_api(api, colour=False, indent=""):  # type: (Iterable[Any], bool, str
             result += indent + "{}: {}\n".format(name, green(item.type))
         elif isinstance(item, Var):
             result += indent + "{}: {}\n".format(item.name, green(item.type))
+        elif isinstance(item, Unknown):
+            result += indent + "{}? {}\n".format(item.name, yellow(item.info))
         else:
             result += indent + str(item) + "\n"
     return result
