@@ -48,6 +48,10 @@ def arg_type_change(a, b=0, *c):  # type: (bool, int, str) -> bool
     return True
 
 
+def return_type_change_subtype():  # type: () -> Sequence[str]
+    return []
+
+
 class MethTypeChange(object):
     def meth_type_change(self, a, b=0, *c):  # type: (bool, int, str) -> bool
         return True

@@ -161,13 +161,7 @@ def compare_func(basename, old_func, new_func):  # type: (str, Func, Func) -> Se
     changes = set()  # type: Set[Change]
 
     if old_func.returns != new_func.returns:
-        level = (
-            PATCH
-            if old_func.returns == UNKNOWN
-            else MINOR
-            if is_subtype(old_func.returns, new_func.returns)
-            else MAJOR
-        )
+        level = PATCH if old_func.returns == UNKNOWN else MAJOR
         changes.add(
             Change(
                 level,

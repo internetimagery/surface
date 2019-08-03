@@ -36,7 +36,7 @@ def run_dump(args):  # type: (Any) -> int
         else args.modules
     )
 
-    module_api = {}
+    module_api = []
     for module in modules:
         try:
             api = surface.get_api(
@@ -52,23 +52,23 @@ def run_dump(args):  # type: (Any) -> int
             )
             return 1
         else:
-            module_api[module] = api
+            module_api.append(api)
 
     if not args.quiet:
         yellow = ("{}" if args.no_colour else "\033[33m{}\033[0m").format
-        for mod, api in module_api.items():
+        for mod in module_api:
             sys.stdout.write(
                 "[{}]({}s)\n".format(
-                    yellow(mod), round(surface.import_times.get(mod, 0), 2)
+                    yellow(mod.path), round(surface.import_times.get(mod.path, 0), 2)
                 )
             )
-            sys.stdout.write(surface.format_api(api, not args.no_colour, "    "))
+            sys.stdout.write(surface.format_api(mod.body, not args.no_colour, "    "))
 
     if not args.output:
         return 0
 
     with open(args.output, "w") as handle:
-        serialize = {k: [surface.to_dict(n) for n in v] for k, v in module_api.items()}
+        serialize = [surface.to_dict(mod) for mod in module_api]
         json.dump(serialize, handle, indent=2)
     LOG.info("Saved API to {}".format(args.output))
     return 0

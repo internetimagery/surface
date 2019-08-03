@@ -24,19 +24,19 @@ DEFAULT    = 0b1000
 
 # Structs
 
-Var     = _nt("Var",     ("name", "type")) # type: Tuple[str, str]
+Var     = _nt("Var",     ("name", "type"))
 
-Arg     = _nt("Arg",     ("name", "type", "kind")) # type: Tuple[str, str, int]
+Arg     = _nt("Arg",     ("name", "type", "kind"))
 
-Func    = _nt("Func",    ("name", "args", "returns")) # type: Tuple[str, List[Arg], str]
+Func    = _nt("Func",    ("name", "args", "returns"))
 
-Class   = _nt("Class",   ("name", "body")) # type: Tuple[str, List[Any]]
+Class   = _nt("Class",   ("name", "body"))
 
-Module  = _nt("Module",  ("name", "path", "body")) # type: Tuple[str, str, List[Any]]
+Module  = _nt("Module",  ("name", "path", "body"))
 
-Unknown = _nt("Unknown", ("name", "info")) # type: Tuple[str, str]
+Unknown = _nt("Unknown", ("name", "info"))
 
-Change  = _nt("Change",  ("level", "type", "info")) # type: Tuple[str, str, str]
+Change  = _nt("Change",  ("level", "type", "info"))
 
 # Helper method
 

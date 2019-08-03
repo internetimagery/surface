@@ -47,7 +47,7 @@ class NewMethArgs(object):
         pass
 
 
-def type_changed(a):  # type: (Mapping[str, str]) -> Sequence[str]
+def type_changed(a):  # type: (Mapping[str, str]) -> List[str]
     return []
 
 

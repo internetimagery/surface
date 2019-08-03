@@ -29,7 +29,7 @@ from surface._base import (
 
 def get_api(
     name, exclude_modules=False, all_filter=False, depth=10
-):  # type: (str, bool, bool, int) -> Tuple[Any, ...]
+):  # type: (str, bool, bool, int) -> Module
     """
         Get a representation of the provided publicly exposed API.
 
@@ -40,14 +40,15 @@ def get_api(
             depth (int): Limit how far to spider out into the modules.
 
         Returns:
-            Tuple[Any, ...]: Representation of API
+            Tuple[Module, ...]: Representation of API
     """
     mod = _import_module(name)
     traversal = APITraversal(
         exclude_modules=exclude_modules, all_filter=all_filter, depth=depth
     )
     API = traversal.traverse(mod)
-    return tuple(API)
+    module = Module(name.rsplit(".", 1)[-1], name, tuple(API))
+    return module
 
 
 def format_api(api, colour=False, indent=""):  # type: (Iterable[Any], bool, str) -> str

@@ -64,7 +64,6 @@ class TestCompare(unittest.TestCase):
                 Change('minor', 'Added Arg', 'minorA.NewMethArgs.new_meth_kwarg_var.(b)'),
                 Change('minor', 'Kind Changed', 'minorA.NewMethArgs.change_meth_arg_opt.(a)'),
                 Change('minor', 'Type Changed', 'minorA.type_changed.(a), Was: "typing.Dict[str, str]", Now: "typing.Mapping[str, str]"'),
-                Change('minor', 'Return Type Changed', 'minorA.type_changed, Was: "typing.List[str]", Now: "typing.Sequence[str]"'),
                 Change('minor', 'Could not verify', 'minorA.UnknownChange.ohno: ERROR'),
             ]),
         )
@@ -97,10 +96,12 @@ class TestCompare(unittest.TestCase):
                 Change('major', 'Type Changed', 'majorA.arg_type_change.(b), Was: "str", Now: "int"'),
                 Change('major', 'Type Changed', 'majorA.arg_type_change.(c), Was: "bool", Now: "str"'),
                 Change('major', 'Return Type Changed', 'majorA.arg_type_change, Was: "int", Now: "bool"'),
+                Change('major', 'Return Type Changed', 'majorA.return_type_change_subtype, Was: "typing.List[str]", Now: "typing.Sequence[str]"'),
                 Change('major', 'Type Changed', 'majorA.MethTypeChange.meth_type_change.(a), Was: "int", Now: "bool"'),
                 Change('major', 'Type Changed', 'majorA.MethTypeChange.meth_type_change.(b), Was: "str", Now: "int"'),
                 Change('major', 'Type Changed', 'majorA.MethTypeChange.meth_type_change.(c), Was: "bool", Now: "str"'),
                 Change('major', 'Return Type Changed', 'majorA.MethTypeChange.meth_type_change, Was: "int", Now: "bool"'),
+
             ]),
         )
         # fmt: on
