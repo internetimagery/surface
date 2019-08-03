@@ -108,6 +108,9 @@ def compare_deep(
     old_map = {item.name: item for item in old_items}
     new_map = {item.name: item for item in new_items}
 
+    print("OLD", old_map.keys())
+    print("NEW", new_map.keys())
+
     # Check for renames
     changes.update(compare_names(basename, old_map, new_map))
 

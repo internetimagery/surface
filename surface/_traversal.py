@@ -152,8 +152,6 @@ class APITraversal(object):
     def _handle_function(
         self, name, value, parent
     ):  # type: (str, Any, Any) -> Union[Func, Unknown]
-        # TODO: Ensure we find the original classes and methods, and not wrappers.
-        # TODO: Though sigtools helps with this somewhat.
         try:
             sig = sigtools.signature(value)
         except (SyntaxError, ValueError) as err:
