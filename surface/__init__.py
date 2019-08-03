@@ -91,15 +91,22 @@ def format_api(api, colour=False, indent=""):  # type: (Iterable[Any], bool, str
 
 def bump_semantic_version(level, version):  # type: (str, str) -> str
     """ Bump version with the provided level """
-    parts = _re.match(r"(\d+)\.(\d+)\.(\d+)", version)
+    parts = _re.match(r"(\d+)(?:\.(\d+)(?:\.(\d+)|$)|$)", version)
     if not parts:
-        raise TypeError("Not a valid semantic version: {}".format(version))
-    if level == MAJOR:
-        return "{}.0.0".format(int(parts.group(1)) + 1)
-    if level == MINOR:
-        return "{}.{}.0".format(parts.group(1), int(parts.group(2)) + 1)
+        raise ValueError("Not a valid semantic version: {}".format(version))
+    if level not in (PATCH, MINOR, MAJOR):
+        raise ValueError("Invalid level {}".format(level))
+
+    major = int(parts.group(1))
+    minor = int(parts.group(2) or 0)
+    patch = int(parts.group(3) or 0)
+
     if level == PATCH:
-        return "{}.{}.{}".format(
-            parts.group(1), parts.group(2), int(parts.group(3)) + 1
-        )
-    raise ValueError("Unknown level {}".format(level))
+        patch += 1
+    elif level == MINOR or (level == MAJOR and major == 0):
+        minor += 1
+        patch = 0
+    elif level == MAJOR:
+        major += 1
+        minor = patch = 0
+    return "{}.{}.{}".format(major, minor, patch)
