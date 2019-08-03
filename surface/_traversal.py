@@ -4,6 +4,7 @@ if False:  # type checking
     from typing import *
 
 import re
+import sys
 import logging
 import os.path
 import inspect
@@ -126,8 +127,11 @@ class APITraversal(object):
             elif inspect.ismodule(value):
                 if self.exclude_modules:
                     continue
-                guard.add(value_id)
-                yield self._handle_module(name, value, obj, guard.copy())
+                if name in sys.builtin_module_names:
+                    yield Module(name, value.__name__, tuple())
+                else:
+                    guard.add(value_id)
+                    yield self._handle_module(name, value, obj, guard.copy())
             elif inspect.isclass(value):
                 guard.add(value_id)
                 yield self._handle_class(name, value, obj, guard.copy())
