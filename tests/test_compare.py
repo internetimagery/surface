@@ -13,11 +13,12 @@ root = os.path.join(os.path.dirname(__file__), "testdata", "test_mod_compare")
 class TestCompare(unittest.TestCase):
     @staticmethod
     def get_module(name, rename=""):
+        mod_name = rename or name
         module = imp.load_source(
-            rename or name, os.path.join(root, "{}.py".format(name))
+            mod_name, os.path.join(root, "{}.py".format(name))
         )
-        api = {rename or name: list(APITraversal().traverse(module))}
-        del sys.modules[rename or name]
+        api = [Module(mod_name, mod_name, tuple(APITraversal().traverse(module)))]
+        del sys.modules[mod_name]
         return api
 
     def test_no_change(self):

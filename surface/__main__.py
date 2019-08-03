@@ -77,14 +77,10 @@ def run_dump(args):  # type: (Any) -> int
 def run_compare(args):  # type: (Any) -> int
 
     with open(args.old, "r") as handle:
-        old_data = {
-            k: [surface.from_dict(n) for n in v] for k, v in json.load(handle).items()
-        }
+        old_data = sorted((surface.from_dict(mod) for mod in json.load(handle)), key=lambda m: m.path) # type: List[surface.Module]
 
     with open(args.new, "r") as handle:
-        new_data = {
-            k: [surface.from_dict(n) for n in v] for k, v in json.load(handle).items()
-        }
+        new_data = sorted((surface.from_dict(mod) for mod in json.load(handle)), key=lambda m: m.path) # type: List[surface.Module]
 
     purple = ("{}" if args.no_colour else "\033[35m{}\033[0m").format
     colours = {

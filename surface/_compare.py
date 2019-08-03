@@ -68,8 +68,8 @@ subtype_map = {
 
 
 def compare(
-    api_old,  # type: Mapping[str, Iterable[Any]]
-    api_new,  # type: Mapping[str, Iterable[Any]]
+    api_old,  # type: Sequence[Module]
+    api_new,  # type: Sequence[Module]
 ):  # type: (...) -> Set[Change]
     """
         Compare two API's, and return resulting changes.
@@ -79,12 +79,15 @@ def compare(
         major: version when you make incompatible API changes.
     """
     changes = set()  # type: Set[Change]
+    api_old_map = {m.path: m.body for m in api_old}
+    api_new_map = {m.path: m.body for m in api_new}
+
     # Check for renamed modules
-    changes.update(compare_names("", api_old, api_new))
+    changes.update(compare_names("", api_old_map, api_new_map))
 
     # Check for changes within modules
-    for name, new_mod in api_new.items():
-        old_mod = api_old.get(name)
+    for name, new_mod in api_new_map.items():
+        old_mod = api_old_map.get(name)
         if old_mod is not None:
             changes.update(compare_deep(name, old_mod, new_mod))
     return changes
