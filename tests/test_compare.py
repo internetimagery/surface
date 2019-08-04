@@ -14,9 +14,7 @@ class TestCompare(unittest.TestCase):
     @staticmethod
     def get_module(name, rename=""):
         mod_name = rename or name
-        module = imp.load_source(
-            mod_name, os.path.join(root, "{}.py".format(name))
-        )
+        module = imp.load_source(mod_name, os.path.join(root, "{}.py".format(name)))
         api = [Module(mod_name, mod_name, tuple(APITraversal().traverse(module)))]
         del sys.modules[mod_name]
         return api
@@ -75,7 +73,6 @@ class TestCompare(unittest.TestCase):
         self.assertEqual(changes, set([Change("minor", "Added", "minorC.something")]))
         changes = compare([], minorC)
         self.assertEqual(changes, set([Change("minor", "Added", "minorC")]))
-
 
     def test_major(self):
         majorA = self.get_module("majorA")

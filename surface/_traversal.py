@@ -10,6 +10,7 @@ import logging
 import os.path
 import inspect
 import traceback
+import importlib
 import sigtools  # type: ignore
 from surface._base import *
 from surface._type import get_type, get_type_func
@@ -24,7 +25,7 @@ __all__ = ["recurse", "APITraversal"]
 
 LOG = logging.getLogger(__name__)
 
-import_reg = re.compile(r"__init__\.(py[cd]?|so)$")
+import_reg = re.compile(r"__init__\.(py[cwd]?|so)$")
 
 builtin_types = tuple(b for b in builtins.__dict__.values() if isinstance(b, type))
 
