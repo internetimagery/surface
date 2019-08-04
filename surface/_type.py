@@ -16,7 +16,7 @@ import itertools
 
 try:
     from inspect import signature  # type: ignore
-except AttributeError:
+except ImportError:
     from funcsigs import signature  # type: ignore
 
 
