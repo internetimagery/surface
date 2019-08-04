@@ -49,3 +49,6 @@ class MethChanges(object):
     @staticmethod
     def static_to_class(a):
         pass
+
+def decorated(a): # type: (int) -> None
+    pass

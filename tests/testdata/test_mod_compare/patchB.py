@@ -49,3 +49,14 @@ class MethChanges(object):
     @staticmethod
     def static_to_class(a):
         pass
+
+def _decorator(func):
+    from functools import wraps
+    @wraps(func)
+    def inner(*args, **kwargs):
+        return func(*args, **kwargs)
+    return inner
+
+@_decorator
+def decorated(a): # type: (int) -> None
+    pass

@@ -11,15 +11,21 @@ import os.path
 import inspect
 import traceback
 import importlib
-import sigtools  # type: ignore
-from surface._base import *
-from surface._type import get_type, get_type_func
-from surface._utils import clean_err, import_module
 
 try:
     import builtins  # type: ignore
 except ImportError:
     import __builtin__ as builtins  # type: ignore
+
+try:
+    from inspect import signature
+except AttributeError:
+    from funcsigs import signature
+
+from surface._base import *
+from surface._type import get_type, get_type_func
+from surface._utils import clean_err, import_module
+
 
 __all__ = ["recurse", "APITraversal"]
 
@@ -154,7 +160,7 @@ class APITraversal(object):
         self, name, value, parent
     ):  # type: (str, Any, Any) -> Union[Func, Unknown]
         try:
-            sig = sigtools.signature(value)
+            sig = signature(value)
         except (SyntaxError, ValueError) as err:
             LOG.debug(traceback.format_exc())
             return Unknown(name, clean_err(err))
@@ -178,14 +184,14 @@ class APITraversal(object):
         self, name, value, parent
     ):  # type: (str, Any, Any) -> Union[Func, Unknown]
         try:
-            sig = sigtools.signature(value)
+            sig = signature(value)
         except (SyntaxError, ValueError) as err:
             LOG.debug(traceback.format_exc())
             return Unknown(name, clean_err(err))
 
         # We want to ignore "self" and "cls", as those are implementation details
         # and are not relevant for API comparisons
-        # It seems sigtools removes "cls" for us in class methods...
+        # It seems funcsigs removes "cls" for us in class methods...
         params = list(sig.parameters.items())
         param_types, return_type = get_type_func(value, name, parent)
         try:
