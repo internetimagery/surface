@@ -36,3 +36,7 @@ class TestSemanticBump(unittest.TestCase):
         self.assertEqual(bump_semantic_version(MAJOR, "1.2"), "2.0.0")
         # Major Zero version
         self.assertEqual(bump_semantic_version(MAJOR, "0.2.3"), "0.3.0")
+
+
+if __name__ == "__main__":
+    unittest.main()
