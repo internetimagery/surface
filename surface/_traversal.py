@@ -19,7 +19,7 @@ except ImportError:
 
 try:
     from inspect import signature  # type: ignore
-except AttributeError:
+except ImportError:
     from funcsigs import signature  # type: ignore
 
 from surface._base import *
