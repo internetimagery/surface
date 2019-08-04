@@ -15,10 +15,9 @@ import traceback
 import itertools
 
 try:
-    from inspect import signature
+    from inspect import signature  # type: ignore
 except AttributeError:
-    from funcsigs import signature
-
+    from funcsigs import signature  # type: ignore
 
 
 from surface._base import UNKNOWN

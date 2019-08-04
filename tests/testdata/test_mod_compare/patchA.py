@@ -50,5 +50,6 @@ class MethChanges(object):
     def static_to_class(a):
         pass
 
-def decorated(a): # type: (int) -> None
+
+def decorated(a):  # type: (int) -> None
     pass

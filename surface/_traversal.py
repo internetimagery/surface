@@ -18,9 +18,9 @@ except ImportError:
     import __builtin__ as builtins  # type: ignore
 
 try:
-    from inspect import signature
+    from inspect import signature  # type: ignore
 except AttributeError:
-    from funcsigs import signature
+    from funcsigs import signature  # type: ignore
 
 from surface._base import *
 from surface._type import get_type, get_type_func
