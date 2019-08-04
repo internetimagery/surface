@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import re
+import sys
 import os.path
 from distutils.core import setup
 
@@ -24,9 +25,9 @@ setup(
     url="https://github.com/internetimagery/surface",
     keywords=["development", "typing", "api", "semantic", "versioning"],
     packages=["surface"],
-    install_requires=["sigtools>=2"],
+    install_requires=["funcsigs"] if sys.version_info[0] == 2 else [],
     # python_requires=">=2.7,>=3.6",
     python_requires=">=2.7",
     license="MIT",
-    entry_points={"console_scripts": ["surface=surface.__main__"]},
+    entry_points={"console_scripts": ["surface=surface.__main__:main"]},
 )
