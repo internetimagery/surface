@@ -19,7 +19,7 @@ except ImportError:
 
 from surface._base import *
 from surface._type import get_type, get_type_func
-from surface._utils import clean_err, import_module, get_signature
+from surface._utils import clean_err, import_module, get_signature, get_source
 
 
 __all__ = ["recurse", "APITraversal"]
@@ -156,8 +156,7 @@ class APITraversal(object):
     ):  # type: (str, Any, Any) -> Union[Func, Unknown]
         try:
             sig = get_signature(value)
-        except (SyntaxError, ValueError) as err:
-            LOG.debug(traceback.format_exc())
+        except ValueError as err:
             return Unknown(name, clean_err(err))
 
         param_types, return_type = get_type_func(value, name, parent)
@@ -180,8 +179,7 @@ class APITraversal(object):
     ):  # type: (str, Any, Any) -> Union[Func, Unknown]
         try:
             sig = get_signature(value)
-        except (SyntaxError, ValueError) as err:
-            LOG.debug(traceback.format_exc())
+        except ValueError as err:
             return Unknown(name, clean_err(err))
 
         # We want to ignore "self" and "cls", as those are implementation details
@@ -189,18 +187,11 @@ class APITraversal(object):
         # It seems funcsigs removes "cls" for us in class methods...
         params = list(sig.parameters.items())
         param_types, return_type = get_type_func(value, name, parent)
-        try:
-            source = inspect.getsource(value)
-        except IOError:
-            pass
-        except TypeError as err:
-            LOG.debug(err)
-            pass
-        else:
-            if not "@staticmethod" in source and not "@classmethod" in source:
-                if len(param_types) == len(params):
-                    param_types = param_types[1:]
-                params = params[1:]
+        source = get_source(value)
+        if source and not "@staticmethod" in source and not "@classmethod" in source:
+            if len(param_types) == len(params):
+                param_types = param_types[1:]
+            params = params[1:]
         return Func(
             name,
             tuple(

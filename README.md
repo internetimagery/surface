@@ -55,5 +55,5 @@ Rough todo...
 - [x] Collect annotation typing information.
 - [x] Partial support for typing comments.
 - [x] Partial support for docstring typing (google style only, currently)
-- [ ] Reduce dependency on sigtools. It's useful but might be overkill here.
+- [ ] Utilize sigtools depth feature, to collect typing from comments on all arguments.
 - [ ] More and more and more tests.

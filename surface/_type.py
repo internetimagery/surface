@@ -16,7 +16,7 @@ import itertools
 
 from surface._base import UNKNOWN
 from surface._doc import parse_docstring
-from surface._utils import get_signature
+from surface._utils import get_signature, get_source
 
 
 LOG = logging.getLogger(__name__)
@@ -103,13 +103,8 @@ def get_type_func(
 
 
 def get_comment_type_func(value):  # type: (Any) -> Optional[Tuple[List[str], str]]
-    try:
-        source = inspect.getsource(value)
-    except IOError:
-        LOG.debug(traceback.format_exc())
-        return None
-    except TypeError as err:
-        LOG.debug(err)
+    source = get_source(value)
+    if not source:
         return None
 
     lines = iter(source.splitlines(True))

@@ -1,7 +1,5 @@
 """ Convenience CLI """
 
-from __future__ import print_function
-
 if False:  # type checking
     from typing import *
 

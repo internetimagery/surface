@@ -8,12 +8,15 @@ from surface._base import UNKNOWN
 
 type_chars = r"[\w\-\[\]\., `]+"
 
+
 def parse_docstring(docstring):  # type: (str) -> Optional[Tuple[Dict[str, str], str]]
     """ Parse out typing information from docstring """
     return handle_google(docstring)
 
-def clean_type(type_str): # type: (str) -> str
+
+def clean_type(type_str):  # type: (str) -> str
     return type_str.replace("`", "").strip()
+
 
 def handle_google(docstring):  # type: (str) -> Optional[Tuple[Dict[str, str], str]]
     # Find the first header, to establish indent
