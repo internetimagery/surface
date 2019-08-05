@@ -38,7 +38,7 @@ def clean_err(err):
         str(err),
     )
 
-
+# TODO: Look into inspect.unwrap for this and source code gathering.
 def get_signature(func):
     # handle bug in funcsigs
     restore_attr = False

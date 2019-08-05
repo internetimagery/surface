@@ -6,11 +6,14 @@ if False:  # type checking
 import re
 from surface._base import UNKNOWN
 
+type_chars = r"[\w\-\[\]\., `]+"
 
 def parse_docstring(docstring):  # type: (str) -> Optional[Tuple[Dict[str, str], str]]
     """ Parse out typing information from docstring """
     return handle_google(docstring)
 
+def clean_type(type_str): # type: (str) -> str
+    return type_str.replace("`", "").strip()
 
 def handle_google(docstring):  # type: (str) -> Optional[Tuple[Dict[str, str], str]]
     # Find the first header, to establish indent
@@ -30,10 +33,10 @@ def handle_google(docstring):  # type: (str) -> Optional[Tuple[Dict[str, str], s
         header_name = header.group(1).lower()
         if header_name in ("arg", "args", "arguments", "parameters"):
             params = {
-                p.group(1): p.group(2).strip()
+                p.group(1): clean_type(p.group(2))
                 for p in re.finditer(
-                    r"^{}[ \t]+([\w\-]+) *(?:\(([\w\-\[\]\., ]+)\) *):".format(
-                        header_indent
+                    r"^{}[ \t]+([\w\-]+) *\(({})\)(?: *: .+| *)$".format(
+                        header_indent, type_chars
                     ),
                     docstring[
                         header.end() : headers[i + 1].start()
@@ -45,12 +48,12 @@ def handle_google(docstring):  # type: (str) -> Optional[Tuple[Dict[str, str], s
             }
         elif header_name in ("yield", "yields", "return", "returns"):
             returns = re.search(
-                r"^{}[ \t]+([\w\-\[\]\., ]+) *:?".format(header_indent),
+                r"^{}[ \t]+({})(?: *: .+| *)$".format(header_indent, type_chars),
                 docstring[header.end() :],
                 re.M,
             )
             if returns:
-                return_type = returns.group(1).strip()
+                return_type = clean_type(returns.group(1))
                 if "yield" in header_name:
                     return_type = "typing.Iterable[{}]".format(return_type)
     if params or return_type:

@@ -35,6 +35,6 @@ def func3():
 def func4(num):
     """ print number
         Args:
-            num (int): some number
+            num (int)
     """
     print(num)
