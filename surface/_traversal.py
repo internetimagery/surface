@@ -17,14 +17,9 @@ try:
 except ImportError:
     import __builtin__ as builtins  # type: ignore
 
-try:
-    from inspect import signature  # type: ignore
-except ImportError:
-    from funcsigs import signature  # type: ignore
-
 from surface._base import *
 from surface._type import get_type, get_type_func
-from surface._utils import clean_err, import_module
+from surface._utils import clean_err, import_module, get_signature
 
 
 __all__ = ["recurse", "APITraversal"]
@@ -160,7 +155,7 @@ class APITraversal(object):
         self, name, value, parent
     ):  # type: (str, Any, Any) -> Union[Func, Unknown]
         try:
-            sig = signature(value)
+            sig = get_signature(value)
         except (SyntaxError, ValueError) as err:
             LOG.debug(traceback.format_exc())
             return Unknown(name, clean_err(err))
@@ -184,7 +179,7 @@ class APITraversal(object):
         self, name, value, parent
     ):  # type: (str, Any, Any) -> Union[Func, Unknown]
         try:
-            sig = signature(value)
+            sig = get_signature(value)
         except (SyntaxError, ValueError) as err:
             LOG.debug(traceback.format_exc())
             return Unknown(name, clean_err(err))

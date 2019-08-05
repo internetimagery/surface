@@ -61,6 +61,6 @@ def _decorator(func):
     return inner
 
 
-@_decorator
+# @_decorator TODO! python2 not supported yet
 def decorated(a):  # type: (int) -> None
     pass

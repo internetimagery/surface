@@ -14,14 +14,9 @@ import tokenize
 import traceback
 import itertools
 
-try:
-    from inspect import signature  # type: ignore
-except ImportError:
-    from funcsigs import signature  # type: ignore
-
-
 from surface._base import UNKNOWN
 from surface._doc import parse_docstring
+from surface._utils import get_signature
 
 
 LOG = logging.getLogger(__name__)
@@ -180,7 +175,7 @@ def get_docstring_type_func(value):  # type: (Any) -> Optional[Tuple[List[str], 
         return None
     params_dict, return_type = result
     if params_dict:
-        sig = signature(value)
+        sig = get_signature(value)
         params = [params_dict.get(name, UNKNOWN) for name in sig.parameters]
     else:
         params = []
@@ -188,7 +183,7 @@ def get_docstring_type_func(value):  # type: (Any) -> Optional[Tuple[List[str], 
 
 
 def get_annotate_type_func(value, name):  # type: (Any, str) -> Tuple[List[str], str]
-    sig = signature(value)
+    sig = get_signature(value)
     return_type = (
         handle_live_annotation(sig.return_annotation)
         if sig.return_annotation is not sig.empty
