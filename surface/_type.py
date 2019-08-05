@@ -16,6 +16,7 @@ import itertools
 
 from surface._base import UNKNOWN
 from surface._doc import parse_docstring
+from surface._comment import get_comment
 from surface._utils import get_signature, get_source
 
 
@@ -103,6 +104,7 @@ def get_type_func(
 
 
 def get_comment_type_func(value):  # type: (Any) -> Optional[Tuple[List[str], str]]
+    get_comment(value)
     source = get_source(value)
     if not source:
         return None

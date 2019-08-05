@@ -3,7 +3,7 @@ python:
 - '2.7'
 - '3.6'
 install:
-- pip install surface && surface -q dump -o before.json && surface -V > version.txt
+# - pip install surface && surface -q dump -o before.json && surface -V > version.txt
 - pip install -e ./
 - ./py3 pip install mypy
 - ./py3 pip install black
