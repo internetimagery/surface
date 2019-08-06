@@ -11,6 +11,8 @@ script:
 - python tests
 - ./py3 mypy surface
 - ./py3 black --check surface
+- surface dump surface -o after.json
+- surface compare before.json after.json
 deploy:
   provider: pypi
   skip_existing: true
