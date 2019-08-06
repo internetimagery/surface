@@ -62,6 +62,7 @@ class StaticMap(object):
 
 
 def get_comment(func): # type: (Any) -> Optional[Tuple[Dict[str, str], str]]
+    return
     try:
         source = inspect.getsource(func)
     except (IOError, TypeError) as err:
