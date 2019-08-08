@@ -56,7 +56,7 @@ class StaticMap(object):
         sig_match = type_comment_sig_reg.match(sig_comment[1])
         if not sig_match:
             return None
-        return sig_match.group(1).strip(), sig_match.group(2).strip()
+        return (sig_match.group(1) or "").strip(), sig_match.group(2).strip()
 
     def iter_func(funcDef): # type: (ast.FunctionDef) -> Iterable[Tuple[name, Tuple[int, int]]]
         for arg in funcDef.args.args:
@@ -85,13 +85,10 @@ def get_comment(func): # type: (Any) -> Optional[Tuple[Dict[str, str], str]]
 
     # Normalize return_type
     context = func.__globals__
-    utils.normalize_type(return_comment, context)
-
-    # TODO: Make return type normal.
-    print(return_comment)
+    return_type = utils.normalize_type(return_comment, context)
 
     if not param_comment: # No parameters, nothing more to do.
-        return {}, return_comment
+        return {}, return_type
 
     # Parse signature
     if param_comment != "...":

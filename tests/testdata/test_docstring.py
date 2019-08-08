@@ -3,7 +3,7 @@ def func1(a, b, c):
 
         Args:
             a (int): a number
-            b (str): some text
+            b (`str`): some text
             c (Dict[str, bool]): some kind of mapping
 
         Returns:
