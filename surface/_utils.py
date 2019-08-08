@@ -4,12 +4,16 @@ if False:
     from typing import *
 
 import re
+import ast
 import time
+import types
 import inspect
 import logging
 import importlib
 import traceback
 import sigtools  # type: ignore
+
+from surface._base import UNKNOWN, TYPING_ATTRS
 
 LOG = logging.getLogger(__name__)
 
@@ -65,3 +69,42 @@ def get_source(func):  # type: (Any) -> str
     except TypeError as err:
         LOG.debug(err)
     return ""
+
+def normalize_type(type_string, context): # type: (str, Dict[str, Any]) -> str
+    try:
+        root = ast.parse(type_string).body[0].value
+    except SyntaxError:
+        return UNKNOWN
+
+    updates = {}
+    stack = [root]
+    while stack:
+        node = stack.pop()
+
+        # eg: myVariable
+        if isinstance(node, ast.Name):
+            parent = context.get(node.id) # in scope?
+            if parent:
+                mod = inspect.getmodule(parent)
+                if mod:
+                    updates[node.col_offset] = mod.__name__
+            elif node.id in TYPING_ATTRS: # special case for typing
+                updates[node.col_offset] = "typing"
+
+        # eg: List[something] or Dict[str, int]
+        elif isinstance(node, ast.Subscript):
+            stack.append(node.value)
+            stack.append(node.slice.value)
+
+        # eg: val1, val2
+        elif isinstance(node, ast.Tuple):
+            stack.extend(node.elts)
+
+        # eg: val1.val2
+        elif isinstance(node, ast.Attribute):
+            stack.append(node.value)
+
+    if updates:
+        for i in sorted(updates.keys(), reverse=True):
+            type_string = type_string[:i] + updates[i] + "." + type_string[i:]
+    return type_string

@@ -12,12 +12,14 @@ import tokenize
 import traceback
 import collections
 
+import surface._utils as utils
+from surface._base import TYPE_CHARS
+
 LOG = logging.getLogger(__name__)
 
-comment_chars = r"[\w\.]+(?:[\w\.,\[\] ]+)"
 func_header_reg = re.compile(r"^[ \t]*(def \w+)", re.M)
-type_comment_reg = re.compile(r"# +type: ({})".format(comment_chars))
-type_comment_sig_reg = re.compile(r"# +type: \(({0})?\) +-> +({0})".format(comment_chars))
+type_comment_reg = re.compile(r"# +type: ({})".format(TYPE_CHARS))
+type_comment_sig_reg = re.compile(r"# +type: \(({0})?\) +-> +({0})".format(TYPE_CHARS))
 
 
 class StaticMap(object):
@@ -56,18 +58,13 @@ class StaticMap(object):
             return None
         return sig_match.group(1).strip(), sig_match.group(2).strip()
 
-    @staticmethod
-    def normalize_type(type_string, context): # type: (str, Dict[str, Any]) -> str
-        return UNKNOWN
-
-
     def iter_func(funcDef): # type: (ast.FunctionDef) -> Iterable[Tuple[name, Tuple[int, int]]]
         for arg in funcDef.args.args:
             yield arg.arg, (arg.lineno, arg.col_offset)
 
 
 def get_comment(func): # type: (Any) -> Optional[Tuple[Dict[str, str], str]]
-    return
+    # return
     try:
         source = inspect.getsource(func)
     except (IOError, TypeError) as err:
@@ -87,6 +84,9 @@ def get_comment(func): # type: (Any) -> Optional[Tuple[Dict[str, str], str]]
     param_comment, return_comment = sig_parts
 
     # Normalize return_type
+    context = func.__globals__
+    utils.normalize_type(return_comment, context)
+
     # TODO: Make return type normal.
     print(return_comment)
 
