@@ -5,8 +5,6 @@ if False:  # type checking
 
 __version__ = "0.3.6"
 
-someVar = 123
-
 import re as _re
 from surface._utils import import_module as _import_module, import_times
 from surface._traversal import APITraversal, recurse

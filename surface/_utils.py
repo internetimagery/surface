@@ -26,11 +26,11 @@ def import_module(name):  # type: (str) -> Any
             import_times[name] = time.time() - start
 
 
-def clean_err(err):  # type: (Any) -> str
+def clean_repr(err):  # type: (Any) -> str
     """ Strip out memory parts of an error """
     return re.sub(
-        r"<([\w\.]+) object at (0x[\da-zA-Z]+)>",
-        r"<\1 object at memory_address>",
+        r"<(.+) at (0x[0-9A-Fa-f]+)>",
+        r"<\1 at memory_address>",
         str(err),
     )
 

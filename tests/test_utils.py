@@ -1,6 +1,6 @@
 import unittest
 
-from surface._utils import clean_err
+from surface._utils import clean_repr
 
 
 class A(object):
@@ -19,7 +19,7 @@ class TestErrClean(unittest.TestCase):
             a2.err()
         except RuntimeError as err:
             err2 = str(err)
-        clean1, clean2 = clean_err(err1), clean_err(err2)
+        clean1, clean2 = clean_repr(err1), clean_repr(err2)
         self.assertNotEqual(err1, err2)
         self.assertEqual(clean1, clean2)
 

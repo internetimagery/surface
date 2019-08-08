@@ -19,7 +19,7 @@ except ImportError:
 
 from surface._base import *
 from surface._type import get_type, get_type_func
-from surface._utils import clean_err, import_module, get_signature, get_source
+from surface._utils import clean_repr, import_module, get_signature, get_source
 
 
 __all__ = ["recurse", "APITraversal"]
@@ -114,12 +114,12 @@ class APITraversal(object):
             except Exception as err:
                 # If we cannot get the attribute, keep going. Just record that the attribute was there.
                 LOG.debug(traceback.format_exc())
-                yield Unknown(name, clean_err(err))
+                yield Unknown(name, clean_repr(err))
                 continue
 
             value_id = id(value)
             if value_id in guard:
-                yield Unknown(name, "Circular Reference: {}".format(repr(value)))
+                yield Unknown(name, "Circular Reference: {}".format(clean_repr(repr(value))))
             elif value is None:
                 yield Var(name, "None")
             elif value in builtin_types:
@@ -157,7 +157,7 @@ class APITraversal(object):
         try:
             sig = get_signature(value)
         except ValueError as err:
-            return Unknown(name, clean_err(err))
+            return Unknown(name, clean_repr(err))
 
         param_types, return_type = get_type_func(value, name, parent)
         return Func(
@@ -180,7 +180,7 @@ class APITraversal(object):
         try:
             sig = get_signature(value)
         except ValueError as err:
-            return Unknown(name, clean_err(err))
+            return Unknown(name, clean_repr(err))
 
         # We want to ignore "self" and "cls", as those are implementation details
         # and are not relevant for API comparisons

@@ -14,9 +14,10 @@ import collections
 
 LOG = logging.getLogger(__name__)
 
+comment_chars = r"[\w\.]+(?:[\w\.,\[\] ]+)"
 func_header_reg = re.compile(r"^[ \t]*(def \w+)", re.M)
-type_comment_reg = re.compile(r"# +type: ([\w ,\[\]\.]+)")
-type_comment_sig_reg = re.compile(r"# +type: \(([\w ,\[\]\.]*)\) +-> +([\w ,\[\]\.]+)")
+type_comment_reg = re.compile(r"# +type: ({})".format(comment_chars))
+type_comment_sig_reg = re.compile(r"# +type: \(({0})?\) +-> +({0})".format(comment_chars))
 
 
 class StaticMap(object):
@@ -54,6 +55,10 @@ class StaticMap(object):
         if not sig_match:
             return None
         return sig_match.group(1).strip(), sig_match.group(2).strip()
+
+    @staticmethod
+    def normalize_type(type_string, context): # type: (str, Dict[str, Any]) -> str
+        return UNKNOWN
 
 
     def iter_func(funcDef): # type: (ast.FunctionDef) -> Iterable[Tuple[name, Tuple[int, int]]]
