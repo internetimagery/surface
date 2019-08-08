@@ -32,11 +32,7 @@ def import_module(name):  # type: (str) -> Any
 
 def clean_repr(err):  # type: (Any) -> str
     """ Strip out memory parts of an error """
-    return re.sub(
-        r"<(.+) at (0x[0-9A-Fa-f]+)>",
-        r"<\1 at memory_address>",
-        str(err),
-    )
+    return re.sub(r"<(.+) at (0x[0-9A-Fa-f]+)>", r"<\1 at memory_address>", str(err))
 
 
 def get_signature(func):  # type: (Any) -> sigtools.Signature
@@ -70,10 +66,11 @@ def get_source(func):  # type: (Any) -> str
         LOG.debug(err)
     return ""
 
-def normalize_type(type_string, context): # type: (str, Dict[str, Any]) -> str
+
+def normalize_type(type_string, context):  # type: (str, Dict[str, Any]) -> str
     try:
-        root = ast.parse(type_string).body[0].value
-    except SyntaxError:
+        root = ast.parse(type_string).body[0].value  # type: ignore
+    except (SyntaxError, AttributeError, IndexError):
         return UNKNOWN
 
     updates = {}
@@ -83,18 +80,18 @@ def normalize_type(type_string, context): # type: (str, Dict[str, Any]) -> str
 
         # eg: myVariable
         if isinstance(node, ast.Name):
-            parent = context.get(node.id) # in scope?
+            parent = context.get(node.id)  # in scope?
             if parent:
                 mod = inspect.getmodule(parent)
                 if mod:
                     updates[node.col_offset] = mod.__name__
-            elif node.id in TYPING_ATTRS: # special case for typing
+            elif node.id in TYPING_ATTRS:  # special case for typing
                 updates[node.col_offset] = "typing"
 
         # eg: List[something] or Dict[str, int]
         elif isinstance(node, ast.Subscript):
             stack.append(node.value)
-            stack.append(node.slice.value)
+            stack.append(node.slice.value)  # type: ignore
 
         # eg: val1, val2
         elif isinstance(node, ast.Tuple):

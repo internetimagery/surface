@@ -119,7 +119,9 @@ class APITraversal(object):
 
             value_id = id(value)
             if value_id in guard:
-                yield Unknown(name, "Circular Reference: {}".format(clean_repr(repr(value))))
+                yield Unknown(
+                    name, "Circular Reference: {}".format(clean_repr(repr(value)))
+                )
             elif value is None:
                 yield Var(name, "None")
             elif value in builtin_types:

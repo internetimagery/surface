@@ -23,7 +23,6 @@ type_comment_sig_reg = re.compile(r"# +type: \(({0})?\) +-> +({0})".format(TYPE_
 
 
 class StaticMap(object):
-
     def __init__(self, tokens, token_map, func):
         self._tokens = tokens
         self._token_map = token_map
@@ -34,7 +33,7 @@ class StaticMap(object):
         header = func_header_reg.match(source)
         if not header:
             return None
-        source = source[header.start(1):]
+        source = source[header.start(1) :]
 
         # Parse source code
         lines = iter(source.splitlines(True))
@@ -58,13 +57,14 @@ class StaticMap(object):
             return None
         return (sig_match.group(1) or "").strip(), sig_match.group(2).strip()
 
-    def iter_func(funcDef): # type: (ast.FunctionDef) -> Iterable[Tuple[name, Tuple[int, int]]]
-        for arg in funcDef.args.args:
-            yield arg.arg, (arg.lineno, arg.col_offset)
+    # def iter_func(
+    #     self, funcDef
+    # ):  # type: (ast.FunctionDef) -> Iterable[Tuple[name, Tuple[int, int]]]
+    #     for arg in funcDef.args.args:
+    #         yield arg.arg, (arg.lineno, arg.col_offset)
 
 
-def get_comment(func): # type: (Any) -> Optional[Tuple[Dict[str, str], str]]
-    # return
+def get_comment(func):  # type: (Any) -> Optional[Tuple[Dict[str, str], str]]
     try:
         source = inspect.getsource(func)
     except (IOError, TypeError) as err:
@@ -87,9 +87,10 @@ def get_comment(func): # type: (Any) -> Optional[Tuple[Dict[str, str], str]]
     context = func.__globals__
     return_type = utils.normalize_type(return_comment, context)
 
-    if not param_comment: # No parameters, nothing more to do.
+    if not param_comment:  # No parameters, nothing more to do.
         return {}, return_type
 
+    return None
     # Parse signature
     if param_comment != "...":
         param_ast = ast.parse(param_comment).body[0].value  # type: ignore
@@ -104,9 +105,7 @@ def get_comment(func): # type: (Any) -> Optional[Tuple[Dict[str, str], str]]
                 .strip()
                 for i in range(len(param_ast.elts) - 1)
             ]
-            params.append(
-                str(param_comment[param_ast.elts[-1].col_offset :].strip())
-            )
+            params.append(str(param_comment[param_ast.elts[-1].col_offset :].strip()))
         else:
             params = [str(param_comment)]
     #
