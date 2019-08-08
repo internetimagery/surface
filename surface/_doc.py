@@ -4,10 +4,7 @@ if False:  # type checking
     from typing import *
 
 import re
-from surface._base import UNKNOWN
-
-type_chars = r"[\w\-\[\]\., `]+"
-
+from surface._base import UNKNOWN, TYPE_CHARS
 
 def parse_docstring(docstring):  # type: (str) -> Optional[Tuple[Dict[str, str], str]]
     """ Parse out typing information from docstring """
@@ -38,8 +35,8 @@ def handle_google(docstring):  # type: (str) -> Optional[Tuple[Dict[str, str], s
             params = {
                 p.group(1): clean_type(p.group(2))
                 for p in re.finditer(
-                    r"^{}[ \t]+([\w\-]+) *\(({})\)(?: *: .+| *)$".format(
-                        header_indent, type_chars
+                    r"^{}[ \t]+([\w\-]+) *\((`?{}`?)\)(?: *: .+| *)$".format(
+                        header_indent, TYPE_CHARS
                     ),
                     docstring[
                         header.end() : headers[i + 1].start()
@@ -51,7 +48,7 @@ def handle_google(docstring):  # type: (str) -> Optional[Tuple[Dict[str, str], s
             }
         elif header_name in ("yield", "yields", "return", "returns"):
             returns = re.search(
-                r"^{}[ \t]+({})(?: *: .+| *)$".format(header_indent, type_chars),
+                r"^{}[ \t]+(`?{}`?)(?: *: .+| *)$".format(header_indent, TYPE_CHARS),
                 docstring[header.end() :],
                 re.M,
             )

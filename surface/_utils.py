@@ -19,6 +19,8 @@ LOG = logging.getLogger(__name__)
 
 import_times = {}  # type: Dict[str, float]
 
+# Cache signature parsing
+sig_cache = {} # type: Dict[int, sigtools.Signature]
 
 def import_module(name):  # type: (str) -> Any
     start = time.time()
@@ -36,17 +38,23 @@ def clean_repr(err):  # type: (Any) -> str
 
 
 def get_signature(func):  # type: (Any) -> sigtools.Signature
+    func_id = id(func)
+    if func_id in sig_cache:
+        return sig_cache[func_id]
+
     # handle bug in funcsigs
     restore_attr = False
     if hasattr(func, "__annotations__") and func.__annotations__ is None:
         func.__annotations__ = {}
         restore_attr = True
     try:
-        return sigtools.signature(func)
+        sig_cache[func_id] = sigtools.signature(func)
     except (SyntaxError, ValueError) as err:
         LOG.debug("Error getting signature for {}".format(func))
         LOG.debug(traceback.format_exc())
         raise ValueError(str(err))
+    else:
+        return sig_cache[func_id]
     finally:
         if restore_attr:
             func.__annotations__ = None
