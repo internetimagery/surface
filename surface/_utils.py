@@ -20,7 +20,8 @@ LOG = logging.getLogger(__name__)
 import_times = {}  # type: Dict[str, float]
 
 # Cache signature parsing
-sig_cache = {} # type: Dict[int, sigtools.Signature]
+sig_cache = {}  # type: Dict[int, sigtools.Signature]
+
 
 def import_module(name):  # type: (str) -> Any
     start = time.time()

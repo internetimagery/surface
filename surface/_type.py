@@ -106,7 +106,7 @@ def get_type_func(
 def get_comment_type_func(value):  # type: (Any) -> Optional[Tuple[List[str], str]]
     result = get_comment(value)
     if result:
-        params, return_type = result
+        _, return_type = result
         return [], return_type
 
     source = get_source(value)

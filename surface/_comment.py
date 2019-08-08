@@ -12,7 +12,7 @@ import tokenize
 import traceback
 import collections
 
-import surface._utils as utils
+from surface._utils import normalize_type, get_signature
 from surface._base import TYPE_CHARS
 
 LOG = logging.getLogger(__name__)
@@ -22,14 +22,16 @@ type_comment_reg = re.compile(r"# +type: ({})".format(TYPE_CHARS))
 type_comment_sig_reg = re.compile(r"# +type: \(({0})?\) +-> +({0})".format(TYPE_CHARS))
 
 
-class StaticMap(object):
-    def __init__(self, tokens, token_map, func):
+class Static(object):
+    def __init__(
+        self, tokens, token_map, ast
+    ):  # type: (Sequence[Any], Dict[Tuple[int, int], int], Any) -> None
         self._tokens = tokens
         self._token_map = token_map
-        self._func = func
+        self._ast = ast
 
     @classmethod
-    def parse(cls, source):
+    def parse(cls, source):  # type: (str) -> Optional[Static]
         header = func_header_reg.match(source)
         if not header:
             return None
@@ -42,12 +44,15 @@ class StaticMap(object):
         except tokenize.TokenError:
             LOG.debug(traceback.format_exc())
             return None
-        func = ast.parse(source).body[0]
+        try:
+            parsed_ast = ast.parse(source).body[0]
+        except SyntaxError:
+            return None
         token_map = {tokens[i][2]: i for i in range(len(tokens))}
-        return cls(tokens, token_map, func)
+        return cls(tokens, token_map, parsed_ast)
 
-    def get_signature(self):
-        body = self._func.body[0]
+    def get_signature(self):  # type: () -> Optional[Tuple[str, str]]
+        body = self._ast.body[0]
         body_index = self._token_map[body.lineno, body.col_offset]
         sig_comment = self._tokens[body_index - 3]
         if sig_comment[0] != tokenize.COMMENT:
@@ -56,6 +61,13 @@ class StaticMap(object):
         if not sig_match:
             return None
         return (sig_match.group(1) or "").strip(), sig_match.group(2).strip()
+
+    def get_params(self):  # type: () -> Optional[List[str]]
+        return None
+
+    @property
+    def is_elipsis(self):
+        return isinstance(self._ast, ast.Elipsis)
 
     # def iter_func(
     #     self, funcDef
@@ -73,7 +85,7 @@ def get_comment(func):  # type: (Any) -> Optional[Tuple[Dict[str, str], str]]
     if not source:
         return None
 
-    mapping = StaticMap.parse(source)
+    mapping = Static.parse(source)
     if not mapping:
         return None
 
@@ -85,29 +97,39 @@ def get_comment(func):  # type: (Any) -> Optional[Tuple[Dict[str, str], str]]
 
     # Normalize return_type
     context = func.__globals__
-    return_type = utils.normalize_type(return_comment, context)
+    return_type = normalize_type(return_comment, context)
 
     if not param_comment:  # No parameters, nothing more to do.
         return {}, return_type
 
-    return None
-    # Parse signature
-    if param_comment != "...":
-        param_ast = ast.parse(param_comment).body[0].value  # type: ignore
-        if isinstance(param_ast, ast.Tuple) and param_ast.elts:
-            params = [
-                str(
-                    param_comment[
-                        param_ast.elts[i].col_offset : param_ast.elts[i + 1].col_offset
-                    ]
-                )
-                .rsplit(",", 1)[0]
-                .strip()
-                for i in range(len(param_ast.elts) - 1)
-            ]
-            params.append(str(param_comment[param_ast.elts[-1].col_offset :].strip()))
-        else:
-            params = [str(param_comment)]
+    param_map = Static.parse(param_comment)
+    if not param_map:
+        return None
+
+    if param_map.is_elipsis:
+        # Individual parameters must have typing...
+        return None
+
+    else:
+        # Match parameters to function values
+        params = param_map.get_params()
+        return None
+
+        # param_ast = ast.parse(param_comment).body[0].value  # type: ignore
+        # if isinstance(param_ast, ast.Tuple) and param_ast.elts:
+        #     params = [
+        #         str(
+        #             param_comment[
+        #                 param_ast.elts[i].col_offset : param_ast.elts[i + 1].col_offset
+        #             ]
+        #         )
+        #         .rsplit(",", 1)[0]
+        #         .strip()
+        #         for i in range(len(param_ast.elts) - 1)
+        #     ]
+        #     params.append(str(param_comment[param_ast.elts[-1].col_offset :].strip()))
+        # else:
+        #     params = [str(param_comment)]
     #
     #
     #

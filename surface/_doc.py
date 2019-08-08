@@ -6,6 +6,7 @@ if False:  # type checking
 import re
 from surface._base import UNKNOWN, TYPE_CHARS
 
+
 def parse_docstring(docstring):  # type: (str) -> Optional[Tuple[Dict[str, str], str]]
     """ Parse out typing information from docstring """
     return handle_google(docstring)
