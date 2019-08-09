@@ -14,7 +14,10 @@ if False:  # type checking
 # then check "git merge-base HEAD branch_name"
 # and look for that commit within the provided directory
 
-
+# TODO:
+# Need a more comprehensive type comparison
+# at the very least it needs to check for ~unknown within a type.
+# eg Optional[~unknown] -> Optional[int]
 
 import re
 import sys

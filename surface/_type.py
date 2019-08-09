@@ -84,87 +84,53 @@ type_attr_reg = re.compile(
     r"(?:^|(?<=[, \[]))(?:typing\.)?({})\b".format("|".join(typing_attrs))
 )
 
+cache_type = {} # type: Dict[int, str]
 
 def get_type(value, name="", parent=None):  # type: (Any, str, Any) -> str
-    return (
-        get_comment_type(value, name, parent)
-        or get_annotate_type(value, name, parent)
-        or get_live_type(value)
-    )
+    value_id = id(value)
+    if value_id not in cache_type:
+
+        cache_type[value_id] = (
+            get_comment_type(value, name, parent)
+            or get_annotate_type(value, name, parent)
+            or get_live_type(value)
+        )
+    return cache_type[value_id]
 
 
 def get_type_func(
     value, name="", parent=None
 ):  # type: (Any, str, Any) -> Tuple[List[str], str]
-    return (
-        get_comment_type_func(value)
-        or get_docstring_type_func(value)
-        or get_annotate_type_func(value, name)
-    )
+    value_id = id(value)
+    if value_id not in cache_type:
+
+        cache_type[value_id] = (
+            get_comment_type_func(value)
+            or get_docstring_type_func(value)
+            or get_annotate_type_func(value, name)
+        )
+    return cache_type[value_id]
 
 
 def get_comment_type_func(value):  # type: (Any) -> Optional[Tuple[List[str], str]]
-    result = get_comment(value)
-    if result and not result[0]:
-        _, return_type = result
-        return [], return_type
-
-    source = get_source(value)
-    if not source:
+    sig = get_signature(value)
+    if not sig:
         return None
 
-    lines = iter(source.splitlines(True))
-    readline = lambda: next(lines)
-    try:
-        tokens = list(tokenize.generate_tokens(readline))
-    except tokenize.TokenError:
-        LOG.debug(traceback.format_exc())
+    # All the sources touched by this function (eg decorators etc)
+    source_chain = sorted(sig.sources["+depths"].items(), key=lambda x: x[1])
+    root_typing = get_comment(source_chain[-1][0])
+    if not root_typing: # If we have no typing info at the base level ignore decorators.
         return None
 
-    params = []
-    sig_comment = None
-    in_sig = False
+    # Decorators could augment this return value... probably need a merge algorithm
+    return_type = root_typing[1] # Use root level return type as implied return
 
-    for i, tok in enumerate(tokens):
-        if not in_sig and tok[0] == token.NAME and tok[1] == "def":
-            in_sig = True
-        elif in_sig and tok[0] == token.NEWLINE and i < len(tokens) - 1:
-            sig_comment = sig_comment or type_comment_sig_reg.match(tokens[i + 1][1])
-            break
-        elif in_sig and tok[0] == tokenize.COMMENT:
-            param = type_comment_reg.match(tok[1])
-            if param:
-                params.append(normalize(param.group(1).strip()))
-            sig_comment = sig_comment or type_comment_sig_reg.match(tok[1])
-    if not sig_comment:
-        return None
-
-    # Validate the same number of params as comment params? Assume mypy etc will do it for us?
-
-    return_type = sig_comment.group(2)
-    param_comment = sig_comment.group(1).strip()
-    if param_comment and param_comment != "...":
-        param_ast = ast.parse(param_comment).body[0].value  # type: ignore
-        if isinstance(param_ast, ast.Tuple) and param_ast.elts:
-            params = [
-                normalize(
-                    param_comment[
-                        param_ast.elts[i].col_offset : param_ast.elts[i + 1].col_offset
-                    ]
-                )
-                .rsplit(",", 1)[0]
-                .strip()
-                for i in range(len(param_ast.elts) - 1)
-            ]
-            params.append(
-                normalize(param_comment[param_ast.elts[-1].col_offset :].strip())
-            )
-        else:
-            params = [normalize(param_comment)]
-    if return_type:
-        return params, normalize(return_type)
-
-    return None
+    source_map = {src: get_comment(src) for src, _ in source_chain}
+    params_map = {name: source_map[src[0]][0][name] for name, src in sig.sources.items() if not name.startswith("+") and source_map.get(src[0]) and name in source_map[src[0]][0]}
+    # this needs a method check of some kind...
+    params = [params_map[name] for name in sig.parameters.keys() if name in params_map]
+    return params, return_type
 
 
 def get_docstring_type_func(value):  # type: (Any) -> Optional[Tuple[List[str], str]]

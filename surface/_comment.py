@@ -13,7 +13,7 @@ import traceback
 import collections
 
 from surface._utils import normalize_type, get_signature, get_tokens
-from surface._base import TYPE_CHARS
+from surface._base import TYPE_CHARS, UNKNOWN
 
 LOG = logging.getLogger(__name__)
 
@@ -48,7 +48,7 @@ class FuncMapper(Mapper):
 
     @classmethod
     def parse(cls, source):  # type: (str) -> Optional[FuncMapper]
-        header = func_header_reg.match(source)
+        header = func_header_reg.search(source)
         if not header:
             return None
         source = source[header.start(1) :]
@@ -79,17 +79,34 @@ class FuncMapper(Mapper):
             return None
         return (sig_match.group(1) or "").strip(), sig_match.group(2).strip()
 
-    # def iter_func(
-    #     self, funcDef
-    # ):  # type: (ast.FunctionDef) -> Iterable[Tuple[name, Tuple[int, int]]]
-    #     for arg in funcDef.args.args:
-    #         yield arg.arg, (arg.lineno, arg.col_offset)
+    def get_params(self):  # type: () -> Dict[str, str]
+        arg_node = self._ast.args
+        all_args = all_args = arg_node.args + (arg_node.vararg or []) + getattr(arg_node, "kwonlyargs", []) + (arg_node.kwarg or [])
+        arg_tokens = [self._token_map[arg.lineno, arg.col_offset] for arg in all_args]
+        params = {}
+        i = 0
+        for i in range(len(arg_tokens) - 1):
+            start_index = arg_tokens[i]
+            start_name = self._tokens[start_index][1]
+            end_index = arg_tokens[i+1]
+            params[start_name] = self._get_comment_inline(self._tokens[start_index:end_index]) or UNKNOWN
+        start_index = arg_tokens[i+1]
+        start_name = self._tokens[start_index][1]
+        params[start_name] = self._get_comment_inline(self._tokens[start_index:]) or UNKNOWN
+        return params
+
+    def _get_comment_inline(self, tokens): # type: (Any) -> Optional[str]
+        for tok in tokens:
+            if tok[0] == tokenize.NL:
+                return None
+            if tok[0] == tokenize.COMMENT:
+                tok_match = type_comment_reg.match(tok[1])
+                if tok_match:
+                    return tok_match.group(1)
+        return None
+
 
 class ArgMapper(Mapper):
-
-    @property
-    def has_external_types(self):
-        return isinstance(self._ast.value, ast.Ellipsis)
 
     def get_params(self):  # type: () -> Optional[List[str]]
         node = self._ast.value
@@ -116,12 +133,12 @@ def get_comment(func):  # type: (Any) -> Optional[Tuple[Dict[str, str], str]]
     if not source:
         return None
 
-    mapping = FuncMapper.parse(source)
-    if not mapping:
+    func_map = FuncMapper.parse(source)
+    if not func_map:
         return None
 
     # Locate function signature type
-    sig_parts = mapping.get_signature()
+    sig_parts = func_map.get_signature()
     if not sig_parts:
         return None
     param_comment, return_comment = sig_parts
@@ -133,103 +150,20 @@ def get_comment(func):  # type: (Any) -> Optional[Tuple[Dict[str, str], str]]
     if not param_comment:  # No parameters, nothing more to do.
         return {}, return_type
 
-    param_map = ArgMapper.parse(param_comment)
-    if not param_map:
-        return None
-
-    if param_map.has_external_types:
+    if param_comment == "...": # We have external typing
         # Individual parameters must have typing...
-        return None
+        params = {name: normalize_type(typ, context) for name, typ in func_map.get_params().items()}
+        return params, return_type
 
     else:
-        # need to handle method! ARG
+        param_map = ArgMapper.parse(param_comment)
+        if not param_map:
+            return None
         # Match parameters to function values
         sig = get_signature(func)
+        # reverse args, as a hack to skip "self" without knowing if it's an unbound method
         param_names = reversed(sig.parameters.keys())
         param_types = reversed(param_map.get_params())
 
         params = {name: normalize_type(typ, context) for name, typ in zip(param_names, param_types)}
         return params, return_type
-
-        # param_ast = ast.parse(param_comment).body[0].value  # type: ignore
-        # if isinstance(param_ast, ast.Tuple) and param_ast.elts:
-        #     params = [
-        #         str(
-        #             param_comment[
-        #                 param_ast.elts[i].col_offset : param_ast.elts[i + 1].col_offset
-        #             ]
-        #         )
-        #         .rsplit(",", 1)[0]
-        #         .strip()
-        #         for i in range(len(param_ast.elts) - 1)
-        #     ]
-        #     params.append(str(param_comment[param_ast.elts[-1].col_offset :].strip()))
-        # else:
-        #     params = [str(param_comment)]
-    #
-    #
-    #
-    #
-    #
-    #
-    #
-    #
-    #
-    #
-    #
-    #
-    #
-    #
-    #
-    #
-    #
-    #
-    #
-    #
-    # print(source)
-    # print(sig_match.group(0))
-    #
-    # params = []
-    # sig_comment = None
-    # in_sig = False
-    #
-    # for i, tok in enumerate(tokens):
-    #     if not in_sig and tok[0] == token.NAME and tok[1] == "def":
-    #         in_sig = True
-    #     elif in_sig and tok[0] == token.NEWLINE and i < len(tokens) - 1:
-    #         sig_comment = sig_comment or type_comment_sig_reg.match(tokens[i + 1][1])
-    #         break
-    #     elif in_sig and tok[0] == tokenize.COMMENT:
-    #         param = type_comment_reg.match(tok[1])
-    #         if param:
-    #             params.append(str(param.group(1).strip()))
-    #         sig_comment = sig_comment or type_comment_sig_reg.match(tok[1])
-    # if not sig_comment:
-    #     return None
-    #
-    # # Validate the same number of params as comment params? Assume mypy etc will do it for us?
-    #
-    # return_type = sig_comment.group(2)
-    # param_comment = sig_comment.group(1).strip()
-    # if param_comment and param_comment != "...":
-    #     param_ast = ast.parse(param_comment).body[0].value  # type: ignore
-    #     if isinstance(param_ast, ast.Tuple) and param_ast.elts:
-    #         params = [
-    #             str(
-    #                 param_comment[
-    #                     param_ast.elts[i].col_offset : param_ast.elts[i + 1].col_offset
-    #                 ]
-    #             )
-    #             .rsplit(",", 1)[0]
-    #             .strip()
-    #             for i in range(len(param_ast.elts) - 1)
-    #         ]
-    #         params.append(
-    #             str(param_comment[param_ast.elts[-1].col_offset :].strip())
-    #         )
-    #     else:
-    #         params = [str(param_comment)]
-    # if return_type:
-    #     return params, str(return_type)
-    #
-    # return None
