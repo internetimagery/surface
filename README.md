@@ -56,4 +56,5 @@ Rough todo...
 - [x] Partial support for typing comments.
 - [x] Partial support for docstring typing (google style only, currently)
 - [ ] Utilize sigtools depth feature, to collect typing from comments on all arguments.
+- [ ] Provide features to store api output using git commits
 - [ ] More and more and more tests.

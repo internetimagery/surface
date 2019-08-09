@@ -50,11 +50,25 @@ class Static(object):
 
     def get_signature(self):  # type: () -> Optional[Tuple[str, str]]
         body = self._ast.body[0]
-        body_index = self._token_map[body.lineno, body.col_offset]
-        sig_comment = self._tokens[body_index - 3]
-        if sig_comment[0] != tokenize.COMMENT:
+        # Silly hack to get around ast inconsistencies
+        # Walk the token stream till we hit the first token on the first line
+        # of the body of the function.
+        # Then walk backwards from there till we hit the end of the function.
+        # If we spot a comment between now and then, sweet. Otherwise nothing to do!
+        for i, tok in enumerate(self._tokens):
+            if tok[2][0] == body.lineno:
+                break
+        else:
             return None
-        sig_match = type_comment_sig_reg.match(sig_comment[1])
+        for j in range(i, 0, -1):
+            tok = self._tokens[j]
+            if tok[0] == token.OP and tok[1] == ":":
+                return None
+            if tok[0] == tokenize.COMMENT:
+                break
+        else:
+            return None
+        sig_match = type_comment_sig_reg.match(tok[1])
         if not sig_match:
             return None
         return (sig_match.group(1) or "").strip(), sig_match.group(2).strip()

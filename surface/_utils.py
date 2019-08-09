@@ -1,4 +1,4 @@
-""" Useful utilities """
+""" Useful utilities and python compatability work arounds """
 
 if False:
     from typing import *

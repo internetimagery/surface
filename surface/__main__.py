@@ -3,6 +3,18 @@
 if False:  # type checking
     from typing import *
 
+# TODO:
+
+
+# add --git command that takes a given directory
+# when using "surface dump --git /path/to/folder"
+# check for the current commit hash, and use that to store the api
+# when using surface compare --git /path/to/folder branch_name
+# check the current hash, or else generate one
+# then check "git merge-base HEAD branch_name"
+# and look for that commit within the provided directory
+
+
 
 import re
 import sys
