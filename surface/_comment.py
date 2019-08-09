@@ -12,7 +12,7 @@ import tokenize
 import traceback
 import collections
 
-from surface._utils import normalize_type, get_signature, get_tokens
+from surface._utils import normalize_type, get_signature, get_tokens, is_method
 from surface._base import TYPE_CHARS
 
 LOG = logging.getLogger(__name__)
@@ -22,7 +22,7 @@ type_comment_reg = re.compile(r"# +type: ({})".format(TYPE_CHARS))
 type_comment_sig_reg = re.compile(r"# +type: \(({0})?\) +-> +({0})".format(TYPE_CHARS))
 
 
-class Static(object):
+class Mapper(object):
     def __init__(
         self, tokens, token_map, ast
     ):  # type: (Sequence[Any], Dict[Tuple[int, int], int], Any) -> None
@@ -31,12 +31,7 @@ class Static(object):
         self._ast = ast
 
     @classmethod
-    def parse(cls, source):  # type: (str) -> Optional[Static]
-        header = func_header_reg.match(source)
-        if not header:
-            return None
-        source = source[header.start(1) :]
-
+    def parse(cls, source):  # type: (str) -> Optional[Mapper]
         # Parse source code
         tokens = get_tokens(source)
         if not tokens:
@@ -47,6 +42,17 @@ class Static(object):
             return None
         token_map = {tokens[i][2]: i for i in range(len(tokens))}
         return cls(tokens, token_map, parsed_ast)
+
+
+class FuncMapper(Mapper):
+
+    @classmethod
+    def parse(cls, source):  # type: (str) -> Optional[FuncMapper]
+        header = func_header_reg.match(source)
+        if not header:
+            return None
+        source = source[header.start(1) :]
+        return super(FuncMapper, cls).parse(source)
 
     def get_signature(self):  # type: () -> Optional[Tuple[str, str]]
         body = self._ast.body[0]
@@ -73,19 +79,35 @@ class Static(object):
             return None
         return (sig_match.group(1) or "").strip(), sig_match.group(2).strip()
 
-    def get_params(self):  # type: () -> Optional[List[str]]
-        # TODO: fill this out
-        return None
-
-    @property
-    def has_external_types(self):
-        return isinstance(self._ast, ast.Elipsis)
-
     # def iter_func(
     #     self, funcDef
     # ):  # type: (ast.FunctionDef) -> Iterable[Tuple[name, Tuple[int, int]]]
     #     for arg in funcDef.args.args:
     #         yield arg.arg, (arg.lineno, arg.col_offset)
+
+class ArgMapper(Mapper):
+
+    @property
+    def has_external_types(self):
+        return isinstance(self._ast.value, ast.Ellipsis)
+
+    def get_params(self):  # type: () -> Optional[List[str]]
+        node = self._ast.value
+        # Single variable can just return
+        if not isinstance(node, ast.Tuple):
+            return [tokenize.untokenize(self._tokens).strip()]
+
+        params = []
+        for i in range(len(node.elts) - 1):
+            start_node = node.elts[i]
+            end_node = node.elts[i+1]
+            start_index = self._token_map[start_node.lineno, start_node.col_offset]
+            end_index = self._token_map[end_node.lineno, end_node.col_offset] - 1
+            params.append(tokenize.untokenize(self._tokens[start_index:end_index]).strip())
+        params.append(tokenize.untokenize(self._tokens[end_index+1:]).strip())
+        return params
+
+
 
 
 def get_comment(func):  # type: (Any) -> Optional[Tuple[Dict[str, str], str]]
@@ -97,7 +119,7 @@ def get_comment(func):  # type: (Any) -> Optional[Tuple[Dict[str, str], str]]
     if not source:
         return None
 
-    mapping = Static.parse(source)
+    mapping = FuncMapper.parse(source)
     if not mapping:
         return None
 
@@ -114,7 +136,7 @@ def get_comment(func):  # type: (Any) -> Optional[Tuple[Dict[str, str], str]]
     if not param_comment:  # No parameters, nothing more to do.
         return {}, return_type
 
-    param_map = Static.parse(param_comment)
+    param_map = ArgMapper.parse(param_comment)
     if not param_map:
         return None
 
@@ -123,8 +145,14 @@ def get_comment(func):  # type: (Any) -> Optional[Tuple[Dict[str, str], str]]
         return None
 
     else:
+        # need to handle method! ARG
         # Match parameters to function values
-        params = param_map.get_params()
+        sig = get_signature(func)
+        param_names = list(sig.parameters)
+        param_types = param_map.get_params()
+        if is_method(func):
+            param_names = param_names[1:]
+        params = {name: normalize_type(typ, context) for name, typ in zip(param_names, param_types)}
         return None
 
         # param_ast = ast.parse(param_comment).body[0].value  # type: ignore

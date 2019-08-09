@@ -21,8 +21,9 @@ LOG = logging.getLogger(__name__)
 
 import_times = {}  # type: Dict[str, float]
 
-# Cache signature parsing
+# Cache stuff
 cache_sig = {}  # type: Dict[int, sigtools.Signature]
+cache_is_method = {} # type: Dict[int, bool]
 
 
 def import_module(name):  # type: (str) -> Any
@@ -91,6 +92,39 @@ def get_tokens(source):  # type: (str) -> List[tokenize.TokenInfo]
         return []
     return tokens
 
+def is_method(func): # type: (Any) -> bool
+    func_id = id(func)
+    if func_id in cache_is_method:
+        return cache_is_method[func_id]
+
+    if inspect.ismethod(func): # Method is bound
+        cache_is_method[func_id] = True
+        return True
+
+    module = inspect.getmodule(func)
+    if not module: # Can't access module... can't really figure it out then
+        cache_is_method[func_id] = False
+        return False
+
+    # Locate function in module.
+    if func in module.__dict__.values():
+        return False
+
+    # Function must be an unbound function in a class somewhere
+    stack = [obj for obj in module.__dict__.values() if inspect.isclass(obj)]
+    while stack:
+        obj = stack.pop()
+        for attr in dir(obj):
+            try:
+                value = getattr(obj, attr)
+            except Exception:
+                LOG.debug(traceback.format_exc())
+            else:
+                if inspect.isclass(value) and inspect.getmodule(value) == module:
+                    stack.append(value) # Need to be cautious of circulars?
+                if value == func:
+                    print("maybe?", obj, value, value.__qualname__)
+    return False
 
 def normalize_type(type_string, context):  # type: (str, Dict[str, Any]) -> str
     try:
@@ -128,5 +162,5 @@ def normalize_type(type_string, context):  # type: (str, Dict[str, Any]) -> str
 
     if updates:
         for i in sorted(updates.keys(), reverse=True):
-            type_string = type_string[:i] + updates[i] + "." + type_string[i:]
+            type_string = "{}{}.{}".format(type_string[:i], updates[i], type_string[i:])
     return type_string
