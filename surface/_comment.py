@@ -12,7 +12,7 @@ import tokenize
 import traceback
 import collections
 
-from surface._utils import normalize_type, get_signature
+from surface._utils import normalize_type, get_signature, get_tokens
 from surface._base import TYPE_CHARS
 
 LOG = logging.getLogger(__name__)
@@ -38,11 +38,8 @@ class Static(object):
         source = source[header.start(1) :]
 
         # Parse source code
-        lines = iter(source.splitlines(True))
-        try:
-            tokens = list(tokenize.generate_tokens(lambda: next(lines)))
-        except tokenize.TokenError:
-            LOG.debug(traceback.format_exc())
+        tokens = get_tokens(source)
+        if not tokens:
             return None
         try:
             parsed_ast = ast.parse(source).body[0]
@@ -63,10 +60,11 @@ class Static(object):
         return (sig_match.group(1) or "").strip(), sig_match.group(2).strip()
 
     def get_params(self):  # type: () -> Optional[List[str]]
+        # TODO: fill this out
         return None
 
     @property
-    def is_elipsis(self):
+    def has_external_types(self):
         return isinstance(self._ast, ast.Elipsis)
 
     # def iter_func(
@@ -106,7 +104,7 @@ def get_comment(func):  # type: (Any) -> Optional[Tuple[Dict[str, str], str]]
     if not param_map:
         return None
 
-    if param_map.is_elipsis:
+    if param_map.has_external_types:
         # Individual parameters must have typing...
         return None
 

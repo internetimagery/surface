@@ -4,11 +4,13 @@ if False:
     from typing import *
 
 import re
+import sys
 import ast
 import time
 import types
 import inspect
 import logging
+import tokenize
 import importlib
 import traceback
 import sigtools  # type: ignore
@@ -20,7 +22,7 @@ LOG = logging.getLogger(__name__)
 import_times = {}  # type: Dict[str, float]
 
 # Cache signature parsing
-sig_cache = {}  # type: Dict[int, sigtools.Signature]
+cache_sig = {}  # type: Dict[int, sigtools.Signature]
 
 
 def import_module(name):  # type: (str) -> Any
@@ -40,8 +42,8 @@ def clean_repr(err):  # type: (Any) -> str
 
 def get_signature(func):  # type: (Any) -> sigtools.Signature
     func_id = id(func)
-    if func_id in sig_cache:
-        return sig_cache[func_id]
+    if func_id in cache_sig:
+        return cache_sig[func_id]
 
     # handle bug in funcsigs
     restore_attr = False
@@ -49,13 +51,13 @@ def get_signature(func):  # type: (Any) -> sigtools.Signature
         func.__annotations__ = {}
         restore_attr = True
     try:
-        sig_cache[func_id] = sigtools.signature(func)
+        cache_sig[func_id] = sigtools.signature(func)
     except (SyntaxError, ValueError) as err:
         LOG.debug("Error getting signature for {}".format(func))
         LOG.debug(traceback.format_exc())
         raise ValueError(str(err))
     else:
-        return sig_cache[func_id]
+        return cache_sig[func_id]
     finally:
         if restore_attr:
             func.__annotations__ = None
@@ -74,6 +76,20 @@ def get_source(func):  # type: (Any) -> str
     except TypeError as err:
         LOG.debug(err)
     return ""
+
+
+def get_tokens(source):  # type: (str) -> List[tokenize.TokenInfo]
+    try:
+        if sys.version_info.major == 2:
+            lines_str = (line for line in source.splitlines(True))
+            tokens = list(tokenize.generate_tokens(lambda: next(lines_str)))
+        else:
+            lines_bytes = (line.encode("utf-8") for line in source.splitlines(True))
+            tokens = list(tokenize.tokenize(lambda: next(lines_bytes)))
+    except tokenize.TokenError:
+        LOG.debug(traceback.format_exc())
+        return []
+    return tokens
 
 
 def normalize_type(type_string, context):  # type: (str, Dict[str, Any]) -> str

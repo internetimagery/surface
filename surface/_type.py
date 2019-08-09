@@ -212,9 +212,7 @@ def get_docstring_type(value, name, parent):  # type: (Any, str, Any) -> Optiona
         if result:
             params, return_type = result
             return "typing.Callable[{}, {}]".format(
-                "[{}]".format(", ".join(p for p in params))
-                if params
-                else "...",
+                "[{}]".format(", ".join(p for p in params)) if params else "...",
                 return_type,
             )
     return None
