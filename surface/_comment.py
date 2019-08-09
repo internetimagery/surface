@@ -12,7 +12,7 @@ import tokenize
 import traceback
 import collections
 
-from surface._utils import normalize_type, get_signature, get_tokens, is_method
+from surface._utils import normalize_type, get_signature, get_tokens
 from surface._base import TYPE_CHARS
 
 LOG = logging.getLogger(__name__)
@@ -95,7 +95,7 @@ class ArgMapper(Mapper):
         node = self._ast.value
         # Single variable can just return
         if not isinstance(node, ast.Tuple):
-            return [tokenize.untokenize(self._tokens).strip()]
+            return [tokenize.untokenize(self._tokens).decode("utf8").strip()]
 
         params = []
         for i in range(len(node.elts) - 1):
@@ -106,9 +106,6 @@ class ArgMapper(Mapper):
             params.append(tokenize.untokenize(self._tokens[start_index:end_index]).strip())
         params.append(tokenize.untokenize(self._tokens[end_index+1:]).strip())
         return params
-
-
-
 
 def get_comment(func):  # type: (Any) -> Optional[Tuple[Dict[str, str], str]]
     try:
@@ -148,12 +145,11 @@ def get_comment(func):  # type: (Any) -> Optional[Tuple[Dict[str, str], str]]
         # need to handle method! ARG
         # Match parameters to function values
         sig = get_signature(func)
-        param_names = list(sig.parameters)
-        param_types = param_map.get_params()
-        if is_method(func):
-            param_names = param_names[1:]
+        param_names = reversed(sig.parameters.keys())
+        param_types = reversed(param_map.get_params())
+
         params = {name: normalize_type(typ, context) for name, typ in zip(param_names, param_types)}
-        return None
+        return params, return_type
 
         # param_ast = ast.parse(param_comment).body[0].value  # type: ignore
         # if isinstance(param_ast, ast.Tuple) and param_ast.elts:
