@@ -7,6 +7,7 @@ import re
 import inspect
 
 from surface._base import UNKNOWN, TYPE_CHARS
+from surface._utils import normalize_type
 
 
 def parse_docstring(func):  # type: (Any) -> Optional[Tuple[Dict[str, str], str]]
@@ -14,10 +15,11 @@ def parse_docstring(func):  # type: (Any) -> Optional[Tuple[Dict[str, str], str]
     doc = inspect.getdoc(func)
     if not doc:
         return None
-    return handle_google(doc)
+    context = func.__globals__
+    return handle_google(doc, context)
 
 
-def handle_google(docstring):  # type: (str) -> Optional[Tuple[Dict[str, str], str]]
+def handle_google(docstring, context):  # type: (str, Dict[str, Any]) -> Optional[Tuple[Dict[str, str], str]]
     # Find the first header, to establish indent
     header = re.search(r"^([ \t]*)[a-zA-Z]+:\s*$", docstring, re.M)
     if not header:
@@ -35,7 +37,7 @@ def handle_google(docstring):  # type: (str) -> Optional[Tuple[Dict[str, str], s
         header_name = header.group(1).lower()
         if header_name in ("arg", "args", "arguments", "parameters"):
             params = {
-                p.group(1): p.group(2)
+                p.group(1): normalize_type(p.group(2), context)
                 for p in re.finditer(
                     r"^{}[ \t]+([\w\-]+) *\(`?({})`?\)(?: *: .+| *)$".format(
                         header_indent, TYPE_CHARS
@@ -55,7 +57,7 @@ def handle_google(docstring):  # type: (str) -> Optional[Tuple[Dict[str, str], s
                 re.M,
             )
             if returns:
-                return_type = returns.group(1)
+                return_type = normalize_type(returns.group(1), context)
                 if "yield" in header_name:
                     return_type = "typing.Iterable[{}]".format(return_type)
     if params or return_type:
