@@ -168,10 +168,7 @@ def get_comment_type_func(value):  # type: (Any) -> Optional[Tuple[List[str], st
 
 
 def get_docstring_type_func(value):  # type: (Any) -> Optional[Tuple[List[str], str]]
-    doc = inspect.getdoc(value)
-    if not doc:
-        return None
-    result = parse_docstring(doc)
+    result = parse_docstring(value)
     if not result:
         return None
     params_dict, return_type = result
