@@ -5,6 +5,16 @@ if False:  # type checking
 
 # TODO:
 
+# [major] Type Changed: surface.compare.(api_old), Was: "typing.Sequence[Module]", Now: "typing.Sequence[surface._base.Module]"
+# This is wrong... the original module is used, but it is defined in the init module.
+# This means changing the underlying location breaks typing. It should read: "surface.Module"
+# this means typing normalization needs to change. If name exists in context, then use context path, else use full module path
+# context should be an object, with a path to object, and dict of names / values
+# Context.from_module()
+# Context.from_class()
+# Context.from_function()
+# etc
+# Path needs to be generated and passed around while Traversing
 
 # add --git command that takes a given directory
 # when using "surface dump --git /path/to/folder"
