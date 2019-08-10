@@ -1,4 +1,4 @@
-""" Scopes for live objects """
+""" Wrapping live objects """
 
 import inspect
 import logging
@@ -6,8 +6,9 @@ import traceback
 import sigtools
 
 from surface._base import POSITIONAL, KEYWORD, VARIADIC, DEFAULT
-from surface._scope import Scope, ErrorScope
+from surface._object import Object, ErrorObject
 from surface._utils import get_signature
+from surface._type import get_type_func
 
 try: # python 3
     from inspect import Parameter, _empty # type: ignore
@@ -17,7 +18,7 @@ except ImportError:
 LOG = logging.getLogger(__name__)
 
 
-class LiveModuleScope(Scope):
+class LiveModule(Object):
     """ Wrap live module objects """
 
     __slots__ = []
@@ -37,7 +38,7 @@ class LiveModuleScope(Scope):
         return sorted(dir(self.obj))
 
 
-class LiveClassScope(LiveModuleScope):
+class LiveClass(LiveModule):
     """ Wrap live class objects """
 
     __slots__ = []
@@ -49,13 +50,13 @@ class LiveClassScope(LiveModuleScope):
         return inspect.isclass(obj)
 
     def get_children_names(self):
-        names = super(LiveClassScope, self).get_children_names()
-        if not LiveFunctionScope.is_this_type(self.obj.__init__, "__init__", self):
+        names = super(LiveClass, self).get_children_names()
+        if not LiveFunction.is_this_type(self.obj.__init__, "__init__", self):
             names = (n for n in names if n != "__init__") # strip init
         return names
 
 
-class LiveFunctionScope(Scope):
+class LiveFunction(Object):
     """ Wrap function / method """
 
     __slots__ = []
@@ -73,30 +74,26 @@ class LiveFunctionScope(Scope):
         return sig.parameters.keys()
 
 
-class LiveParameterScope(Scope):
+class LiveParameter(Object):
     """ Wrap function parameter """
 
     __slots__ = []
+
+    KIND_MAP = {
+        "POSITIONAL_ONLY": POSITIONAL,
+        "KEYWORD_ONLY": KEYWORD,
+        "POSITIONAL_OR_KEYWORD": POSITIONAL | KEYWORD,
+        "VAR_POSITIONAL": POSITIONAL | VARIADIC,
+        "VAR_KEYWORD": KEYWORD | VARIADIC,
+    }
 
     @staticmethod
     def is_this_type(obj, name, parent):
         return isinstance(obj, Parameter)
 
-    def get_kind(self):
-        kind = self._convert_arg_kind(str(self.obj.kind))
-        kind |= 0 if self.obj.default is _empty else DEFAULT
-        return kind
+    def get_type(self):
+        return "~unknown"
 
-    @staticmethod
-    def _convert_arg_kind(kind):  # type: (str) -> int
-        if kind == "POSITIONAL_ONLY":
-            return POSITIONAL
-        if kind == "KEYWORD_ONLY":
-            return KEYWORD
-        if kind == "POSITIONAL_OR_KEYWORD":
-            return POSITIONAL | KEYWORD
-        if kind == "VAR_POSITIONAL":
-            return POSITIONAL | VARIADIC
-        if kind == "VAR_KEYWORD":
-            return KEYWORD | VARIADIC
-        raise TypeError("Unknown type.")
+    def get_kind(self):
+        kind = self.KIND_MAP[str(self.obj.kind)] | (0 if self.obj.default is _empty else DEFAULT)
+        return kind

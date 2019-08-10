@@ -18,8 +18,6 @@ from surface._base import UNKNOWN
 from surface._doc import parse_docstring
 from surface._comment import get_comment
 from surface._utils import get_signature, get_source
-from surface._scope import Scope
-from surface._scope_live import LiveFunctionScope, LiveParameterScope
 
 LOG = logging.getLogger(__name__)
 
@@ -88,32 +86,40 @@ type_attr_reg = re.compile(
 cache_type = {} # type: Dict[int, str]
 
 
-def get_type(scope): # type: (Scope) -> str
-    obj_id = id(scope.obj)
-    if obj_id in cache_type:
-        return cache_type[obj_id]
+# TODO: handle types in here...
+# TODO: function typer, return ordered dict, name / type
+# TODO: and return type
+# TODO: else a standard type, return string... which is mostly the case now.
 
-    scope_type = type(scope)
-    if scope_type == Scope:
-        cache_type[obj_id] = get_live_type(scope.obj)
+# TODO: similar can_handle methodology
 
-    return cache_type.get(obj_id, UNKNOWN)
 
-# def get_type(value, name="", parent=None):  # type: (Any, str, Any) -> str
+# def get_type(scope): # type: (Object) -> str
+#     obj_id = id(scope.obj)
+#     if obj_id in cache_type:
+#         return cache_type[obj_id]
 #
-#     if isinstance(value, Scope):
-#         return get_scope_type(value)
+#     scope_type = type(scope)
+#     if scope_type == Object:
+#         cache_type[obj_id] = get_live_type(scope.obj)
 #
-#     value_id = id(value)
-#     if value_id in cache_type:
-#         return cache_type[value_id]
-#
-#     cache_type[value_id] = (
-#         get_comment_type(value, name, parent)
-#         or get_annotate_type(value, name, parent)
-#         or get_live_type(value)
-#     )
-#     return cache_type[value_id]
+#     return cache_type.get(obj_id, UNKNOWN)
+
+def get_type(value, name="", parent=None):  # type: (Any, str, Any) -> str
+
+    if isinstance(value, Object):
+        return get_scope_type(value)
+
+    value_id = id(value)
+    if value_id in cache_type:
+        return cache_type[value_id]
+
+    cache_type[value_id] = (
+        get_comment_type(value, name, parent)
+        or get_annotate_type(value, name, parent)
+        or get_live_type(value)
+    )
+    return cache_type[value_id]
 
 
 def get_type_func(

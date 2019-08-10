@@ -20,8 +20,8 @@ except ImportError:
 from surface._base import *
 from surface._type import get_type, get_type_func
 from surface._utils import clean_repr, import_module, get_signature, get_source
-from surface._scope import Scope, ErrorScope
-from surface._scope_live import LiveModuleScope, LiveClassScope, LiveFunctionScope, LiveParameterScope
+from surface._object import Object, ErrorObject
+from surface._object_live import LiveModule, LiveClass, LiveFunction, LiveParameter
 
 
 LOG = logging.getLogger(__name__)
@@ -73,20 +73,18 @@ class APITraversal(object):
         self.all_filter = all_filter  # Mimic "import *"
         self.depth = depth  # How far down the rabbit hole do we go?
         self.scope_api_map = {
-            Scope: lambda n, s, p: Var(n, get_type(s)),
-            ErrorScope: lambda n, s, p: Unknown(n, clean_repr(s.err)),
-            LiveClassScope: lambda n, s, p: Class(n, tuple(self.walk(s, set(p)))),
-            LiveModuleScope: lambda n, s, p: Module(n, s.obj.__name__, tuple(self.walk(s, set(p)))),
-            LiveFunctionScope: lambda n, s, p: Func(n, tuple(self.walk(s, set(p))), get_type(s)),
-            LiveParameterScope: lambda n, s, p: Arg(n, get_type(s), s.get_kind()),
+            Object: lambda n, s, p: Var(n, s.get_type()),
+            ErrorObject: lambda n, s, p: Unknown(n, clean_repr(s.err)),
+            LiveClass: lambda n, s, p: Class(n, tuple(self.walk(s, set(p)))),
+            LiveModule: lambda n, s, p: Module(n, s.obj.__name__, tuple(self.walk(s, set(p)))),
+            LiveFunction: lambda n, s, p: Func(n, tuple(self.walk(s, set(p))), s.get_type()),
+            LiveParameter: lambda n, s, p: Arg(n, s.get_type(), s.get_kind()),
         }
 
-    def traverse(self, module):
+    def traverse(self, module, name):
         """ Entry point to generating an API representation. """
-        name = module.__name__
-        basename = name.rsplit(".", 1)[-1]
-        scope = Scope.wrap(module, basename)
-        api = Module(basename, name, tuple(self.walk(scope, set())))
+        scope = Object.wrap(module, name)
+        api = Module(name, module.__name__, tuple(self.walk(scope, set())))
         return api
 
     def walk(self, outer_scope, path):

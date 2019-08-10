@@ -45,9 +45,8 @@ def get_api(
     traversal = APITraversal(
         exclude_modules=exclude_modules, all_filter=all_filter, depth=depth
     )
-    API = traversal.traverse(mod)
-    module = Module(name.rsplit(".", 1)[-1], name, tuple(API))
-    return module
+    api = traversal.traverse(mod, name.rsplit(".", 1)[-1])
+    return api
 
 
 def format_api(api, colour=False, indent=""):  # type: (Iterable[Any], bool, str) -> str

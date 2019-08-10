@@ -1,4 +1,4 @@
-""" Scope """
+""" Wrap objects in a simplified interface """
 
 if False:  # type checking
     from typing import *
@@ -11,8 +11,9 @@ import logging
 
 LOG = logging.getLogger(__name__)
 
+from surface._base import UNKNOWN
 
-class Scope(collections.Mapping):
+class Object(collections.Mapping):
     """ Represent objects as graph of containers. """
 
     __slots__ = ("obj", "name", "parent")
@@ -26,21 +27,24 @@ class Scope(collections.Mapping):
     @classmethod
     def wrap(cls, obj, name="", parent=None): # type: (Any, str, Optional[Any]) -> Any
         """ Entry point to create a scope """
-        for handler in cls._get_handlers(Scope):
+        for handler in cls._get_handlers(Object):
             if handler.is_this_type(obj, name, parent):
                 return handler(obj, name, parent)
-        return Scope(obj, name, parent) # Plain scope as fallback
+        return Object(obj, name, parent) # Plain scope as fallback
 
     def __new__(cls, obj, name="", parent=None): # type: (Any, str, Dict[str, Any]) -> None
-        scope = super(Scope, cls).__new__(cls)
+        scope = super(Object, cls).__new__(cls)
         scope.obj = obj
         scope.name = name
         scope.parent = parent # why is this not weak referenceable?
         return scope
 
     def is_this_type(obj, name, parent): # type: (Any, str, Any) -> bool
-        """ Check if the passed in object represents the scope """
+        """ Check if the passed in object represents the Object """
         return False
+
+    def get_type(self): # type: () -> str
+        return UNKNOWN
 
     # ------------------------------------------
     # Traversing
@@ -57,7 +61,7 @@ class Scope(collections.Mapping):
     # ------------------------------------------
 
     @staticmethod
-    def _get_handlers(cls): # type: (Type[Scope]) -> Set[Any]
+    def _get_handlers(cls): # type: (Type[Object]) -> Set[Any]
         handlers = set([cls])
         stack = list(cls.__subclasses__())
         while stack:
@@ -79,19 +83,19 @@ class Scope(collections.Mapping):
         except KeyError:
             raise
         except Exception:
-            return ErrorScope(name, parent=self)
+            return ErrorObject(name, parent=self)
         else:
             return self.wrap(value, name, self)
 
 
-class ErrorScope(Scope):
-    """ Special scope to represent errors from unreachable objects. """
+class ErrorObject(Object):
+    """ Special object to represent errors attained from unreachable objects. """
 
     __slots__ = ("type", "trace")
 
     def __new__(cls, name, parent=None):
         err = sys.last_value
-        scope = super(ErrorScope, cls).__new__(cls, err, name, parent)
+        scope = super(ErrorObject, cls).__new__(cls, err, name, parent)
         scope.type = sys.last_type
         scope.trace = traceback.format_exc()
         LOG.debug(scope.trace) # Alert us of this error
