@@ -20,9 +20,9 @@ except ImportError:
 from surface._base import *
 from surface._type import get_type, get_type_func
 from surface._utils import clean_repr, import_module, get_signature, get_source
+from surface._scope import Scope, ErrorScope
+from surface._scope_live import LiveModuleScope, LiveClassScope, LiveFunctionScope, LiveParameterScope
 
-
-__all__ = ["recurse", "APITraversal"]
 
 LOG = logging.getLogger(__name__)
 
@@ -64,94 +64,130 @@ def recurse(name):  # type: (str) -> List[str]
 
 class APITraversal(object):
     def __init__(self, exclude_modules=False, all_filter=False, depth=10):
+        LOG.debug(
+            "APITraversal created with {}".format(
+                ", ".join("{}={}".format(*var) for var in locals().items())
+            )
+        )
         self.exclude_modules = exclude_modules  # Do not follow exposed modules
         self.all_filter = all_filter  # Mimic "import *"
         self.depth = depth  # How far down the rabbit hole do we go?
-        LOG.debug(
-            "APITraversal created with exclude_modules={}, all_filter={}, depth={}".format(
-                exclude_modules, all_filter, depth
-            )
-        )
+        self.scope_api_map = {
+            Scope: lambda n, s, p: Var(n, UNKNOWN),
+            ErrorScope: lambda n, s, p: Unknown(n, clean_repr(s.err)),
+            LiveClassScope: lambda n, s, p: Class(n, tuple(self.walk(s, set(p)))),
+            LiveModuleScope: lambda n, s, p: Module(n, s.obj.__name__, tuple(self.walk(s, set(p)))),
+            LiveFunctionScope: lambda n, s, p: Func(n, tuple(self.walk(s, set(p))), UNKNOWN),
+        }
 
-    def traverse(
-        self, obj, guard=None
-    ):  # type: (Any, Optional[Set[int]]) -> Iterable[Any]
+    def traverse(self, module):
         """ Entry point to generating an API representation. """
-        if guard is None:  # Guard against infinite recursion
-            guard = set()
-        if len(guard) > self.depth:
-            LOG.debug("Exceeded Depth, {}".format(obj))
+        name = module.__name__
+        basename = name.rsplit(".", 1)[-1]
+        scope = Scope.wrap(module, basename)
+        api = Module(basename, name, tuple(self.walk(scope, set())))
+        return api
+
+    def walk(self, outer_scope, path):
+        LOG.debug("Visiting: {}".format(outer_scope))
+        if len(path) > self.depth:
+            LOG.debug("Exceeded depth")
             return
 
-        LOG.debug("Traversing: {}".format(obj))
+        obj_id = id(outer_scope.obj)
+        if obj_id in path:
+            yield Unknown(
+                outer_scope.name, "Circular Reference: {}".format(clean_repr(repr(outer_scope.obj)))
+            )
+            return
 
-        # NOTE: inspect.getmembers is more comprehensive than dir
-        # NOTE: but it doesn't allow catching errors on each attribute
-        # NOTE: getattr_static is also another nice option, python3 only.
-        attributes = [attr for attr in dir(obj) if self._is_public(attr)]
+        for name, scope in outer_scope.items():
+            scope_type = type(scope)
+            mapping = self.scope_api_map.get(scope_type)
+            if mapping:
+                yield mapping(name, scope, path)
 
-        if self.all_filter:
-            # __all__ attribute restricts import with *,
-            # and displays what is intended to be public
-            whitelist = getattr(obj, "__all__", [])
-            if whitelist:
-                attributes = [attr for attr in attributes if attr in whitelist]
-
-        # Sort the attributes by name for readability, and diff-ability (is that a word?)
-        attributes.sort()
-
-        # Walk the surface of the object, and extract the information
-        # In storing a path, make a distinction between modules and their contents
-        # as a submodule can have the same name as a class in the parent module.
-        for name in attributes:
-            # Not sure why this is possible... but it has happened...
-            if not name:
-                continue
-
-            # NOTE: Consider also supporting python 3 getattr_static for more passive inspection
-            try:
-                value = getattr(obj, name)
-            except Exception as err:
-                # If we cannot get the attribute, keep going. Just record that the attribute was there.
-                LOG.debug(traceback.format_exc())
-                yield Unknown(name, clean_repr(err))
-                continue
-
-            value_id = id(value)
-            if value_id in guard:
-                yield Unknown(
-                    name, "Circular Reference: {}".format(clean_repr(repr(value)))
-                )
-            elif value is None:
-                yield Var(name, "None")
-            elif value in builtin_types:
-                yield Var(name, value.__name__)
-            # Recursable objects
-            elif inspect.ismodule(value):
-                if self.exclude_modules:
-                    continue
-                if name in sys.builtin_module_names:
-                    yield Module(name, value.__name__, tuple())
-                else:
-                    guard.add(value_id)
-                    yield self._handle_module(name, value, obj, guard.copy())
-            elif inspect.isclass(value):
-                guard.add(value_id)
-                yield self._handle_class(name, value, obj, guard.copy())
-            # Python2
-            elif inspect.ismethod(value):
-                yield self._handle_method(name, value, obj)
-            elif inspect.isfunction(value):
-                # python3
-                if inspect.isclass(obj):
-                    yield self._handle_method(name, value, obj)
-                else:
-                    yield self._handle_function(name, value, obj)
-            elif isinstance(value, types.GetSetDescriptorType):
-                # TODO: Any way to get the result type of value.__get__?
-                yield Var(name, UNKNOWN)
-            elif name != "__init__":
-                yield self._handle_variable(name, value, obj)
+    #
+    #
+    # def traverse(
+    #     self, obj, guard=None
+    # ):  # type: (Any, Optional[Set[int]]) -> Iterable[Any]
+    #     """ Entry point to generating an API representation. """
+    #     if guard is None:  # Guard against infinite recursion
+    #         guard = set()
+    #     if len(guard) > self.depth:
+    #         LOG.debug("Exceeded Depth, {}".format(obj))
+    #         return
+    #
+    #     LOG.debug("Traversing: {}".format(obj))
+    #
+    #     # NOTE: inspect.getmembers is more comprehensive than dir
+    #     # NOTE: but it doesn't allow catching errors on each attribute
+    #     # NOTE: getattr_static is also another nice option, python3 only.
+    #     attributes = [attr for attr in dir(obj) if self._is_public(attr)]
+    #
+    #     if self.all_filter:
+    #         # __all__ attribute restricts import with *,
+    #         # and displays what is intended to be public
+    #         whitelist = getattr(obj, "__all__", [])
+    #         if whitelist:
+    #             attributes = [attr for attr in attributes if attr in whitelist]
+    #
+    #     # Sort the attributes by name for readability, and diff-ability (is that a word?)
+    #     attributes.sort()
+    #
+    #     # Walk the surface of the object, and extract the information
+    #     # In storing a path, make a distinction between modules and their contents
+    #     # as a submodule can have the same name as a class in the parent module.
+    #     for name in attributes:
+    #         # Not sure why this is possible... but it has happened...
+    #         if not name:
+    #             continue
+    #
+    #         # NOTE: Consider also supporting python 3 getattr_static for more passive inspection
+    #         try:
+    #             value = getattr(obj, name)
+    #         except Exception as err:
+    #             # If we cannot get the attribute, keep going. Just record that the attribute was there.
+    #             LOG.debug(traceback.format_exc())
+    #             yield Unknown(name, clean_repr(err))
+    #             continue
+    #
+    #         value_id = id(value)
+    #         if value_id in guard:
+    #             yield Unknown(
+    #                 name, "Circular Reference: {}".format(clean_repr(repr(value)))
+    #             )
+    #         elif value is None:
+    #             yield Var(name, "None")
+    #         elif value in builtin_types:
+    #             yield Var(name, value.__name__)
+    #         # Recursable objects
+    #         elif inspect.ismodule(value):
+    #             if self.exclude_modules:
+    #                 continue
+    #             if name in sys.builtin_module_names:
+    #                 yield Module(name, value.__name__, tuple())
+    #             else:
+    #                 guard.add(value_id)
+    #                 yield self._handle_module(name, value, obj, guard.copy())
+    #         elif inspect.isclass(value):
+    #             guard.add(value_id)
+    #             yield self._handle_class(name, value, obj, guard.copy())
+    #         # Python2
+    #         elif inspect.ismethod(value):
+    #             yield self._handle_method(name, value, obj)
+    #         elif inspect.isfunction(value):
+    #             # python3
+    #             if inspect.isclass(obj):
+    #                 yield self._handle_method(name, value, obj)
+    #             else:
+    #                 yield self._handle_function(name, value, obj)
+    #         elif isinstance(value, types.GetSetDescriptorType):
+    #             # TODO: Any way to get the result type of value.__get__?
+    #             yield Var(name, UNKNOWN)
+    #         elif name != "__init__":
+    #             yield self._handle_variable(name, value, obj)
 
     def _handle_function(
         self, name, value, parent
