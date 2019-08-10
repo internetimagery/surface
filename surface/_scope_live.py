@@ -5,13 +5,14 @@ import logging
 import traceback
 import sigtools
 
+from surface._base import POSITIONAL, KEYWORD, VARIADIC, DEFAULT
 from surface._scope import Scope, ErrorScope
 from surface._utils import get_signature
 
 try: # python 3
-    from inspect import Parameter # type: ignore
+    from inspect import Parameter, _empty # type: ignore
 except ImportError:
-    from funcsigs import Parameter # type: ignore
+    from funcsigs import Parameter, _empty # type: ignore
 
 LOG = logging.getLogger(__name__)
 
@@ -80,3 +81,22 @@ class LiveParameterScope(Scope):
     @staticmethod
     def is_this_type(obj, name, parent):
         return isinstance(obj, Parameter)
+
+    def get_kind(self):
+        kind = self._convert_arg_kind(str(self.obj.kind))
+        kind |= 0 if self.obj.default is _empty else DEFAULT
+        return kind
+
+    @staticmethod
+    def _convert_arg_kind(kind):  # type: (str) -> int
+        if kind == "POSITIONAL_ONLY":
+            return POSITIONAL
+        if kind == "KEYWORD_ONLY":
+            return KEYWORD
+        if kind == "POSITIONAL_OR_KEYWORD":
+            return POSITIONAL | KEYWORD
+        if kind == "VAR_POSITIONAL":
+            return POSITIONAL | VARIADIC
+        if kind == "VAR_KEYWORD":
+            return KEYWORD | VARIADIC
+        raise TypeError("Unknown type.")

@@ -18,7 +18,8 @@ from surface._base import UNKNOWN
 from surface._doc import parse_docstring
 from surface._comment import get_comment
 from surface._utils import get_signature, get_source
-
+from surface._scope import Scope
+from surface._scope_live import LiveFunctionScope, LiveParameterScope
 
 LOG = logging.getLogger(__name__)
 
@@ -86,16 +87,33 @@ type_attr_reg = re.compile(
 
 cache_type = {} # type: Dict[int, str]
 
-def get_type(value, name="", parent=None):  # type: (Any, str, Any) -> str
-    value_id = id(value)
-    if value_id not in cache_type:
 
-        cache_type[value_id] = (
-            get_comment_type(value, name, parent)
-            or get_annotate_type(value, name, parent)
-            or get_live_type(value)
-        )
-    return cache_type[value_id]
+def get_type(scope): # type: (Scope) -> str
+    obj_id = id(scope.obj)
+    if obj_id in cache_type:
+        return cache_type[obj_id]
+
+    scope_type = type(scope)
+    if scope_type == Scope:
+        cache_type[obj_id] = get_live_type(scope.obj)
+
+    return cache_type.get(obj_id, UNKNOWN)
+
+# def get_type(value, name="", parent=None):  # type: (Any, str, Any) -> str
+#
+#     if isinstance(value, Scope):
+#         return get_scope_type(value)
+#
+#     value_id = id(value)
+#     if value_id in cache_type:
+#         return cache_type[value_id]
+#
+#     cache_type[value_id] = (
+#         get_comment_type(value, name, parent)
+#         or get_annotate_type(value, name, parent)
+#         or get_live_type(value)
+#     )
+#     return cache_type[value_id]
 
 
 def get_type_func(

@@ -73,11 +73,12 @@ class APITraversal(object):
         self.all_filter = all_filter  # Mimic "import *"
         self.depth = depth  # How far down the rabbit hole do we go?
         self.scope_api_map = {
-            Scope: lambda n, s, p: Var(n, UNKNOWN),
+            Scope: lambda n, s, p: Var(n, get_type(s)),
             ErrorScope: lambda n, s, p: Unknown(n, clean_repr(s.err)),
             LiveClassScope: lambda n, s, p: Class(n, tuple(self.walk(s, set(p)))),
             LiveModuleScope: lambda n, s, p: Module(n, s.obj.__name__, tuple(self.walk(s, set(p)))),
-            LiveFunctionScope: lambda n, s, p: Func(n, tuple(self.walk(s, set(p))), UNKNOWN),
+            LiveFunctionScope: lambda n, s, p: Func(n, tuple(self.walk(s, set(p))), get_type(s)),
+            LiveParameterScope: lambda n, s, p: Arg(n, get_type(s), s.get_kind()),
         }
 
     def traverse(self, module):
