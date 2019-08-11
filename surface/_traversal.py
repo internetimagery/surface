@@ -20,8 +20,7 @@ except ImportError:
 from surface._base import *
 from surface._type import get_type, get_type_func
 from surface._utils import clean_repr, import_module, get_signature, get_source
-from surface._object import Object, ErrorObject
-from surface._object_live import LiveModule, LiveClass, LiveFunction, LiveParameter
+from surface._item_live import ErrorItem, ModuleItem, ClassItem, VarItem, FunctionItem, ParameterItem
 
 
 LOG = logging.getLogger(__name__)
@@ -73,38 +72,45 @@ class APITraversal(object):
         self.all_filter = all_filter  # Mimic "import *"
         self.depth = depth  # How far down the rabbit hole do we go?
         self.scope_api_map = {
-            Object: lambda n, s, p: Var(n, s.get_type()),
-            ErrorObject: lambda n, s, p: Unknown(n, clean_repr(s.err)),
-            LiveClass: lambda n, s, p: Class(n, tuple(self.walk(s, set(p)))),
-            LiveModule: lambda n, s, p: Module(n, s.obj.__name__, tuple(self.walk(s, set(p)))),
-            LiveFunction: lambda n, s, p: Func(n, tuple(self.walk(s, set(p))), s.get_type()),
-            LiveParameter: lambda n, s, p: Arg(n, s.get_type(), s.get_kind()),
+            VarItem: lambda n, s, p: Var(n, s.get_type()),
+            ErrorItem: lambda n, s, p: Unknown(n, clean_repr(s.item)),
+            ClassItem: lambda n, s, p: Class(n, tuple(self.walk(s, n, set(p)))),
+            ModuleItem: lambda n, s, p: Module(n, s.obj.__name__, tuple(self.walk(s, n, set(p)))),
+            FunctionItem: lambda n, s, p: Func(n, tuple(self.walk(s, n, set(p))), s.get_return_type()),
+            ParameterItem: lambda n, s, p: Arg(n, s.get_type(), s.get_kind()),
         }
 
     def traverse(self, module, name):
         """ Entry point to generating an API representation. """
-        scope = Object.wrap(module, name)
-        api = Module(name, module.__name__, tuple(self.walk(scope, set())))
+        visitors = [
+            ParameterItem,
+            FunctionItem,
+            ModuleItem,
+            ClassItem,
+            VarItem,
+        ]
+        item = ModuleItem.wrap(visitors, module)
+        api = Module(name, module.__name__, tuple(self.walk(item, name, set())))
         return api
 
-    def walk(self, outer_scope, path):
-        LOG.debug("Visiting: {}".format(outer_scope))
+    def walk(self, parent_item, parent_name, path):
+        LOG.debug("Visiting: {}".format(parent_item))
         if len(path) > self.depth:
             LOG.debug("Exceeded depth")
             return
 
-        obj_id = id(outer_scope.obj)
-        if obj_id in path:
+        item_id = id(parent_item.item)
+        if item_id in path:
             yield Unknown(
-                outer_scope.name, "Circular Reference: {}".format(clean_repr(repr(outer_scope.obj)))
+                parent_name, "Circular Reference: {}".format(clean_repr(repr(parent_item.item)))
             )
             return
 
-        for name, scope in outer_scope.items():
-            scope_type = type(scope)
-            mapping = self.scope_api_map.get(scope_type)
+        for name, item in parent_item.items():
+            item_type = type(item)
+            mapping = self.scope_api_map.get(item_type)
             if mapping:
-                yield mapping(name, scope, path)
+                yield mapping(name, item, path)
 
     #
     #

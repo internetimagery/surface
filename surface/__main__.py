@@ -5,6 +5,9 @@ if False:  # type checking
 
 # TODO:
 
+# TODO: check module each step of the way, then if inside a new module, traverse that module,
+# to get a real parent/child relationship?
+# this will help map to static traversing too!
 
 # [major] Type Changed: surface.compare.(api_old), Was: "typing.Sequence[Module]", Now: "typing.Sequence[surface._base.Module]"
 # This is wrong... the original module is used, but it is defined in the init module.
