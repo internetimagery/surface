@@ -3,9 +3,12 @@
 if False:  # type checking
     from typing import *
 
-
+import sys
 from collections import namedtuple as _nt
 
+
+# Python 2 compatability
+PY2 = sys.version_info.major == 2
 
 # fmt: off
 

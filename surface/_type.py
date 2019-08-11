@@ -14,7 +14,7 @@ import tokenize
 import traceback
 import itertools
 
-from surface._base import UNKNOWN
+from surface._base import UNKNOWN, PY2
 from surface._doc import parse_docstring
 from surface._comment import get_comment
 from surface._utils import get_signature, get_source
@@ -84,6 +84,30 @@ type_attr_reg = re.compile(
 )
 
 cache_type = {} # type: Dict[int, str]
+
+
+
+def format_annotation(ann): # type: (Any) -> str
+    if PY2: # Annotations do not exist in python 2
+        return UNKNOWN
+
+    if isinstance(ann, str):
+        # TODO: Use existing static logic?
+        # TODO: Or do this check outside this function?
+        return UNKNOWN
+
+    if inspect.isclass(ann):
+        if ann.__module__ == "typing":
+            return str(ann)
+        if ann.__module__ == "builtins":
+            return ann.__name__
+        return "{}.{}".format(ann.__module__, ann.__qualname__)
+
+    return UNKNOWN
+
+
+
+
 
 
 # TODO: handle types in here...

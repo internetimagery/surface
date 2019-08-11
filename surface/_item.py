@@ -61,10 +61,6 @@ class Item(collections.Mapping):
         """ Return the names of all children in this item """
         return []
 
-    def filter_name(self, name): # type: (str) -> bool
-        """ Only allow names following the schema """
-        return True
-
     # ------------------------------------------
     # Plumbing
     # ------------------------------------------
@@ -73,7 +69,7 @@ class Item(collections.Mapping):
         return len(list(self.__iter__()))
 
     def __iter__(self):
-        return (name for name in self.get_children_names() if self.filter_name(name))
+        return iter(self.get_children_names())
 
     def __getitem__(self, name):
         return self.wrap(self.__visitors, self.get_child(name), self)

@@ -6,9 +6,9 @@ import logging
 import traceback
 import sigtools
 
-from surface._base import POSITIONAL, KEYWORD, VARIADIC, DEFAULT
+from surface._base import POSITIONAL, KEYWORD, VARIADIC, DEFAULT, UNKNOWN
 from surface._utils import get_signature
-from surface._type import get_type_func
+from surface._type import get_type_func, format_annotation
 
 from surface._item import Item
 
@@ -39,10 +39,6 @@ class LiveItem(Item):
 
     __slots__ = []
 
-    def filter_name(self, name): # type: (str) -> bool
-        """ Only allow names following the schema """
-        return not name.startswith("_")
-
     def __getitem__(self, name): # type: (str) -> Item
         """ We can get errors while traversing. Keep them. """
         try:
@@ -56,18 +52,31 @@ class ModuleItem(LiveItem):
 
     __slots__ = []
 
-    @staticmethod
-    def is_this_type(item, parent):
+    ALL_FILTER = False
+    EXCLUDE_MODULES = False
+
+    @classmethod
+    def is_this_type(cls, item, parent):
+        if cls.EXCLUDE_MODULES and parent:
+            return False
         return inspect.ismodule(item)
 
     def get_child(self, attr):
         return getattr(self.item, attr)
 
     def get_children_names(self):
-        return sorted(dir(self.item))
+        names = (name for name in sorted(dir(self.item)) if not name.startswith("_"))
+        if self.ALL_FILTER:
+            try:
+                all_filter = self.item.__all__
+            except AttributeError:
+                pass
+            else:
+                names = (name for name in names if name in all_filter)
+        return names
 
 
-class ClassItem(ModuleItem):
+class ClassItem(LiveItem):
     """ Wrap live class objects """
 
     __slots__ = []
@@ -77,15 +86,13 @@ class ClassItem(ModuleItem):
         return inspect.isclass(item)
 
     def get_children_names(self):
-        names = super(ClassItem, self).get_children_names()
+        names = (name for name in sorted(dir(self.item)) if name == "__init__" or not name.startswith("_"))
         if not FunctionItem.is_this_type(self.item.__init__, self):
             names = (n for n in names if n != "__init__") # strip init
         return names
 
-    def filter_name(self, name):
-        if name == "__init__":
-            return True
-        return super(ClassItem, self).filter_name(name)
+    def get_child(self, attr):
+        return getattr(self.item, attr)
 
 
 class VarItem(LiveItem):
@@ -141,10 +148,8 @@ class ParameterItem(LiveItem):
 
     def get_type(self):
         if self.item.annotation != Empty:
-            # TODO: improve annotation handling.
-            # TODO: can use __qualpath__
-            print("Annotation", self.item.annotation)
-        return "~unknown"
+            return format_annotation(self.item.annotation)
+        return UNKNOWN
 
     def get_kind(self):
         kind = self.KIND_MAP[str(self.item.kind)] | (0 if self.item.default is Empty else DEFAULT)
