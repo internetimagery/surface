@@ -36,6 +36,7 @@ import surface
 import os.path
 import argparse
 import logging
+import traceback
 import functools
 
 # Global logger
@@ -204,6 +205,9 @@ def main():
         sys.exit(args.func(args))
     except KeyboardInterrupt:
         sys.exit(0)
-
+    except Exception as err:
+        LOG.debug(traceback.format_exc())
+        LOG.warn(str(err))
+        sys.exit(1)
 
 main()
