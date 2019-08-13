@@ -38,6 +38,7 @@ import argparse
 import logging
 import traceback
 import functools
+from surface.git import Git
 
 # Global logger
 LOG = logging.getLogger()
@@ -88,27 +89,42 @@ def run_dump(args):  # type: (Any) -> int
             )
             sys.stdout.write(surface.format_api(mod.body, not args.no_colour, "    "))
 
-    if not args.output:
-        return 0
-
-    with open(args.output, "w") as handle:
+    if args.output or args.git:
         serialize = [surface.to_dict(mod) for mod in module_api]
-        json.dump(serialize, handle, indent=2)
-    LOG.info("Saved API to {}".format(args.output))
+        data = json.dumps(serialize, indent=2)
+
+        if args.output:
+            with open(args.output, "w") as handle:
+                handle.write(data)
+                LOG.info("Saved API to {}".format(args.output))
+        if args.git:
+            commit = Git.get_commit()
+            path = Git.save(commit, args.git, data)
+            LOG.info("Saved API to {}".format(path))
     return 0
 
 
 def run_compare(args):  # type: (Any) -> int
 
-    with open(args.old, "r") as handle:
-        old_data = sorted(
-            (surface.from_dict(mod) for mod in json.load(handle)), key=lambda m: m.path
-        )  # type: List[surface.Module]
+    if args.git: # We are in git mode!! old / new refer to tree-ish identifiers!
+        new_commit = Git.get_commit(args.new)
+        old_commit = Git.get_merge_base(args.old, args.new)
+        git_path = [path.strip() for path in re.split(r"[,:;]", args.git)]
 
-    with open(args.new, "r") as handle:
-        new_data = sorted(
-            (surface.from_dict(mod) for mod in json.load(handle)), key=lambda m: m.path
-        )  # type: List[surface.Module]
+        new_data = Git.load(new_commit, git_path)
+        old_data = Git.load(old_commit, git_path)
+    else:
+        with open(args.old, "r") as handle:
+            old_data = handle.read()
+        with open(args.new, "r") as handle:
+            new_data = handle.read()
+
+    old_api = sorted(
+        (surface.from_dict(mod) for mod in json.loads(old_data)), key=lambda m: m.path
+    )  # type: List[surface.Module]
+    new_api = sorted(
+        (surface.from_dict(mod) for mod in json.loads(new_data)), key=lambda m: m.path
+    )  # type: List[surface.Module]
 
     purple = ("{}" if args.no_colour else "\033[35m{}\033[0m").format
     colours = {
@@ -118,7 +134,7 @@ def run_compare(args):  # type: (Any) -> int
     }
 
     highest_level = surface.PATCH
-    changes = surface.compare(old_data, new_data)
+    changes = surface.compare(old_api, new_api)
     for level, change_type, note in changes:
         if not args.quiet:
             LOG.info(
@@ -139,6 +155,9 @@ def run_compare(args):  # type: (Any) -> int
 
 
 def main():
+    # -----------------
+    # Global options
+    # -----------------
     parser = argparse.ArgumentParser(
         description="Generate representations of publicly exposed Python API's."
     )
@@ -153,10 +172,16 @@ def main():
         "-V", "--version", action="version", version=surface.__version__
     )
 
+
+    # -----------------
+    # Dump options
+    # -----------------
+
     subparsers = parser.add_subparsers()
 
-    dump_parser = subparsers.add_parser("dump", help="Store surface API in a file.")
+    dump_parser = subparsers.add_parser("dump", help="Scan, display and optionally store surface API in a file.")
     dump_parser.add_argument("-o", "--output", help="File to store API into.")
+    dump_parser.add_argument("-g", "--git", help="Directory to store API into, under current git commit hash.")
     dump_parser.add_argument(
         "modules", nargs="+", help="Full import path to module eg: mymodule.submodule"
     )
@@ -181,9 +206,19 @@ def main():
     )
     dump_parser.set_defaults(func=run_dump)
 
+
+    # -----------------
+    # Compare options
+    # -----------------
+
     compare_parser = subparsers.add_parser(
         "compare", help="Compare two API's and suggest a semantic version."
     )
+    compare_parser.add_argument("-g", "--git", help=(
+        "List of directories separated by (,:;)."
+        "Presence of this flag will treat 'old' and 'new' arguments as git branches (tree-ish); "
+        "Using the merge base between the two as the 'old' source, and the current commit as the 'new' source."
+        "The commits will be searched for in the provided directories."))
     compare_parser.add_argument("old", help="Path to original API file.")
     compare_parser.add_argument("new", help="Path to new API file.")
     compare_parser.add_argument(

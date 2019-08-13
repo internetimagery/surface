@@ -1,5 +1,8 @@
 """ Git utility, for cli """
 
+if False:  # type checking
+    from typing import *
+
 import gzip
 import errno
 import os.path
@@ -21,14 +24,14 @@ class Git(object):
     def get_commit(cls, treeish="HEAD"): # type: (str) -> str
         """ Convert provded name into concrete commit hash """
         command = ["git", "rev-parse", "--verify", treeish]
-        commit = cls._run(command)
+        commit = cls._run(command).strip()
         return commit
 
     @classmethod
     def get_merge_base(cls, branch1, branch2="HEAD"): # type: (str, str) -> str
         """ Get commit that will be used as a base if these two branches were merged """
         command = ["git", "merge-base", branch1, branch2]
-        commit = cls._run(command)
+        commit = cls._run(command).strip()
         return commit
 
     # --------------------------------------
@@ -51,7 +54,7 @@ class Git(object):
             if err.errno != errno.EEXIST:
                 raise
         with gzip.open(storage_path, "w") as handle:
-            handle.write(data)
+            handle.write(data.encode("utf-8"))
         return storage_path
 
     @classmethod
