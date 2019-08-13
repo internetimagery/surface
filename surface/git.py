@@ -21,14 +21,14 @@ class Git(object):
     # --------------------------------------
 
     @classmethod
-    def get_commit(cls, treeish="HEAD"): # type: (str) -> str
+    def get_commit(cls, treeish="HEAD"):  # type: (str) -> str
         """ Convert provded name into concrete commit hash """
         command = ["git", "rev-parse", "--verify", treeish]
         commit = cls._run(command).strip()
         return commit
 
     @classmethod
-    def get_merge_base(cls, branch1, branch2="HEAD"): # type: (str, str) -> str
+    def get_merge_base(cls, branch1, branch2="HEAD"):  # type: (str, str) -> str
         """ Get commit that will be used as a base if these two branches were merged """
         command = ["git", "merge-base", branch1, branch2]
         commit = cls._run(command).strip()
@@ -39,7 +39,7 @@ class Git(object):
     # --------------------------------------
 
     @classmethod
-    def save(cls, commit, storage_directory, data): # type: (str, str, str) -> str
+    def save(cls, commit, storage_directory, data):  # type: (str, str, str) -> str
         """ Save data to location """
         storage_directory = os.path.realpath(storage_directory)
         if not os.path.isdir(storage_directory):
@@ -58,7 +58,7 @@ class Git(object):
         return storage_path
 
     @classmethod
-    def load(cls, commit, storage_directories): # type: (str, Sequence[str]) -> Any
+    def load(cls, commit, storage_directories):  # type: (str, Sequence[str]) -> Any
         """ Look for, and load the provided commit, in any of the provided directories """
         parts = cls._format_commit(commit)
         for storage_dir in storage_directories:
@@ -91,6 +91,6 @@ class Git(object):
             return output.decode("utf-8")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     print(Git.save("abcdefghijklmnopqrstuvwxyz", "./", "hello there"))
     print(Git.load("abcdefghijklmnopqrstuvwxyzz", "./"))

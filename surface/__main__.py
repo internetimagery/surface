@@ -106,7 +106,7 @@ def run_dump(args):  # type: (Any) -> int
 
 def run_compare(args):  # type: (Any) -> int
 
-    if args.git: # We are in git mode!! old / new refer to tree-ish identifiers!
+    if args.git:  # We are in git mode!! old / new refer to tree-ish identifiers!
         new_commit = Git.get_commit(args.new)
         old_commit = Git.get_merge_base(args.old, args.new)
         git_path = [path.strip() for path in re.split(r"[,:;]", args.git)]
@@ -172,16 +172,21 @@ def main():
         "-V", "--version", action="version", version=surface.__version__
     )
 
-
     # -----------------
     # Dump options
     # -----------------
 
     subparsers = parser.add_subparsers()
 
-    dump_parser = subparsers.add_parser("dump", help="Scan, display and optionally store surface API in a file.")
+    dump_parser = subparsers.add_parser(
+        "dump", help="Scan, display and optionally store surface API in a file."
+    )
     dump_parser.add_argument("-o", "--output", help="File to store API into.")
-    dump_parser.add_argument("-g", "--git", help="Directory to store API into, under current git commit hash.")
+    dump_parser.add_argument(
+        "-g",
+        "--git",
+        help="Directory to store API into, under current git commit hash.",
+    )
     dump_parser.add_argument(
         "modules", nargs="+", help="Full import path to module eg: mymodule.submodule"
     )
@@ -206,7 +211,6 @@ def main():
     )
     dump_parser.set_defaults(func=run_dump)
 
-
     # -----------------
     # Compare options
     # -----------------
@@ -214,11 +218,16 @@ def main():
     compare_parser = subparsers.add_parser(
         "compare", help="Compare two API's and suggest a semantic version."
     )
-    compare_parser.add_argument("-g", "--git", help=(
-        "List of directories separated by (,:;)."
-        "Presence of this flag will treat 'old' and 'new' arguments as git branches (tree-ish); "
-        "Using the merge base between the two as the 'old' source, and the current commit as the 'new' source."
-        "The commits will be searched for in the provided directories."))
+    compare_parser.add_argument(
+        "-g",
+        "--git",
+        help=(
+            "List of directories separated by (,:;)."
+            "Presence of this flag will treat 'old' and 'new' arguments as git branches (tree-ish); "
+            "Using the merge base between the two as the 'old' source, and the current commit as the 'new' source."
+            "The commits will be searched for in the provided directories."
+        ),
+    )
     compare_parser.add_argument("old", help="Path to original API file.")
     compare_parser.add_argument("new", help="Path to new API file.")
     compare_parser.add_argument(
@@ -244,5 +253,6 @@ def main():
         LOG.debug(traceback.format_exc())
         LOG.warn(str(err))
         sys.exit(1)
+
 
 main()
