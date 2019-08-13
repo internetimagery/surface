@@ -3,6 +3,8 @@
 if False:  # type checking
     from typing import *
 
+    M = TypeVar("M", bound="Mapper")
+
 import re
 import ast
 import token
@@ -31,7 +33,10 @@ class Mapper(object):
         self._ast = ast
 
     @classmethod
-    def parse(cls, source):  # type: (str) -> Optional[Mapper]
+    def parse(
+        cls,  # type: Type[M]
+        source,  # type: str
+    ):  # type: (...) -> Optional[M]
         # Parse source code
         tokens = get_tokens(source)
         if not tokens:
@@ -45,14 +50,17 @@ class Mapper(object):
 
 
 class FuncMapper(Mapper):
-
     @classmethod
-    def parse(cls, source):  # type: (str) -> Optional[FuncMapper]
+    def parse(
+        cls,  # type: Type[M]
+        source,  # type: str
+    ):  # type: (...) -> Optional[M]
         header = func_header_reg.search(source)
         if not header:
             return None
         source = source[header.start(1) :]
-        return super(FuncMapper, cls).parse(source)
+        mapper = super(FuncMapper, cls).parse(source)
+        return mapper
 
     def get_signature(self):  # type: () -> Optional[Tuple[str, str]]
         body = self._ast.body[0]
@@ -81,21 +89,30 @@ class FuncMapper(Mapper):
 
     def get_params(self):  # type: () -> Dict[str, str]
         arg_node = self._ast.args
-        all_args = all_args = arg_node.args + (arg_node.vararg or []) + getattr(arg_node, "kwonlyargs", []) + (arg_node.kwarg or [])
+        all_args = all_args = (
+            arg_node.args
+            + (arg_node.vararg or [])
+            + getattr(arg_node, "kwonlyargs", [])
+            + (arg_node.kwarg or [])
+        )
         arg_tokens = [self._token_map[arg.lineno, arg.col_offset] for arg in all_args]
         params = {}
         i = 0
         for i in range(len(arg_tokens) - 1):
             start_index = arg_tokens[i]
             start_name = self._tokens[start_index][1]
-            end_index = arg_tokens[i+1]
-            params[start_name] = self._get_comment_inline(self._tokens[start_index:end_index]) or UNKNOWN
-        start_index = arg_tokens[i+1]
+            end_index = arg_tokens[i + 1]
+            params[start_name] = (
+                self._get_comment_inline(self._tokens[start_index:end_index]) or UNKNOWN
+            )
+        start_index = arg_tokens[i + 1]
         start_name = self._tokens[start_index][1]
-        params[start_name] = self._get_comment_inline(self._tokens[start_index:]) or UNKNOWN
+        params[start_name] = (
+            self._get_comment_inline(self._tokens[start_index:]) or UNKNOWN
+        )
         return params
 
-    def _get_comment_inline(self, tokens): # type: (Any) -> Optional[str]
+    def _get_comment_inline(self, tokens):  # type: (Any) -> Optional[str]
         for tok in tokens:
             if tok[0] == tokenize.NL:
                 return None
@@ -107,8 +124,7 @@ class FuncMapper(Mapper):
 
 
 class ArgMapper(Mapper):
-
-    def get_params(self):  # type: () -> Optional[List[str]]
+    def get_params(self):  # type: () -> List[str]
         node = self._ast.value
         # Single variable can just return
         if not isinstance(node, ast.Tuple):
@@ -117,12 +133,15 @@ class ArgMapper(Mapper):
         params = []
         for i in range(len(node.elts) - 1):
             start_node = node.elts[i]
-            end_node = node.elts[i+1]
+            end_node = node.elts[i + 1]
             start_index = self._token_map[start_node.lineno, start_node.col_offset]
             end_index = self._token_map[end_node.lineno, end_node.col_offset] - 1
-            params.append(tokenize.untokenize(self._tokens[start_index:end_index]).strip())
-        params.append(tokenize.untokenize(self._tokens[end_index+1:]).strip())
+            params.append(
+                tokenize.untokenize(self._tokens[start_index:end_index]).strip()
+            )
+        params.append(tokenize.untokenize(self._tokens[end_index + 1 :]).strip())
         return params
+
 
 def get_comment(func):  # type: (Any) -> Optional[Tuple[Dict[str, str], str]]
     try:
@@ -150,9 +169,12 @@ def get_comment(func):  # type: (Any) -> Optional[Tuple[Dict[str, str], str]]
     if not param_comment:  # No parameters, nothing more to do.
         return {}, return_type
 
-    if param_comment == "...": # We have external typing
+    if param_comment == "...":  # We have external typing
         # Individual parameters must have typing...
-        params = {name: normalize_type(typ, context) for name, typ in func_map.get_params().items()}
+        params = {
+            name: normalize_type(typ, context)
+            for name, typ in func_map.get_params().items()
+        }
         return params, return_type
 
     else:
@@ -165,5 +187,8 @@ def get_comment(func):  # type: (Any) -> Optional[Tuple[Dict[str, str], str]]
         param_names = reversed(sig.parameters.keys())
         param_types = reversed(param_map.get_params())
 
-        params = {name: normalize_type(typ, context) for name, typ in zip(param_names, param_types)}
+        params = {
+            name: normalize_type(typ, context)
+            for name, typ in zip(param_names, param_types)
+        }
         return params, return_type

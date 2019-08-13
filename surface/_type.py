@@ -83,7 +83,9 @@ type_attr_reg = re.compile(
     r"(?:^|(?<=[, \[]))(?:typing\.)?({})\b".format("|".join(typing_attrs))
 )
 
-cache_type = {} # type: Dict[int, str]
+cache_type = {}  # type: Dict[int, str]
+cache_func_type = {}  # type: Dict[int, Tuple[List[str], str]]
+
 
 
 
@@ -150,14 +152,13 @@ def get_type_func(
     value, name="", parent=None
 ):  # type: (Any, str, Any) -> Tuple[List[str], str]
     value_id = id(value)
-    if value_id not in cache_type:
-
-        cache_type[value_id] = (
+    if value_id not in cache_func_type:
+        cache_func_type[value_id] = (
             get_comment_type_func(value)
             or get_docstring_type_func(value)
             or get_annotate_type_func(value, name)
         )
-    return cache_type[value_id]
+    return cache_func_type[value_id]
 
 
 def get_comment_type_func(value):  # type: (Any) -> Optional[Tuple[List[str], str]]
@@ -168,14 +169,22 @@ def get_comment_type_func(value):  # type: (Any) -> Optional[Tuple[List[str], st
     # All the sources touched by this function (eg decorators etc)
     source_chain = sorted(sig.sources["+depths"].items(), key=lambda x: x[1])
     root_typing = get_comment(source_chain[-1][0])
-    if not root_typing: # If we have no typing info at the base level ignore decorators.
+    if (
+        not root_typing
+    ):  # If we have no typing info at the base level ignore decorators.
         return None
 
     # Decorators could augment this return value... probably need a merge algorithm
-    return_type = root_typing[1] # Use root level return type as implied return
+    return_type = root_typing[1]  # Use root level return type as implied return
 
     source_map = {src: get_comment(src) for src, _ in source_chain}
-    params_map = {name: source_map[src[0]][0][name] for name, src in sig.sources.items() if not name.startswith("+") and source_map.get(src[0]) and name in source_map[src[0]][0]}
+    params_map = {
+        name: source_map[src[0]][0][name]  # type: ignore
+        for name, src in sig.sources.items()
+        if not name.startswith("+")
+        and source_map.get(src[0])
+        and name in source_map[src[0]][0]  # type: ignore
+    }
     # this needs a method check of some kind...
     params = [params_map[name] for name in sig.parameters.keys() if name in params_map]
     return params, return_type

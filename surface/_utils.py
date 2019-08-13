@@ -91,6 +91,7 @@ def get_tokens(source):  # type: (str) -> List[tokenize.TokenInfo]
         return []
     return tokens
 
+
 def normalize_type(type_string, context):  # type: (str, Dict[str, Any]) -> str
     try:
         root = ast.parse(type_string).body[0].value  # type: ignore
