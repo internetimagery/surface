@@ -45,7 +45,7 @@ def get_api(
     traversal = APITraversal(
         exclude_modules=exclude_modules, all_filter=all_filter, depth=depth
     )
-    api = traversal.traverse(mod, name.rsplit(".", 1)[-1])
+    api = traversal.traverse(mod)
     return api
 
 

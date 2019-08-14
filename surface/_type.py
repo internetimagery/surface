@@ -138,10 +138,6 @@ def format_annotation(ann): # type: (Any) -> str
 #     return cache_type.get(obj_id, UNKNOWN)
 
 def get_type(value, name="", parent=None):  # type: (Any, str, Any) -> str
-
-    if isinstance(value, Object):
-        return get_scope_type(value)
-
     value_id = id(value)
     if value_id in cache_type:
         return cache_type[value_id]
@@ -252,7 +248,7 @@ def get_docstring_type(value, name, parent):  # type: (Any, str, Any) -> Optiona
         if result:
             params, return_type = result
             return "typing.Callable[{}, {}]".format(
-                "[{}]".format(", ".join(p for p in params)) if params else "...",
+                "[{}]".format(", ".join(p for p in params.values())) if params else "...",
                 return_type,
             )
     return None
@@ -264,7 +260,7 @@ def get_comment_type(value, name, parent):  # type: (Any, str, Any) -> Optional[
         if result:
             params, return_type = result
             return "typing.Callable[{}, {}]".format(
-                "[{}]".format(", ".join(params)) if params else "...", return_type
+                "[{}]".format(", ".join(params.values())) if params else "...", return_type
             )
     return None
 
@@ -273,7 +269,7 @@ def get_annotate_type(value, name, parent):  # type: (Any, str, Any) -> Optional
     if type(value) == types.FunctionType:
         params, return_type = get_annotate_type_func(value, name)
         return "typing.Callable[{}, {}]".format(
-            "[{}]".format(", ".join(params)) if params else "...", return_type
+            "[{}]".format(", ".join(params.values())) if params else "...", return_type
         )
     elif inspect.isclass(parent) or inspect.ismodule(parent):
         annotation = getattr(parent, "__annotations__", {})
@@ -361,7 +357,7 @@ def handle_live_abstract(value, value_type):  # type: (Any, Any) -> Optional[str
     if value_type == types.FunctionType:
         params, return_type = get_type_func(value)
         return "typing.Callable[{}, {}]".format(
-            "[{}]".format(", ".join(params)) if params else "...", return_type
+            "[{}]".format(", ".join(params.values())) if params else "...", return_type
         )
 
     return None

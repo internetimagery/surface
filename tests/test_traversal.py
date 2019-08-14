@@ -2,6 +2,7 @@ import sys
 import os.path
 import unittest
 
+from surface import get_api
 from surface._traversal import APITraversal, recurse
 from surface._base import *
 
@@ -127,7 +128,7 @@ class TestImporter(unittest.TestCase):
         # Run through standard lib to see if anything breaks
         modules = sys.builtin_module_names
         for module in modules:
-            data = list(APITraversal().traverse(module))
+            data = list(get_api(module))
             self.assertTrue(len(data))
 
 

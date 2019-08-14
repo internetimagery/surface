@@ -1,7 +1,6 @@
 """ Wrapping live objects """
 
 import sys
-import types
 import inspect
 import logging
 import traceback
@@ -9,7 +8,7 @@ import sigtools
 
 from surface._base import POSITIONAL, KEYWORD, VARIADIC, DEFAULT, UNKNOWN
 from surface._utils import get_signature
-from surface._type import get_type_func, format_annotation
+from surface._type import get_type, get_type_func, format_annotation
 
 from surface._item import Item
 
@@ -119,7 +118,7 @@ class VarItem(LiveItem):
         return True
 
     def get_type(self):
-        return "~unknown"
+        return get_type(self.item)
 
 
 class BuiltinItem(LiveItem):
@@ -129,11 +128,7 @@ class BuiltinItem(LiveItem):
 
     @staticmethod
     def is_this_type(item, parent):
-        if isinstance(item, types.BuiltinFunctionType):
-            return True
-        if item in BUILTIN_TYPES:
-            return True
-        return False
+        return item in BUILTIN_TYPES
 
     def get_type(self):
         return self.item.__name__

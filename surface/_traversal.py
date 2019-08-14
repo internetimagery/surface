@@ -82,7 +82,7 @@ class APITraversal(object):
             ParameterItem: lambda n, s, p: Arg(n, s.get_type(), s.get_kind()),
         }
 
-    def traverse(self, module, name): # type: (Any, str) -> Module
+    def traverse(self, module): # type: (Any) -> Module
         """ Entry point to generating an API representation. """
         visitors = [
             NoneItem,
@@ -93,6 +93,7 @@ class APITraversal(object):
             ClassItem,
             VarItem,
         ]
+        name = module.__name__.rsplit(".", 1)[-1]
         item = ModuleItem.wrap(visitors, module)
         api = Module(name, module.__name__, tuple(self.walk(item, name, set())))
         return api
