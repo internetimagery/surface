@@ -13,6 +13,7 @@ import inspect
 import tokenize
 import traceback
 import itertools
+import collections
 
 from surface._base import UNKNOWN, PY2
 from surface._doc import parse_docstring
@@ -87,6 +88,11 @@ cache_type = {}  # type: Dict[int, str]
 cache_func_type = {}  # type: Dict[int, Tuple[List[str], str]]
 
 
+# TODO: Maybe come back to this. Just use existing flawed typing logic at the moment.
+# TODO: re-jig func type getter to output ordered dict / list tuples
+# TODO: clean things up with new nody style traversal
+# TODO: THEN tackle new typing, and new module-first traversal.
+
 
 
 def format_annotation(ann): # type: (Any) -> str
@@ -150,7 +156,7 @@ def get_type(value, name="", parent=None):  # type: (Any, str, Any) -> str
 
 def get_type_func(
     value, name="", parent=None
-):  # type: (Any, str, Any) -> Tuple[List[str], str]
+):  # type: (Any, str, Any) -> Tuple[Dict[str, str], str]
     value_id = id(value)
     if value_id not in cache_func_type:
         cache_func_type[value_id] = (
@@ -161,72 +167,83 @@ def get_type_func(
     return cache_func_type[value_id]
 
 
-def get_comment_type_func(value):  # type: (Any) -> Optional[Tuple[List[str], str]]
+def get_comment_type_func(value):  # type: (Any) -> Optional[Tuple[Dict[str, str], str]]
     sig = get_signature(value)
     if not sig:
         return None
 
-    # All the sources touched by this function (eg decorators etc)
-    source_chain = sorted(sig.sources["+depths"].items(), key=lambda x: x[1])
-    root_typing = get_comment(source_chain[-1][0])
-    if (
-        not root_typing
-    ):  # If we have no typing info at the base level ignore decorators.
+    # Check the lowest level function for typing.
+    # In the case of decorators, this is the source function.
+    # If the source has no typing information, ignore everything else.
+    root_func = sorted(sig.sources["+depths"].items(), key=lambda x: x[1])[-1][0]
+    root_typing = get_comment(root_func)
+    if not root_typing:
         return None
 
-    # Decorators could augment this return value... probably need a merge algorithm
+    # Decorators could augment this return value... probably need a merge algorithm?
     return_type = root_typing[1]  # Use root level return type as implied return
 
-    source_map = {src: get_comment(src) for src, _ in source_chain}
-    params_map = {
-        name: source_map[src[0]][0][name]  # type: ignore
-        for name, src in sig.sources.items()
-        if not name.startswith("+")
-        and source_map.get(src[0])
-        and name in source_map[src[0]][0]  # type: ignore
-    }
-    # this needs a method check of some kind...
-    params = [params_map[name] for name in sig.parameters.keys() if name in params_map]
+    params = collections.OrderedDict() # map params from each function to attributes.
+    for param in sig.parameters:
+        source_func = sig.sources[param]
+        source_type = get_comment(source_func)
+        if source_type:
+            params[param] = source_type[0].get(param, UNKNOWN)
+        else:
+            params[param] = UNKNOWN
     return params, return_type
 
 
 def get_docstring_type_func(value):  # type: (Any) -> Optional[Tuple[List[str], str]]
-    result = parse_docstring(value)
-    if not result:
+    sig = get_signature(value)
+    if not sig:
         return None
-    params_dict, return_type = result
-    if params_dict:
-        sig = get_signature(value)
-        params = [params_dict.get(name, UNKNOWN) for name in sig.parameters]
-    else:
-        params = []
+
+    # Check the lowest level function for typing.
+    # In the case of decorators, this is the source function.
+    # If the source has no typing information, ignore everything else.
+    root_func = sorted(sig.sources["+depths"].items(), key=lambda x: x[1])[-1][0]
+    root_typing = parse_docstring(root_func)
+    if not root_typing:
+        return None
+
+    # Decorators could augment this return value... probably need a merge algorithm?
+    return_type = root_typing[1]  # Use root level return type as implied return
+
+    params = collections.OrderedDict() # map params from each function to attributes.
+    for param in sig.parameters:
+        source_func = sig.sources[param]
+        source_type = parse_docstring(source_func)
+        if source_type:
+            params[param] = source_type[0].get(param, UNKNOWN)
+        else:
+            params[param] = UNKNOWN
     return params, return_type
 
 
-def get_annotate_type_func(value, name):  # type: (Any, str) -> Tuple[List[str], str]
+def get_annotate_type_func(value, name):  # type: (Any, str) -> Tuple[Dict[str, str], str]
     sig = get_signature(value)
     return_type = (
         handle_live_annotation(sig.return_annotation)
         if sig.return_annotation is not sig.empty
         else UNKNOWN
     )
-    if return_type == UNKNOWN and name == "__init__":
-        return_type = "None"
-    parameters = []
-    for param in sig.parameters.values():
+
+    params = collections.OrderedDict() # map params from each function to attributes.
+    for name, param in sig.parameters.items():
         if param.annotation is not sig.empty:
             # If we are given an annotation, use it
-            parameters.append(handle_live_annotation(param.annotation))
+            params[name] = handle_live_annotation(param.annotation)
         elif param.default is not sig.empty:
             # If we have a default value, use that type
             if param.default is None:
                 # Value is optional
-                parameters.append("typing.Optional[{}]".format(UNKNOWN))
+                params[name] = "typing.Optional[{}]".format(UNKNOWN)
             else:
-                parameters.append(get_live_type(param.default))
+                params[name] = get_live_type(param.default)
         else:
-            parameters.append(UNKNOWN)
-    return parameters, return_type
+            params[name] = UNKNOWN
+    return params, return_type
 
 
 def get_docstring_type(value, name, parent):  # type: (Any, str, Any) -> Optional[str]

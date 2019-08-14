@@ -183,6 +183,8 @@ def get_comment(func):  # type: (Any) -> Optional[Tuple[Dict[str, str], str]]
             return None
         # Match parameters to function values
         sig = get_signature(func)
+        if not sig:
+            return None
         # reverse args, as a hack to skip "self" without knowing if it's an unbound method
         param_names = reversed(sig.parameters.keys())
         param_types = reversed(param_map.get_params())

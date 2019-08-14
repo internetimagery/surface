@@ -73,6 +73,7 @@ Rough todo...
 - [x] Collect annotation typing information.
 - [x] Partial support for typing comments.
 - [x] Partial support for docstring typing (google style only, currently)
+- [ ] Search modules from bottom up. So "parent" relationships reflect module heirarchy, not traversal chain.
 - [ ] Utilize sigtools depth feature, to collect typing from comments on all arguments.
 - [ ] Improve typing comparison. Inspecting deeply nested types.
 - [x] Provide features to store api output using git commits

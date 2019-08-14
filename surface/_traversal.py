@@ -75,7 +75,7 @@ class APITraversal(object):
             VarItem: lambda n, s, p: Var(n, s.get_type()),
             ErrorItem: lambda n, s, p: Unknown(n, clean_repr(s.item)),
             ClassItem: lambda n, s, p: Class(n, tuple(self.walk(s, n, set(p)))),
-            ModuleItem: lambda n, s, p: Module(n, s.obj.__name__, tuple(self.walk(s, n, set(p)))),
+            ModuleItem: lambda n, s, p: Module(n, s.item.__name__, tuple(self.walk(s, n, set(p)))),
             FunctionItem: lambda n, s, p: Func(n, tuple(self.walk(s, n, set(p))), s.get_return_type()),
             ParameterItem: lambda n, s, p: Arg(n, s.get_type(), s.get_kind()),
         }
@@ -105,11 +105,13 @@ class APITraversal(object):
                 parent_name, "Circular Reference: {}".format(clean_repr(repr(parent_item.item)))
             )
             return
+        path.add(item_id)
 
         for name, item in parent_item.items():
             item_type = type(item)
             mapping = self.scope_api_map.get(item_type)
             if mapping:
+
                 yield mapping(name, item, path)
 
     #

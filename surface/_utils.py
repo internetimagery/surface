@@ -40,7 +40,7 @@ def clean_repr(err):  # type: (Any) -> str
     return re.sub(r"<(.+) at (0x[0-9A-Fa-f]+)>", r"<\1 at memory_address>", str(err))
 
 
-def get_signature(func):  # type: (Any) -> sigtools.Signature
+def get_signature(func):  # type: (Any) -> Optional[sigtools.Signature]
     func_id = id(func)
     if func_id in cache_sig:
         return cache_sig[func_id]
@@ -55,7 +55,7 @@ def get_signature(func):  # type: (Any) -> sigtools.Signature
     except (SyntaxError, ValueError) as err:
         LOG.debug("Error getting signature for {}".format(func))
         LOG.debug(traceback.format_exc())
-        raise ValueError(str(err))
+        return None
     else:
         return cache_sig[func_id]
     finally:
