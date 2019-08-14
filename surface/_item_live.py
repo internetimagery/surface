@@ -114,6 +114,14 @@ class VarItem(LiveItem):
     def get_type(self):
         return "~unknown"
 
+class NoneItem(LiveItem):
+    """ Wrap variable. Fallback. """
+
+    __slots__ = []
+
+    @staticmethod
+    def is_this_type(item, parent):
+        return item is None
 
 class FunctionItem(LiveItem):
     """ Wrap function / method """

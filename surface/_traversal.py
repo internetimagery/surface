@@ -20,7 +20,7 @@ except ImportError:
 from surface._base import *
 from surface._type import get_type, get_type_func
 from surface._utils import clean_repr, import_module, get_signature, get_source
-from surface._item_live import ErrorItem, ModuleItem, ClassItem, VarItem, FunctionItem, ParameterItem
+from surface._item_live import ErrorItem, ModuleItem, ClassItem, VarItem, NoneItem, FunctionItem, ParameterItem
 
 
 LOG = logging.getLogger(__name__)
@@ -72,6 +72,7 @@ class APITraversal(object):
         self.all_filter = all_filter  # Mimic "import *"
         self.depth = depth  # How far down the rabbit hole do we go?
         self.scope_api_map = {
+            NoneItem: lambda n, s, p: Var(n, "None"),
             VarItem: lambda n, s, p: Var(n, s.get_type()),
             ErrorItem: lambda n, s, p: Unknown(n, clean_repr(s.item)),
             ClassItem: lambda n, s, p: Class(n, tuple(self.walk(s, n, set(p)))),
@@ -83,6 +84,7 @@ class APITraversal(object):
     def traverse(self, module, name):
         """ Entry point to generating an API representation. """
         visitors = [
+            NoneItem,
             ParameterItem,
             FunctionItem,
             ModuleItem,
