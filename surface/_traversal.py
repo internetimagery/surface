@@ -20,7 +20,7 @@ except ImportError:
 from surface._base import *
 from surface._type import get_type, get_type_func
 from surface._utils import clean_repr, import_module, get_signature, get_source
-from surface._item_live import ErrorItem, ModuleItem, ClassItem, VarItem, NoneItem, FunctionItem, ParameterItem
+from surface._item_live import ErrorItem, ModuleItem, ClassItem, VarItem, BuiltinItem, NoneItem, FunctionItem, ParameterItem
 
 
 LOG = logging.getLogger(__name__)
@@ -62,7 +62,7 @@ def recurse(name):  # type: (str) -> List[str]
 
 
 class APITraversal(object):
-    def __init__(self, exclude_modules=False, all_filter=False, depth=10):
+    def __init__(self, exclude_modules=False, all_filter=False, depth=10): # type: (bool, bool, int) -> None
         LOG.debug(
             "APITraversal created with {}".format(
                 ", ".join("{}={}".format(*var) for var in locals().items())
@@ -74,6 +74,7 @@ class APITraversal(object):
         self.scope_api_map = {
             NoneItem: lambda n, s, p: Var(n, "None"),
             VarItem: lambda n, s, p: Var(n, s.get_type()),
+            BuiltinItem: lambda n, s, p: Var(n, s.get_type()),
             ErrorItem: lambda n, s, p: Unknown(n, clean_repr(s.item)),
             ClassItem: lambda n, s, p: Class(n, tuple(self.walk(s, n, set(p)))),
             ModuleItem: lambda n, s, p: Module(n, s.item.__name__, tuple(self.walk(s, n, set(p)))),
@@ -81,10 +82,11 @@ class APITraversal(object):
             ParameterItem: lambda n, s, p: Arg(n, s.get_type(), s.get_kind()),
         }
 
-    def traverse(self, module, name):
+    def traverse(self, module, name): # type: (Any, str) -> Module
         """ Entry point to generating an API representation. """
         visitors = [
             NoneItem,
+            BuiltinItem,
             ParameterItem,
             FunctionItem,
             ModuleItem,
@@ -95,7 +97,7 @@ class APITraversal(object):
         api = Module(name, module.__name__, tuple(self.walk(item, name, set())))
         return api
 
-    def walk(self, parent_item, parent_name, path):
+    def walk(self, parent_item, parent_name, path): # type: (Any, str, Set[str]) -> Iterable[Any]
         LOG.debug("Visiting: {}".format(parent_item))
         if len(path) > self.depth:
             LOG.debug("Exceeded depth")

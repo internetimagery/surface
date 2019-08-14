@@ -1,6 +1,7 @@
 """ Wrapping live objects """
 
 import sys
+import types
 import inspect
 import logging
 import traceback
@@ -13,11 +14,18 @@ from surface._type import get_type_func, format_annotation
 from surface._item import Item
 
 try: # python 3
+    import builtins  # type: ignore
+except ImportError:
+    import __builtin__ as builtins  # type: ignore
+
+try: # python 3
     from inspect import Parameter, _empty as Empty # type: ignore
 except ImportError:
     from funcsigs import Parameter, _empty as Empty # type: ignore
 
 LOG = logging.getLogger(__name__)
+
+BUILTIN_TYPES = tuple(b for b in builtins.__dict__.values() if isinstance(b, type))
 
 
 class ErrorItem(Item):
@@ -60,18 +68,17 @@ class ModuleItem(LiveItem):
     __slots__ = []
 
     ALL_FILTER = False
-    EXCLUDE_MODULES = False
 
     @classmethod
     def is_this_type(cls, item, parent):
-        if cls.EXCLUDE_MODULES and parent:
-            return False
         return inspect.ismodule(item)
 
     def get_child(self, attr):
         return getattr(self.item, attr)
 
     def get_children_names(self):
+        if self.name in sys.builtin_module_names:
+            return [] # Don't bother traversing built in stuff...
         names = (name for name in sorted(dir(self.item)) if not name.startswith("_"))
         if self.ALL_FILTER:
             try:
@@ -114,8 +121,26 @@ class VarItem(LiveItem):
     def get_type(self):
         return "~unknown"
 
+
+class BuiltinItem(LiveItem):
+    """ Wrap builtin. """
+
+    __slots__ = []
+
+    @staticmethod
+    def is_this_type(item, parent):
+        if isinstance(item, types.BuiltinFunctionType):
+            return True
+        if item in BUILTIN_TYPES:
+            return True
+        return False
+
+    def get_type(self):
+        return self.item.__name__
+
+
 class NoneItem(LiveItem):
-    """ Wrap variable. Fallback. """
+    """ Wrap None. """
 
     __slots__ = []
 
@@ -141,7 +166,10 @@ class FunctionItem(LiveItem):
         return sig.parameters.keys() if sig else []
 
     def get_return_type(self):
-        return "~unknown"
+        func_type = get_type_func(self.item)
+        if not func_type:
+            return UNKNOWN
+        return func_type[1]
 
 
 class ParameterItem(LiveItem):

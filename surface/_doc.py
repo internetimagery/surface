@@ -12,6 +12,12 @@ from surface._utils import normalize_type
 
 def parse_docstring(func):  # type: (Any) -> Optional[Tuple[Dict[str, str], str]]
     """ Parse out typing information from docstring """
+    if inspect.isclass(func):
+        # Classes should be handled, but are not yet...
+        # Handling them would involve determining if they use __new__ or __init__
+        # and using that as the function itself.
+        return None
+
     doc = inspect.getdoc(func)
     if not doc:
         return None

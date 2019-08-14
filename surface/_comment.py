@@ -59,7 +59,10 @@ class FuncMapper(Mapper):
         if not header:
             return None
         source = source[header.start(1) :]
-        mapper = super(FuncMapper, cls).parse(source)
+        try:
+            mapper = super(FuncMapper, cls).parse(source)
+        except Exception as err:
+            import pdb; pdb.set_trace()
         return mapper
 
     def get_signature(self):  # type: () -> Optional[Tuple[str, str]]
@@ -144,6 +147,12 @@ class ArgMapper(Mapper):
 
 
 def get_comment(func):  # type: (Any) -> Optional[Tuple[Dict[str, str], str]]
+    if inspect.isclass(func):
+        # Classes should be handled, but are not yet...
+        # Handling them would involve determining if they use __new__ or __init__
+        # and using that as the function itself.
+        return None
+
     try:
         source = inspect.getsource(func)
     except (IOError, TypeError) as err:

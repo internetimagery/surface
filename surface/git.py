@@ -3,10 +3,12 @@
 if False:  # type checking
     from typing import *
 
-import gzip
-import errno
-import os.path
-import subprocess
+import os as _os
+import gzip as _gzip
+import errno as _errno
+import subprocess as _subprocess
+
+__all__ = ("GitError", "Git")
 
 
 class GitError(Exception):
@@ -41,19 +43,19 @@ class Git(object):
     @classmethod
     def save(cls, commit, storage_directory, data):  # type: (str, str, str) -> str
         """ Save data to location """
-        storage_directory = os.path.realpath(storage_directory)
-        if not os.path.isdir(storage_directory):
+        storage_directory = _os.path.realpath(storage_directory)
+        if not _os.path.isdir(storage_directory):
             raise GitError("Path is not a directory: {}".format(storage_directory))
 
         sub_dir, leaf = cls._format_commit(commit)
-        storage_sub_dir = os.path.join(storage_directory, sub_dir)
-        storage_path = os.path.join(storage_sub_dir, leaf)
+        storage_sub_dir = _os.path.join(storage_directory, sub_dir)
+        storage_path = _os.path.join(storage_sub_dir, leaf)
         try:
-            os.mkdir(storage_sub_dir)
+            _os.mkdir(storage_sub_dir)
         except OSError as err:
-            if err.errno != errno.EEXIST:
+            if err.errno != _errno.EEXIST:
                 raise
-        with gzip.open(storage_path, "w") as handle:
+        with _gzip.open(storage_path, "w") as handle:
             handle.write(data.encode("utf-8"))
         return storage_path
 
@@ -62,12 +64,12 @@ class Git(object):
         """ Look for, and load the provided commit, in any of the provided directories """
         parts = cls._format_commit(commit)
         for storage_dir in storage_directories:
-            storage_path = os.path.join(storage_dir, *parts)
+            storage_path = _os.path.join(storage_dir, *parts)
             try:
-                with gzip.open(storage_path) as handle:
+                with _gzip.open(storage_path) as handle:
                     return handle.read()
             except IOError as err:
-                if err.errno != errno.ENOENT:
+                if err.errno != _errno.ENOENT:
                     raise
         raise GitError("Cannot find the commit {}".format(commit))
 
@@ -82,8 +84,8 @@ class Git(object):
     @staticmethod
     def _run(command):
         try:
-            output = subprocess.check_output(command, stderr=subprocess.STDOUT)
-        except subprocess.CalledProcessError as err:
+            output = _subprocess.check_output(command, stderr=_subprocess.STDOUT)
+        except _subprocess.CalledProcessError as err:
             raise GitError("Git {}".format(err.output.decode("utf-8")))
         except OSError as err:
             raise GitError("Could not find git. Is it correctly installed?")
