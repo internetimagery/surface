@@ -68,6 +68,8 @@ def get_source(func):  # type: (Any) -> str
         sig = get_signature(func)
     except ValueError:
         return ""
+    if not sig:
+        return ""
     sources = sorted(sig.sources["+depths"].items(), key=lambda s: s[1])
     try:
         return inspect.getsource(sources[-1][0]) or ""

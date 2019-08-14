@@ -62,7 +62,9 @@ class FuncMapper(Mapper):
         try:
             mapper = super(FuncMapper, cls).parse(source)
         except Exception as err:
-            import pdb; pdb.set_trace()
+            import pdb
+
+            pdb.set_trace()
         return mapper
 
     def get_signature(self):  # type: () -> Optional[Tuple[str, str]]

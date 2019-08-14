@@ -1,10 +1,13 @@
 """ Wrapping live objects """
 
+if False:  # type checking
+    from typing import *
+
 import sys
 import inspect
 import logging
 import traceback
-import sigtools
+import sigtools  # type: ignore
 
 from surface._base import POSITIONAL, KEYWORD, VARIADIC, DEFAULT, UNKNOWN
 from surface._utils import get_signature
@@ -12,15 +15,15 @@ from surface._type import get_type, get_type_func, format_annotation
 
 from surface._item import Item
 
-try: # python 3
+try:  # python 3
     import builtins  # type: ignore
 except ImportError:
     import __builtin__ as builtins  # type: ignore
 
-try: # python 3
-    from inspect import Parameter, _empty as Empty # type: ignore
+try:  # python 3
+    from inspect import Parameter, _empty as Empty  # type: ignore
 except ImportError:
-    from funcsigs import Parameter, _empty as Empty # type: ignore
+    from funcsigs import Parameter, _empty as Empty  # type: ignore
 
 LOG = logging.getLogger(__name__)
 
@@ -32,21 +35,21 @@ class ErrorItem(Item):
 
     __slots__ = ("type", "trace")
 
-    def __new__(cls, parent=None): # type: (Optional[Item]) -> ErrorItem
+    def __new__(cls, parent=None):  # type: (Optional[Any]) -> ErrorItem
         errType, errVal, errTrace = sys.exc_info()
-        scope = super(ErrorItem, cls).__new__(cls, [], errVal, parent)
+        scope = super(ErrorItem, cls).__new__(cls, [], errVal, parent)  # type: Any
         scope.type = errType
         scope.trace = traceback.format_exc()
-        LOG.debug(scope.trace) # Alert us of this error
+        LOG.debug(scope.trace)  # Alert us of this error
         return scope
 
 
 class LiveItem(Item):
     """ Wrap and traverse live objects """
 
-    __slots__ = []
+    __slots__ = []  # type: ignore
 
-    def __getitem__(self, name): # type: (str) -> Item
+    def __getitem__(self, name):  # type: (str) -> Item
         """ We can get errors while traversing. Keep them. """
         try:
             return super(LiveItem, self).__getitem__(name)
@@ -64,7 +67,7 @@ class LiveItem(Item):
 class ModuleItem(LiveItem):
     """ Wrap live module objects """
 
-    __slots__ = []
+    __slots__ = []  # type: ignore
 
     ALL_FILTER = False
 
@@ -77,8 +80,10 @@ class ModuleItem(LiveItem):
 
     def get_children_names(self):
         if self.name in sys.builtin_module_names:
-            return [] # Don't bother traversing built in stuff...
-        names = (name for name in sorted(dir(self.item)) if name and not name.startswith("_"))
+            return []  # Don't bother traversing built in stuff...
+        names = (
+            name for name in sorted(dir(self.item)) if name and not name.startswith("_")
+        )
         if self.ALL_FILTER:
             try:
                 all_filter = self.item.__all__
@@ -92,16 +97,20 @@ class ModuleItem(LiveItem):
 class ClassItem(LiveItem):
     """ Wrap live class objects """
 
-    __slots__ = []
+    __slots__ = []  # type: ignore
 
     @staticmethod
     def is_this_type(item, parent):
         return inspect.isclass(item)
 
     def get_children_names(self):
-        names = (name for name in sorted(dir(self.item)) if name == "__init__" or not name.startswith("_"))
+        names = (
+            name
+            for name in sorted(dir(self.item))
+            if name == "__init__" or not name.startswith("_")
+        )
         if not FunctionItem.is_this_type(self.item.__init__, self):
-            names = (n for n in names if n != "__init__") # strip init
+            names = (n for n in names if n != "__init__")  # strip init
         return names
 
     def get_child(self, attr):
@@ -111,7 +120,7 @@ class ClassItem(LiveItem):
 class VarItem(LiveItem):
     """ Wrap variable. Fallback. """
 
-    __slots__ = []
+    __slots__ = []  # type: ignore
 
     @staticmethod
     def is_this_type(item, parent):
@@ -124,7 +133,7 @@ class VarItem(LiveItem):
 class BuiltinItem(LiveItem):
     """ Wrap builtin. """
 
-    __slots__ = []
+    __slots__ = []  # type: ignore
 
     @staticmethod
     def is_this_type(item, parent):
@@ -137,16 +146,17 @@ class BuiltinItem(LiveItem):
 class NoneItem(LiveItem):
     """ Wrap None. """
 
-    __slots__ = []
+    __slots__ = []  # type: ignore
 
     @staticmethod
     def is_this_type(item, parent):
         return item is None
 
+
 class FunctionItem(LiveItem):
     """ Wrap function / method """
 
-    __slots__ = []
+    __slots__ = []  # type: ignore
 
     @staticmethod
     def is_this_type(item, parent):
@@ -167,14 +177,20 @@ class FunctionItem(LiveItem):
             # We want to ignore "self" and "cls", as those are implementation details
             # and are not relevant for API comparisons
             # It seems funcsigs removes "cls" for us in class methods... that is nice.
-            source_func = sorted(sig.sources["+depths"].items(), key=lambda s: s[1])[-1][0]
+            source_func = sorted(sig.sources["+depths"].items(), key=lambda s: s[1])[
+                -1
+            ][0]
             try:
                 source = inspect.getsource(source_func)
             except (IOError, TypeError) as err:
                 LOG.debug(traceback.format_exc())
             else:
-                if source and not "@staticmethod" in source and not "@classmethod" in source:
-                    params = params[1:] # chop off self
+                if (
+                    source
+                    and not "@staticmethod" in source
+                    and not "@classmethod" in source
+                ):
+                    params = params[1:]  # chop off self
         return params
 
     def get_return_type(self):
@@ -191,7 +207,7 @@ class FunctionItem(LiveItem):
 class ParameterItem(LiveItem):
     """ Wrap function parameter """
 
-    __slots__ = []
+    __slots__ = []  # type: ignore
 
     KIND_MAP = {
         "POSITIONAL_ONLY": POSITIONAL,
@@ -216,5 +232,7 @@ class ParameterItem(LiveItem):
         return UNKNOWN
 
     def get_kind(self):
-        kind = self.KIND_MAP[str(self.item.kind)] | (0 if self.item.default is Empty else DEFAULT)
+        kind = self.KIND_MAP[str(self.item.kind)] | (
+            0 if self.item.default is Empty else DEFAULT
+        )
         return kind

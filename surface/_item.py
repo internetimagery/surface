@@ -3,6 +3,8 @@
 if False:  # type checking
     from typing import *
 
+    I = TypeVar("I", bound="Item")
+
 import collections
 
 
@@ -16,12 +18,12 @@ class Item(collections.Mapping):
     # ------------------------------------------
 
     @property
-    def item(self): # type: () -> Any
+    def item(self):  # type: (Any) -> Any
         """ Access interal object """
         return self.__item
 
     @property
-    def parent(self): # type: () -> Any
+    def parent(self):  # type: (Any) -> I
         """ Get previous object """
         return self.__parent
 
@@ -30,34 +32,38 @@ class Item(collections.Mapping):
     # ------------------------------------------
 
     @staticmethod
-    def is_this_type(item, parent): # type: (Any, Optional[Item]) -> bool
+    def is_this_type(item, parent):  # type: (Any, Optional[I]) -> bool
         """ Check if the passed in object represents the Object """
         return False
 
     @classmethod
-    def wrap(cls, visitors, item, parent=None): # type: (Sequence[Type[Item]], Any, Optional[Item]) -> Item
+    def wrap(
+        cls, visitors, item, parent=None
+    ):  # type: (Sequence[Type[I]], Any, Optional[I]) -> I
         """ Create an instance of Item, wrapping the provided object """
         for visitor in visitors:
             if visitor.is_this_type(item, parent):
                 return visitor(visitors, item, parent)
         raise TypeError("Unhandled item {}".format(item))
 
-    def __new__(cls, visitors, item, parent): # type: (Sequence[Type[Item]], Any, Optional[Item]) -> Item
+    def __new__(
+        cls, visitors, item, parent
+    ):  # type: (Sequence[Type[I]], Any, Optional[I]) -> I
         scope = super(Item, cls).__new__(cls)
         scope.__visitors = visitors
         scope.__item = item
-        scope.__parent = parent # why is this not weak referenceable?
+        scope.__parent = parent  # why is this not weak referenceable?
         return scope
 
     # ------------------------------------------
     # Traversing
     # ------------------------------------------
 
-    def get_child(self, name): # type: (str) -> Any
+    def get_child(self, name):  # type: (str) -> Any
         """ Return a child of this item """
-        raise KeyError("Child {} not in {}".format(name, self.obj))
+        raise KeyError("Child {} not in {}".format(name, self.item))
 
-    def get_children_names(self): # type: () -> Sequence[Any]
+    def get_children_names(self):  # type: () -> Sequence[str]
         """ Return the names of all children in this item """
         return []
 

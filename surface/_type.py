@@ -85,7 +85,7 @@ type_attr_reg = re.compile(
 )
 
 cache_type = {}  # type: Dict[int, str]
-cache_func_type = {}  # type: Dict[int, Tuple[List[str], str]]
+cache_func_type = {}  # type: Dict[int, Tuple[Dict[str, str], str]]
 
 
 # TODO: Maybe come back to this. Just use existing flawed typing logic at the moment.
@@ -94,9 +94,8 @@ cache_func_type = {}  # type: Dict[int, Tuple[List[str], str]]
 # TODO: THEN tackle new typing, and new module-first traversal.
 
 
-
-def format_annotation(ann): # type: (Any) -> str
-    if PY2: # Annotations do not exist in python 2
+def format_annotation(ann):  # type: (Any) -> str
+    if PY2:  # Annotations do not exist in python 2
         return UNKNOWN
 
     if isinstance(ann, str):
@@ -112,10 +111,6 @@ def format_annotation(ann): # type: (Any) -> str
         return "{}.{}".format(ann.__module__, ann.__qualname__)
 
     return UNKNOWN
-
-
-
-
 
 
 # TODO: handle types in here...
@@ -136,6 +131,7 @@ def format_annotation(ann): # type: (Any) -> str
 #         cache_type[obj_id] = get_live_type(scope.obj)
 #
 #     return cache_type.get(obj_id, UNKNOWN)
+
 
 def get_type(value, name="", parent=None):  # type: (Any, str, Any) -> str
     value_id = id(value)
@@ -179,10 +175,11 @@ def get_comment_type_func(value):  # type: (Any) -> Optional[Tuple[Dict[str, str
     # Decorators could augment this return value... probably need a merge algorithm?
     return_type = root_typing[1]  # Use root level return type as implied return
 
-    params = collections.OrderedDict() # map params from each function to attributes.
+    # map params from each function to attributes.
+    params = collections.OrderedDict()  # type: Dict[str, str]
     for param in sig.parameters:
         source_func = sig.sources[param]
-        source_type = get_comment(source_func[0]) # Just grabbing one for now
+        source_type = get_comment(source_func[0])  # Just grabbing one for now
         if source_type:
             params[param] = source_type[0].get(param, UNKNOWN)
         else:
@@ -190,7 +187,9 @@ def get_comment_type_func(value):  # type: (Any) -> Optional[Tuple[Dict[str, str
     return params, return_type
 
 
-def get_docstring_type_func(value):  # type: (Any) -> Optional[Tuple[List[str], str]]
+def get_docstring_type_func(
+    value
+):  # type: (Any) -> Optional[Tuple[Dict[str, str], str]]
     sig = get_signature(value)
     if not sig:
         return None
@@ -206,7 +205,8 @@ def get_docstring_type_func(value):  # type: (Any) -> Optional[Tuple[List[str], 
     # Decorators could augment this return value... probably need a merge algorithm?
     return_type = root_typing[1]  # Use root level return type as implied return
 
-    params = collections.OrderedDict() # map params from each function to attributes.
+    # map params from each function to attributes.
+    params = collections.OrderedDict()  # type: Dict[str, str]
     for param in sig.parameters:
         source_func = sig.sources[param]
         source_type = parse_docstring(source_func[0])  # Just grabbing one for now
@@ -217,15 +217,21 @@ def get_docstring_type_func(value):  # type: (Any) -> Optional[Tuple[List[str], 
     return params, return_type
 
 
-def get_annotate_type_func(value, name):  # type: (Any, str) -> Tuple[Dict[str, str], str]
+def get_annotate_type_func(
+    value, name
+):  # type: (Any, str) -> Tuple[Dict[str, str], str]
     sig = get_signature(value)
+    if not sig:
+        return {}, UNKNOWN
+
     return_type = (
         handle_live_annotation(sig.return_annotation)
         if sig.return_annotation is not sig.empty
         else UNKNOWN
     )
 
-    params = collections.OrderedDict() # map params from each function to attributes.
+    # map params from each function to attributes.
+    params = collections.OrderedDict()  # type: Dict[str, str]
     for name, param in sig.parameters.items():
         if param.annotation is not sig.empty:
             # If we are given an annotation, use it
@@ -248,7 +254,9 @@ def get_docstring_type(value, name, parent):  # type: (Any, str, Any) -> Optiona
         if result:
             params, return_type = result
             return "typing.Callable[{}, {}]".format(
-                "[{}]".format(", ".join(p for p in params.values())) if params else "...",
+                "[{}]".format(", ".join(p for p in params.values()))
+                if params
+                else "...",
                 return_type,
             )
     return None
@@ -260,7 +268,8 @@ def get_comment_type(value, name, parent):  # type: (Any, str, Any) -> Optional[
         if result:
             params, return_type = result
             return "typing.Callable[{}, {}]".format(
-                "[{}]".format(", ".join(params.values())) if params else "...", return_type
+                "[{}]".format(", ".join(params.values())) if params else "...",
+                return_type,
             )
     return None
 

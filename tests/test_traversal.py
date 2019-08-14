@@ -76,14 +76,16 @@ class TestImporter(unittest.TestCase):
                         ),
                         UNKNOWN,
                     ),
-                    Func("myLambda", (Arg("x", UNKNOWN, POSITIONAL | KEYWORD),), UNKNOWN),
+                    Func(
+                        "myLambda", (Arg("x", UNKNOWN, POSITIONAL | KEYWORD),), UNKNOWN
+                    ),
                     Module(
                         "myModule",
                         "test_mod_basic.myModule",
                         (Var("myVar", "typing.List[int]"),),
                     ),
                     Var("myVar", "int"),
-                )
+                ),
             ),
         )
 
@@ -104,8 +106,8 @@ class TestImporter(unittest.TestCase):
                             Var("ok_method", "str"),
                         ),
                     ),
-                )
-            )
+                ),
+            ),
         )
 
     def test_err_attr(self):
@@ -138,7 +140,7 @@ class TestImporter(unittest.TestCase):
                         ),
                     ),
                 ),
-            )
+            ),
         )
 
     def test_stdlib(self):
