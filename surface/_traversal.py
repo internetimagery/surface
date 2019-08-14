@@ -114,6 +114,18 @@ class APITraversal(object):
 
         for name, item in parent_item.items():
             item_type = type(item)
+            item_id = id(item)
+
+            if item_id in path:
+                yield Unknown(
+                    parent_name, "Circular Reference: {}".format(clean_repr(repr(parent_item.item)))
+                )
+                return
+            path.add(item_id)
+
+
+
+
             mapping = self.scope_api_map.get(item_type)
             if mapping:
 
