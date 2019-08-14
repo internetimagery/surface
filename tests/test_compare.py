@@ -15,7 +15,7 @@ class TestCompare(unittest.TestCase):
     def get_module(name, rename=""):
         mod_name = rename or name
         module = imp.load_source(mod_name, os.path.join(root, "{}.py".format(name)))
-        api = [Module(mod_name, mod_name, tuple(APITraversal().traverse(module)))]
+        api = [APITraversal().traverse(module)]
         del sys.modules[mod_name]
         return api
 
