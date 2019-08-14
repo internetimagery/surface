@@ -76,8 +76,8 @@ class APITraversal(object):
             VarItem: lambda n, s, p: Var(n, s.get_type()),
             BuiltinItem: lambda n, s, p: Var(n, s.get_type()),
             ErrorItem: lambda n, s, p: Unknown(n, clean_repr(s.item)),
-            ClassItem: lambda n, s, p: Class(n, tuple(self.walk(s, n, set(p)))),
-            ModuleItem: lambda n, s, p: Module(n, s.item.__name__, tuple(self.walk(s, n, set(p)))),
+            ClassItem: lambda n, s, p: Class(n, tuple(self.walk(s, n, p.copy()))),
+            ModuleItem: lambda n, s, p: Module(n, s.item.__name__, tuple(self.walk(s, n, p.copy()))),
             FunctionItem: lambda n, s, p: Func(n, tuple(self.walk(s, n, set(p))), s.get_return_type()),
             ParameterItem: lambda n, s, p: Arg(n, s.get_type(), s.get_kind()),
         }
@@ -98,37 +98,24 @@ class APITraversal(object):
         api = Module(name, module.__name__, tuple(self.walk(item, name, set())))
         return api
 
-    def walk(self, parent_item, parent_name, path): # type: (Any, str, Set[str]) -> Iterable[Any]
-        LOG.debug("Visiting: {}".format(parent_item))
+    def walk(self, current_item, current_name, path): # type: (Any, str, Set[int]) -> Iterable[Any]
+        LOG.debug("Visiting: {}".format(current_item))
         if len(path) > self.depth:
             LOG.debug("Exceeded depth")
             return
 
-        item_id = id(parent_item.item)
+        item_id = id(current_item.item)
         if item_id in path:
             yield Unknown(
-                parent_name, "Circular Reference: {}".format(clean_repr(repr(parent_item.item)))
+                current_name, "Circular Reference: {}".format(clean_repr(repr(current_item.item)))
             )
             return
         path.add(item_id)
 
-        for name, item in parent_item.items():
+        for name, item in current_item.items():
             item_type = type(item)
-            item_id = id(item)
-
-            if item_id in path:
-                yield Unknown(
-                    parent_name, "Circular Reference: {}".format(clean_repr(repr(parent_item.item)))
-                )
-                return
-            path.add(item_id)
-
-
-
-
             mapping = self.scope_api_map.get(item_type)
             if mapping:
-
                 yield mapping(name, item, path)
 
     #

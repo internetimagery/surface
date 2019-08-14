@@ -78,7 +78,7 @@ class ModuleItem(LiveItem):
     def get_children_names(self):
         if self.name in sys.builtin_module_names:
             return [] # Don't bother traversing built in stuff...
-        names = (name for name in sorted(dir(self.item)) if not name.startswith("_"))
+        names = (name for name in sorted(dir(self.item)) if name and not name.startswith("_"))
         if self.ALL_FILTER:
             try:
                 all_filter = self.item.__all__
@@ -158,13 +158,34 @@ class FunctionItem(LiveItem):
 
     def get_children_names(self):
         sig = get_signature(self.item)
-        return sig.parameters.keys() if sig else []
+        if not sig:
+            return []
+
+        params = list(sig.parameters.keys())
+
+        if isinstance(self.parent, ClassItem):
+            # We want to ignore "self" and "cls", as those are implementation details
+            # and are not relevant for API comparisons
+            # It seems funcsigs removes "cls" for us in class methods... that is nice.
+            source_func = sorted(sig.sources["+depths"].items(), key=lambda s: s[1])[-1][0]
+            try:
+                source = inspect.getsource(source_func)
+            except (IOError, TypeError) as err:
+                LOG.debug(traceback.format_exc())
+            else:
+                if source and not "@staticmethod" in source and not "@classmethod" in source:
+                    params = params[1:] # chop off self
+        return params
 
     def get_return_type(self):
         func_type = get_type_func(self.item)
         if not func_type:
             return UNKNOWN
         return func_type[1]
+
+    @property
+    def is_method(self):
+        return isinstance(self.parent, ClassItem)
 
 
 class ParameterItem(LiveItem):

@@ -37,91 +37,108 @@ class TestImporter(unittest.TestCase):
     def test_basic(self):
         import test_mod_basic
 
-        data = list(APITraversal().traverse(test_mod_basic))
+        data = APITraversal().traverse(test_mod_basic)
         self.assertEqual(
             data,
-            [
-                Class(
-                    "myClass",
-                    (
-                        Func(
-                            "myMethod",
-                            (
-                                Arg("a", UNKNOWN, POSITIONAL | KEYWORD),
-                                Arg("b", UNKNOWN, POSITIONAL | KEYWORD),
-                                Arg("c", "int", POSITIONAL | KEYWORD | DEFAULT),
+            Module(
+                "test_mod_basic",
+                "test_mod_basic",
+                (
+                    Class(
+                        "myClass",
+                        (
+                            Func(
+                                "myMethod",
+                                (
+                                    Arg("a", UNKNOWN, POSITIONAL | KEYWORD),
+                                    Arg("b", UNKNOWN, POSITIONAL | KEYWORD),
+                                    Arg("c", "int", POSITIONAL | KEYWORD | DEFAULT),
+                                ),
+                                UNKNOWN,
                             ),
-                            UNKNOWN,
-                        ),
-                        Func(
-                            "myStatic",
-                            (
-                                Arg("a", UNKNOWN, POSITIONAL | KEYWORD),
-                                Arg("b", UNKNOWN, POSITIONAL | KEYWORD),
-                                Arg("c", UNKNOWN, POSITIONAL | VARIADIC),
+                            Func(
+                                "myStatic",
+                                (
+                                    Arg("a", UNKNOWN, POSITIONAL | KEYWORD),
+                                    Arg("b", UNKNOWN, POSITIONAL | KEYWORD),
+                                    Arg("c", UNKNOWN, POSITIONAL | VARIADIC),
+                                ),
+                                UNKNOWN,
                             ),
-                            UNKNOWN,
                         ),
                     ),
-                ),
-                Func(
-                    "myFunc",
-                    (
-                        Arg("a", UNKNOWN, POSITIONAL | KEYWORD),
-                        Arg("b", UNKNOWN, POSITIONAL | KEYWORD),
-                        Arg("c", UNKNOWN, KEYWORD | VARIADIC),
+                    Func(
+                        "myFunc",
+                        (
+                            Arg("a", UNKNOWN, POSITIONAL | KEYWORD),
+                            Arg("b", UNKNOWN, POSITIONAL | KEYWORD),
+                            Arg("c", UNKNOWN, KEYWORD | VARIADIC),
+                        ),
+                        UNKNOWN,
                     ),
-                    UNKNOWN,
-                ),
-                Func("myLambda", (Arg("x", UNKNOWN, POSITIONAL | KEYWORD),), UNKNOWN),
-                Module(
-                    "myModule",
-                    "test_mod_basic.myModule",
-                    (Var("myVar", "typing.List[int]"),),
-                ),
-                Var("myVar", "int"),
-            ],
+                    Func("myLambda", (Arg("x", UNKNOWN, POSITIONAL | KEYWORD),), UNKNOWN),
+                    Module(
+                        "myModule",
+                        "test_mod_basic.myModule",
+                        (Var("myVar", "typing.List[int]"),),
+                    ),
+                    Var("myVar", "int"),
+                )
+            ),
         )
 
     def test_err_attr(self):
         import test_mod_errors.errMethod as errMethod
 
-        data = list(APITraversal().traverse(errMethod))
+        data = APITraversal().traverse(errMethod)
         self.assertEqual(
             data,
-            [
-                Class(
-                    "Methods",
-                    (
-                        Unknown("err_method", "more like funtime error"),
-                        Var("ok_method", "str"),
+            Module(
+                "errMethod",
+                "test_mod_errors.errMethod",
+                (
+                    Class(
+                        "Methods",
+                        (
+                            Unknown("err_method", "more like funtime error"),
+                            Var("ok_method", "str"),
+                        ),
                     ),
                 )
-            ],
+            )
         )
 
     def test_err_attr(self):
         import test_mod_basic.cycleA as cycleA
 
-        data = list(APITraversal().traverse(cycleA))
+        data = APITraversal().traverse(cycleA)
         self.assertEqual(
             data,
-            [
-                Class(
-                    "CycleA",
-                    (
-                        Class(
-                            "cycle",
-                            (
-                                Unknown(
-                                    "cycle",
-                                    "Circular Reference: <class 'test_mod_basic.cycleA.CycleA'>",
+            Module(
+                "cycleA",
+                "test_mod_basic.cycleA",
+                (
+                    Class(
+                        "CycleA",
+                        (
+                            Class(
+                                "cycle",
+                                (
+                                    Class(
+                                        "cycle",
+                                        (
+                                            Unknown(
+                                                "cycle",
+                                                "Circular Reference: <class 'test_mod_basic.cycleA.CycleA'>",
+                                            ),
+                                        ),
+                                    ),
                                 ),
                             ),
                         ),
                     ),
-                )
-            ],
+                ),
+            )
         )
 
     def test_stdlib(self):
