@@ -18,7 +18,7 @@ class MethRenameVar(object):
         pass
 
 
-def add_new_types(a):
+def add_new_types(a, b=None):
     pass
 
 

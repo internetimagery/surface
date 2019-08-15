@@ -149,8 +149,8 @@ def compare_deep(
             changes.update(compare_func(abs_name, old_item, new_item))
         elif isinstance(new_item, Var):
             if old_item.type != new_item.type:
-                if old_item.type == UNKNOWN:  # We didn't know the type before.
-                    changes.add(Change(PATCH, "Added Type", abs_name))
+                if is_uncovered(old_item.type, new_item.type):
+                    changes.add(Change(PATCH, "Uncovered Type", abs_name))
                 else:
                     changes.add(
                         Change(
@@ -169,7 +169,7 @@ def compare_func(basename, old_func, new_func):  # type: (str, Func, Func) -> Se
     changes = set()  # type: Set[Change]
 
     if old_func.returns != new_func.returns:
-        level = PATCH if old_func.returns == UNKNOWN else MAJOR
+        level = PATCH if is_uncovered(old_func.returns, new_func.returns) else MAJOR
         changes.add(
             Change(
                 level,
@@ -212,7 +212,7 @@ def compare_func(basename, old_func, new_func):  # type: (str, Func, Func) -> Se
                 Change(MINOR, "Type Changed", _was(name, old_arg.type, new_arg.type))
             )
         elif old_arg.type != new_arg.type:
-            level = PATCH if old_arg.type == UNKNOWN else MAJOR
+            level = PATCH if is_uncovered(old_arg.type, new_arg.type) else MAJOR
             changes.add(
                 Change(level, "Type Changed", _was(name, old_arg.type, new_arg.type))
             )
@@ -263,6 +263,16 @@ def compare_func(basename, old_func, new_func):  # type: (str, Func, Func) -> Se
 
 def join(parent, child):  # type: (str, str) -> str
     return "{}.{}".format(parent, child) if parent else child
+
+
+ESC_UNKNOWN = re.escape(UNKNOWN)  # For search replace
+
+
+def is_uncovered(old_type, new_type):  # type: (str, str) -> bool
+    reg = re.escape(old_type).replace(ESC_UNKNOWN, TYPE_CHARS)
+    if re.match(reg, new_type):
+        return True
+    return False
 
 
 def is_subtype(subtype, supertype):  # type: (str, str) -> bool
