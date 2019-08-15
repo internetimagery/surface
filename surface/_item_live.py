@@ -48,7 +48,7 @@ class LiveItem(Item):
     """ Wrap and traverse live objects """
 
     __slots__ = []  # type: ignore
-    _cache = {}  # type: Dict[int, Any]
+    _cache = {} # type: Dict[int, Any]
 
     @classmethod
     def wrap(cls, visitors, item, parent=None):
@@ -112,14 +112,14 @@ class ClassItem(LiveItem):
         return inspect.isclass(item)
 
     def get_children_names(self):
-        names = [name for name in sorted(dir(self.item)) if not name.startswith("_")]
-        if hasattr(self.item, "__init__") and FunctionItem.is_this_type(
-            self.item.__init__, self
-        ):
+        names = [
+            name
+            for name in sorted(dir(self.item))
+            if not name.startswith("_")
+        ]
+        if hasattr(self.item, "__init__") and FunctionItem.is_this_type(self.item.__init__, self):
             names.append("__init__")
-        if hasattr(self.item, "__new__") and FunctionItem.is_this_type(
-            self.item.__new__, self
-        ):
+        if hasattr(self.item, "__new__") and FunctionItem.is_this_type(self.item.__new__, self):
             names.append("__new__")
         return names
 
