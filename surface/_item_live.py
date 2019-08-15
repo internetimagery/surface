@@ -48,6 +48,14 @@ class LiveItem(Item):
     """ Wrap and traverse live objects """
 
     __slots__ = []  # type: ignore
+    _cache = {} # type: Dict[int, Any]
+
+    @classmethod
+    def wrap(cls, visitors, item, parent=None):
+        item_id = id(item)
+        if item_id not in cls._cache:
+            cls._cache[item_id] = super(LiveItem, cls).wrap(visitors, item, parent)
+        return cls._cache[item_id]
 
     def __getitem__(self, name):  # type: (str) -> Item
         """ We can get errors while traversing. Keep them. """
@@ -104,13 +112,15 @@ class ClassItem(LiveItem):
         return inspect.isclass(item)
 
     def get_children_names(self):
-        names = (
+        names = [
             name
             for name in sorted(dir(self.item))
-            if name == "__init__" or not name.startswith("_")
-        )
-        if not FunctionItem.is_this_type(self.item.__init__, self):
-            names = (n for n in names if n != "__init__")  # strip init
+            if not name.startswith("_")
+        ]
+        if hasattr(self.item, "__init__") and FunctionItem.is_this_type(self.item.__init__, self):
+            names.append("__init__")
+        if hasattr(self.item, "__new__") and FunctionItem.is_this_type(self.item.__new__, self):
+            names.append("__new__")
         return names
 
     def get_child(self, attr):
