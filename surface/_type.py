@@ -84,8 +84,8 @@ type_attr_reg = re.compile(
     r"(?:^|(?<=[, \[]))(?:typing\.)?({})\b".format("|".join(typing_attrs))
 )
 
-cache_type = {}  # type: Dict[int, str]
-cache_func_type = {}  # type: Dict[int, Tuple[Dict[str, str], str]]
+_cache_type = {}  # type: Dict[int, str]
+_cache_func_type = {}  # type: Dict[int, Tuple[Dict[str, str], str]]
 
 
 # TODO: Maybe come back to this. Just use existing flawed typing logic at the moment.
@@ -123,40 +123,40 @@ def format_annotation(ann):  # type: (Any) -> str
 
 # def get_type(scope): # type: (Object) -> str
 #     obj_id = id(scope.obj)
-#     if obj_id in cache_type:
-#         return cache_type[obj_id]
+#     if obj_id in _cache_type:
+#         return _cache_type[obj_id]
 #
 #     scope_type = type(scope)
 #     if scope_type == Object:
-#         cache_type[obj_id] = get_live_type(scope.obj)
+#         _cache_type[obj_id] = get_live_type(scope.obj)
 #
-#     return cache_type.get(obj_id, UNKNOWN)
+#     return _cache_type.get(obj_id, UNKNOWN)
 
 
 def get_type(value, name="", parent=None):  # type: (Any, str, Any) -> str
     value_id = id(value)
-    if value_id in cache_type:
-        return cache_type[value_id]
+    if value_id in _cache_type:
+        return _cache_type[value_id]
 
-    cache_type[value_id] = (
+    _cache_type[value_id] = (
         get_comment_type(value, name, parent)
         or get_annotate_type(value, name, parent)
         or get_live_type(value)
     )
-    return cache_type[value_id]
+    return _cache_type[value_id]
 
 
 def get_type_func(
     value, name="", parent=None
 ):  # type: (Any, str, Any) -> Tuple[Dict[str, str], str]
     value_id = id(value)
-    if value_id not in cache_func_type:
-        cache_func_type[value_id] = (
+    if value_id not in _cache_func_type:
+        _cache_func_type[value_id] = (
             get_comment_type_func(value)
             or get_docstring_type_func(value)
             or get_annotate_type_func(value, name)
         )
-    return cache_func_type[value_id]
+    return _cache_func_type[value_id]
 
 
 def get_comment_type_func(value):  # type: (Any) -> Optional[Tuple[Dict[str, str], str]]

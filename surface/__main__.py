@@ -176,7 +176,9 @@ def main():
         "-V", "--version", action="version", version=surface.__version__
     )
     parser.add_argument(
-        "--pdb", action="store_true", help="Jump into a pdb session if encountering a fatal error."
+        "--pdb",
+        action="store_true",
+        help="Jump into a pdb session if encountering a fatal error.",
     )
 
     # -----------------
@@ -261,6 +263,7 @@ def main():
         LOG.warn(str(err))
         if args.pdb:
             import pdb
+
             pdb.post_mortem()
         sys.exit(1)
 

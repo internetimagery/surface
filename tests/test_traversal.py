@@ -99,10 +99,7 @@ class TestImporter(unittest.TestCase):
                 "test_mod_basic",
                 "test_mod_basic",
                 (
-                    Class(
-                        "myClass",
-                        (),
-                    ),
+                    Class("myClass", ()),
                     Func(
                         "myFunc",
                         (
@@ -115,11 +112,7 @@ class TestImporter(unittest.TestCase):
                     Func(
                         "myLambda", (Arg("x", UNKNOWN, POSITIONAL | KEYWORD),), UNKNOWN
                     ),
-                    Module(
-                        "myModule",
-                        "test_mod_basic.myModule",
-                        (),
-                    ),
+                    Module("myModule", "test_mod_basic.myModule", ()),
                     Var("myVar", "int"),
                 ),
             ),
@@ -134,19 +127,7 @@ class TestImporter(unittest.TestCase):
             Module(
                 "test_all_filter",
                 "test_all_filter",
-                (
-                    Func(
-                        "A",
-                        (),
-                        UNKNOWN,
-                    ),
-                    Func(
-                        "B",
-                        (
-                        ),
-                        UNKNOWN,
-                    ),
-                ),
+                (Func("A", (), UNKNOWN), Func("B", (), UNKNOWN)),
             ),
         )
 
@@ -159,22 +140,9 @@ class TestImporter(unittest.TestCase):
             Module(
                 "test_exclude_modules",
                 "test_exclude_modules",
-                (
-                    Module(
-                        "af",
-                        "test_all_filter",
-                        (),
-                    ),
-                    Func(
-                        "func",
-                        (),
-                        UNKNOWN,
-                    ),
-                ),
+                (Module("af", "test_all_filter", ()), Func("func", (), UNKNOWN)),
             ),
         )
-
-
 
     def test_err_attr(self):
         import test_mod_errors.errMethod as errMethod
