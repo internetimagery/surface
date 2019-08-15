@@ -11,7 +11,7 @@ import collections
 class Item(collections.Mapping):
     """ Wrap objects in a consistent traversal interface. """
 
-    __slots__ = ("__item", "__parent", "__visitors")
+    __slots__ = ("__item", "__parent", "__visitors", "__children_names")
 
     # ------------------------------------------
     # Internals
@@ -53,6 +53,7 @@ class Item(collections.Mapping):
         scope.__visitors = visitors
         scope.__item = item
         scope.__parent = parent  # why is this not weak referenceable?
+        scope.__children_names = None
         return scope
 
     # ------------------------------------------
@@ -75,7 +76,9 @@ class Item(collections.Mapping):
         return len(list(self.__iter__()))
 
     def __iter__(self):
-        return iter(self.get_children_names())
+        if self.__children_names is None:
+            self.__children_names = tuple(self.get_children_names())
+        return iter(self.__children_names)
 
     def __getitem__(self, name):
         return self.wrap(self.__visitors, self.get_child(name), self)
