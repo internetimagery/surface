@@ -3,7 +3,7 @@ import os.path
 import unittest
 
 from surface import get_api
-from surface._traversal import APITraversal, recurse
+from surface._traversal import Traversal, recurse
 from surface._base import *
 
 try:
@@ -37,7 +37,7 @@ class TestImporter(unittest.TestCase):
     def test_basic(self):
         import test_mod_basic
 
-        data = APITraversal().traverse(test_mod_basic)
+        data = Traversal().traverse(test_mod_basic)
         self.assertEqual(
             data,
             Module(
@@ -92,7 +92,7 @@ class TestImporter(unittest.TestCase):
     def test_depth(self):
         import test_mod_basic
 
-        data = APITraversal(depth=0).traverse(test_mod_basic)
+        data = Traversal(depth=0).traverse(test_mod_basic)
         self.assertEqual(
             data,
             Module(
@@ -121,7 +121,7 @@ class TestImporter(unittest.TestCase):
     def test_all_filter(self):
         import test_all_filter
 
-        data = APITraversal(all_filter=True).traverse(test_all_filter)
+        data = Traversal(all_filter=True).traverse(test_all_filter)
         self.assertEqual(
             data,
             Module(
@@ -134,7 +134,7 @@ class TestImporter(unittest.TestCase):
     def test_exclude_modules(self):
         import test_exclude_modules
 
-        data = APITraversal(exclude_modules=True).traverse(test_exclude_modules)
+        data = Traversal(exclude_modules=True).traverse(test_exclude_modules)
         self.assertEqual(
             data,
             Module(
@@ -147,7 +147,7 @@ class TestImporter(unittest.TestCase):
     def test_err_attr(self):
         import test_mod_errors.errMethod as errMethod
 
-        data = APITraversal().traverse(errMethod)
+        data = Traversal().traverse(errMethod)
         self.assertEqual(
             data,
             Module(
@@ -168,7 +168,7 @@ class TestImporter(unittest.TestCase):
     def test_err_attr(self):
         import test_mod_basic.cycleA as cycleA
 
-        data = APITraversal().traverse(cycleA)
+        data = Traversal().traverse(cycleA)
         self.assertEqual(
             data,
             Module(

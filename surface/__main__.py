@@ -36,6 +36,7 @@ if False:  # type checking
 import re
 import sys
 import json
+import time
 import surface
 import os.path
 import argparse
@@ -52,6 +53,7 @@ sys.dont_write_bytecode = True
 
 
 def run_dump(args):  # type: (Any) -> int
+    start = time.time()
     pythonpath = (
         os.path.realpath(os.path.expanduser(p.strip()))
         for p in re.split(r"[:;]", args.pythonpath or "")
@@ -105,6 +107,8 @@ def run_dump(args):  # type: (Any) -> int
             commit = Git.get_commit()
             path = Git.save(commit, args.git, data)
             LOG.info("Saved API to {}".format(path))
+    if not args.quiet:
+        LOG.info("Took ({})".format(round(time.time() - start, 3)))
     return 0
 
 
@@ -166,6 +170,7 @@ def main():
         description="Generate representations of publicly exposed Python API's."
     )
     parser.add_argument("--debug", action="store_true", help="Show debug messages.")
+    parser.add_argument("--rules", action="store_true", help="Show Semantic Rules.")
     parser.add_argument(
         "--no-colour", action="store_true", help="Disable coloured output."
     )
@@ -216,7 +221,7 @@ def main():
         help="Where available, filter API by __all__, same as if imported with *",
     )
     dump_parser.add_argument(
-        "--depth", type=int, default=10, help="Limit the spidering to this depth."
+        "--depth", type=int, default=6, help="Limit the spidering to this depth."
     )
     dump_parser.set_defaults(func=run_dump)
 
@@ -254,6 +259,9 @@ def main():
     LOG.addHandler(logging.StreamHandler(sys.stderr))
     LOG.setLevel(logging.DEBUG if args.debug else logging.INFO)
     LOG.debug("Debug on!")
+    if args.rules:
+        LOG.info(surface.RULES)
+        sys.exit(0)
     try:
         sys.exit(args.func(args))
     except KeyboardInterrupt:

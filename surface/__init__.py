@@ -7,8 +7,8 @@ __version__ = "0.3.7"
 
 import re as _re
 from surface._utils import import_module as _import_module, import_times
-from surface._traversal import APITraversal, recurse
-from surface._compare import compare, PATCH, MINOR, MAJOR
+from surface._traversal import Traversal, recurse
+from surface._compare import compare, PATCH, MINOR, MAJOR, RULES
 from surface._base import (
     POSITIONAL,
     KEYWORD,
@@ -27,7 +27,7 @@ from surface._base import (
 
 
 def get_api(
-    name, exclude_modules=False, all_filter=False, depth=10
+    name, exclude_modules=False, all_filter=False, depth=6
 ):  # type: (str, bool, bool, int) -> Module
     """
         Get a representation of the provided publicly exposed API.
@@ -42,7 +42,7 @@ def get_api(
             Tuple[Module, ...]: Representation of API
     """
     mod = _import_module(name)
-    traversal = APITraversal(
+    traversal = Traversal(
         exclude_modules=exclude_modules, all_filter=all_filter, depth=depth
     )
     api = traversal.traverse(mod)

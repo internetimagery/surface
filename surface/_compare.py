@@ -17,23 +17,28 @@ from surface._base import *
 __all__ = ["PATCH", "MINOR", "MAJOR", "compare"]
 
 
-# Rules:
-#     MAJOR:
-#         Removing anything
-#         Renaming keyword-arguments
-#         Adding positional-arguments
-#         Changing types (except where input types become generics)
-#     MINOR:
-#         Adding new variables, functions, classes, modules, optional-keyword-arguments, *args, **kwargs
-#         Changing positional-only-argument to include keyword
-#         Provide a default to a positional argument
-#         Changing input types to be generics, eg: List to Sequence, Dict to Mapping etc
-#         Unable to verify the change (ie attribute access failed / recursive object)
-#     PATCH:
-#         Renaming positional-only-arguments
-#         Adding new typing information
-#         Unknown type remains Unknown
-#         Changing nothing
+RULES = """
+API Semantic rules, and how they affect versions.
+
+MAJOR:
+  * Removing anything.
+  * Renaming keyword-arguments.
+  * Adding positional-arguments.
+  * Changing types (except where input types become generics).
+
+MINOR:
+  * Adding new variables, functions, classes, modules, optional-keyword-arguments, *args, **kwargs.
+  * Changing positional-only-argument to positional+keyword.
+  * Provide a default to a positional argument.
+  * Changing input types to be generics, eg: List to Sequence, Dict to Mapping etc.
+  * Unable to verify the change (ie attribute access failed / recursive object).
+
+PATCH:
+  * Renaming positional-only-arguments.
+  * Adding new typing information (ie was ~unknown, now concrete type).
+  * Unknown type remains Unknown.
+  * Changing nothing.
+"""
 
 
 # Semantic types

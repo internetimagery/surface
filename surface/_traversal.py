@@ -70,12 +70,12 @@ def recurse(name):  # type: (str) -> List[str]
     return paths
 
 
-class APITraversal(object):
+class Traversal(object):
     def __init__(
-        self, exclude_modules=False, all_filter=False, depth=10
+        self, exclude_modules=False, all_filter=False, depth=6
     ):  # type: (bool, bool, int) -> None
         LOG.debug(
-            "APITraversal created with {}".format(
+            "Traversal created with {}".format(
                 ", ".join("{}={}".format(*var) for var in locals().items())
             )
         )

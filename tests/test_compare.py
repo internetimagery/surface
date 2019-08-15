@@ -5,7 +5,7 @@ import unittest
 
 from surface._base import *
 from surface._compare import *
-from surface._traversal import APITraversal
+from surface._traversal import Traversal
 
 root = os.path.join(os.path.dirname(__file__), "testdata", "test_mod_compare")
 
@@ -15,7 +15,7 @@ class TestCompare(unittest.TestCase):
     def get_module(name, rename=""):
         mod_name = rename or name
         module = imp.load_source(mod_name, os.path.join(root, "{}.py".format(name)))
-        api = [APITraversal().traverse(module)]
+        api = [Traversal().traverse(module)]
         del sys.modules[mod_name]
         return api
 

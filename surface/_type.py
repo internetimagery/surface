@@ -10,7 +10,6 @@ import types
 import token
 import logging
 import inspect
-import tokenize
 import traceback
 import itertools
 import collections
