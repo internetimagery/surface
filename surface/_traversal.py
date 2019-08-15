@@ -108,6 +108,7 @@ class APITraversal(object):
             ClassItem,
             VarItem,
         ]
+        ModuleItem.ALL_FILTER = self.all_filter
         name = module.__name__.rsplit(".", 1)[-1]
         item = ModuleItem.wrap(visitors, module)
         api = Module(name, module.__name__, tuple(self.walk(item, name, set())))
@@ -117,18 +118,22 @@ class APITraversal(object):
         self, current_item, current_name, path
     ):  # type: (Any, str, Set[int]) -> Iterable[Any]
         LOG.debug("Visiting: {}".format(current_item))
-        if len(path) > self.depth:
-            LOG.debug("Exceeded depth")
-            return
 
-        item_id = id(current_item.item)
-        if item_id in path:
-            yield Unknown(
-                current_name,
-                "Circular Reference: {}".format(clean_repr(repr(current_item.item))),
-            )
-            return
-        path.add(item_id)
+        # Recursable types
+        if isinstance(current_item, (ModuleItem, ClassItem)):
+            if len(path) > self.depth:
+                LOG.debug("Exceeded depth")
+                return
+
+
+            item_id = id(current_item.item)
+            if item_id in path:
+                yield Unknown(
+                    current_name,
+                    "Circular Reference: {}".format(clean_repr(repr(current_item.item))),
+                )
+                return
+            path.add(item_id)
 
         for name, item in current_item.items():
             item_type = type(item)

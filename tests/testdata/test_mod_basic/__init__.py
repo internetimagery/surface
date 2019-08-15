@@ -1,5 +1,7 @@
 import test_mod_basic.myModule as myModule
 
+__all__ = ("myVar", "myFunc")
+
 myVar = 123
 
 myLambda = lambda x: x + 1

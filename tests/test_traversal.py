@@ -89,6 +89,69 @@ class TestImporter(unittest.TestCase):
             ),
         )
 
+    def test_depth(self):
+        import test_mod_basic
+
+        data = APITraversal(depth=0).traverse(test_mod_basic)
+        self.assertEqual(
+            data,
+            Module(
+                "test_mod_basic",
+                "test_mod_basic",
+                (
+                    Class(
+                        "myClass",
+                        (),
+                    ),
+                    Func(
+                        "myFunc",
+                        (
+                            Arg("a", UNKNOWN, POSITIONAL | KEYWORD),
+                            Arg("b", UNKNOWN, POSITIONAL | KEYWORD),
+                            Arg("c", UNKNOWN, KEYWORD | VARIADIC),
+                        ),
+                        UNKNOWN,
+                    ),
+                    Func(
+                        "myLambda", (Arg("x", UNKNOWN, POSITIONAL | KEYWORD),), UNKNOWN
+                    ),
+                    Module(
+                        "myModule",
+                        "test_mod_basic.myModule",
+                        (),
+                    ),
+                    Var("myVar", "int"),
+                ),
+            ),
+        )
+
+    def test_all_filter(self):
+        import test_all_filter
+
+        data = APITraversal(all_filter=True).traverse(test_all_filter)
+        self.assertEqual(
+            data,
+            Module(
+                "test_all_filter",
+                "test_all_filter",
+                (
+                    Func(
+                        "A",
+                        (),
+                        UNKNOWN,
+                    ),
+                    Func(
+                        "B",
+                        (
+                        ),
+                        UNKNOWN,
+                    ),
+                ),
+            ),
+        )
+
+
+
     def test_err_attr(self):
         import test_mod_errors.errMethod as errMethod
 
