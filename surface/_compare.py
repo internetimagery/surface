@@ -269,6 +269,8 @@ ESC_UNKNOWN = re.escape(UNKNOWN)  # For search replace
 
 
 def is_uncovered(old_type, new_type):  # type: (str, str) -> bool
+    if old_type == UNKNOWN:
+        return True
     reg = re.escape(old_type).replace(ESC_UNKNOWN, TYPE_CHARS)
     if re.match(reg, new_type):
         return True
