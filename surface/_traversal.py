@@ -89,7 +89,7 @@ class APITraversal(object):
             ErrorItem: lambda n, s, p: Unknown(n, clean_repr(s.item)),
             ClassItem: lambda n, s, p: Class(n, tuple(self.walk(s, n, p.copy()))),
             ModuleItem: lambda n, s, p: Module(
-                n, s.item.__name__, tuple(self.walk(s, n, p.copy()))
+                n, s.item.__name__, tuple([] if self.exclude_modules else self.walk(s, n, p.copy()))
             ),
             FunctionItem: lambda n, s, p: Func(
                 n, tuple(self.walk(s, n, set(p))), s.get_return_type()

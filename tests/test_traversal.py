@@ -150,6 +150,30 @@ class TestImporter(unittest.TestCase):
             ),
         )
 
+    def test_exclude_modules(self):
+        import test_exclude_modules
+
+        data = APITraversal(exclude_modules=True).traverse(test_exclude_modules)
+        self.assertEqual(
+            data,
+            Module(
+                "test_exclude_modules",
+                "test_exclude_modules",
+                (
+                    Module(
+                        "af",
+                        "test_all_filter",
+                        (),
+                    ),
+                    Func(
+                        "func",
+                        (),
+                        UNKNOWN,
+                    ),
+                ),
+            ),
+        )
+
 
 
     def test_err_attr(self):
