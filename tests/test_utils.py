@@ -66,6 +66,18 @@ class TestNormalizeType(unittest.TestCase):
             "mymodule.List.method", normalize_type("List.method", "", [], name, cxt)
         )
 
+    def test_export(self):
+        import datetime
+        local_name = "datetime"
+        local_context = list(datetime.__dict__)
+        export_name = "mymodule"
+        export_context = ["date"]
+
+        self.assertEqual("mymodule.date", normalize_type("date", export_name, export_context, local_name, local_context))
+        self.assertEqual(
+            "typing.List[mymodule.date]",
+            normalize_type("List[date]", export_name, export_context, local_name, local_context),
+        )
 
 if __name__ == "__main__":
     unittest.main()
