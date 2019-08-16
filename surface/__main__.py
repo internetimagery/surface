@@ -188,9 +188,9 @@ def profile(sort):
             )
         )
     try:
-        from cProfile import Profile # type: ignore
+        from cProfile import Profile  # type: ignore
     except ImportError:
-        from Profile import Profile # type: ignore
+        from Profile import Profile  # type: ignore
     prof = Profile()
     prof.enable()
     print("HERE")
