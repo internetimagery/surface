@@ -29,37 +29,41 @@ class TestCleanRepr(unittest.TestCase):
 
 class TestNormalizeType(unittest.TestCase):
     def test_nothing(self):
-        self.assertEqual("int", normalize_type("int", {}))
-        self.assertEqual("typing.List[str]", normalize_type("List[str]", {}))
+        self.assertEqual("int", normalize_type("int", "", [], "", []))
+        self.assertEqual("typing.List[str]", normalize_type("List[str]", "", [], "", []))
         self.assertEqual(
             "typing.Dict[typing.Tuple[int, str], typing.List[str]]",
-            normalize_type("Dict[Tuple[int, str], List[str]]", {}),
+            normalize_type("Dict[Tuple[int, str], List[str]]", "", [], "", []),
         )
         self.assertEqual(
-            "typing.Tuple[int, ...]", normalize_type("Tuple[int, ...]", {})
+            "typing.Tuple[int, ...]", normalize_type("Tuple[int, ...]", "", [], "", [])
         )
 
     def test_aliases(self):
         import datetime
+        name = "datetime"
+        cxt = list(datetime.__dict__)
 
-        self.assertEqual("datetime.date", normalize_type("date", datetime.__dict__))
+        self.assertEqual("datetime.date", normalize_type("date", "", [], name, cxt))
         self.assertEqual(
             "typing.List[datetime.date]",
-            normalize_type("List[date]", datetime.__dict__),
+            normalize_type("List[date]", "", [], name, cxt),
         )
         self.assertEqual(
             "typing.Dict[typing.Tuple[int, ...], datetime.date]",
-            normalize_type("Dict[Tuple[int, ...], date]", datetime.__dict__),
+            normalize_type("Dict[Tuple[int, ...], date]", "", [], name, cxt),
         )
         mod = imp.load_source(
             "mymodule",
             os.path.join(os.path.dirname(__file__), "testdata", "test_utils.py"),
         )
+        name = "mymodule"
+        cxt = mod.__dict__
         self.assertEqual(
-            "mymodule.List[int]", normalize_type("List[int]", mod.__dict__)
+            "mymodule.List[int]", normalize_type("List[int]", "", [], name, cxt)
         )
         self.assertEqual(
-            "mymodule.List.method", normalize_type("List.method", mod.__dict__)
+            "mymodule.List.method", normalize_type("List.method", "", [], name, cxt)
         )
 
 
