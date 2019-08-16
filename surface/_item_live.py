@@ -10,7 +10,7 @@ import traceback
 import sigtools  # type: ignore
 
 from surface._base import POSITIONAL, KEYWORD, VARIADIC, DEFAULT, UNKNOWN
-from surface._utils import get_signature
+from surface._utils import get_signature, Cache
 from surface._type import get_type, get_type_func, format_annotation
 
 from surface._item import Item
@@ -47,15 +47,16 @@ class ErrorItem(Item):
 class LiveItem(Item):
     """ Wrap and traverse live objects """
 
-    __slots__ = []  # type: ignore
-    _cache = {}  # type: Dict[int, Any]
+    __slots__ = [] # type: ignore
+    _cache = Cache(500)
 
     @classmethod
     def wrap(cls, visitors, item, parent=None):
         item_id = id(item)
-        if item_id not in cls._cache:
-            cls._cache[item_id] = super(LiveItem, cls).wrap(visitors, item, parent)
-        return cls._cache[item_id]
+        cache_item = cls._cache.get(item_id, None)
+        if cache_item is None:
+            cls._cache[item_id] = cache_item = super(LiveItem, cls).wrap(visitors, item, parent)
+        return cache_item
 
     def __getitem__(self, name):  # type: (str) -> Item
         """ We can get errors while traversing. Keep them. """
@@ -67,6 +68,14 @@ class LiveItem(Item):
     @property
     def name(self):
         return getattr(self.item, "__name__", "")
+
+    def get_context(self):
+        item = self
+        context = set()
+        while item:
+            context = context.union(item)
+            item = item.parent
+        return context
 
     def __repr__(self):
         return "<{}: {}>".format(self.__class__.__name__, self.name)
@@ -197,8 +206,8 @@ class FunctionItem(LiveItem):
                 params = params[1:]  # chop off self
         return params
 
-    def get_return_type(self):
-        func_type = get_type_func(self.item)
+    def get_return_type(self, collector):
+        func_type = collector.get_type_func(self)
         if not func_type:
             return UNKNOWN
         return func_type[1]
@@ -237,12 +246,12 @@ class ParameterItem(LiveItem):
     def is_this_type(item, parent):
         return isinstance(item, Parameter)
 
-    def get_type(self):
+    def get_type(self, collector):
         if self.item.annotation != Empty:
             print("I HAVE AN ANNOTATION", self.item)
             return UNKNOWN
         else:
-            func_type = get_type_func(self.parent.item)
+            func_type = collector.get_type_func(self.parent)
             if func_type:
                 return func_type[0].get(self.item.name, UNKNOWN)
         return UNKNOWN

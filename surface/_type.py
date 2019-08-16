@@ -14,65 +14,13 @@ import traceback
 import itertools
 import collections
 
-from surface._base import UNKNOWN, PY2
+from surface._base import UNKNOWN, PY2, TYPING_ATTRS
 from surface._doc import parse_docstring
 from surface._comment import get_comment
 from surface._utils import get_signature, Cache
 
 LOG = logging.getLogger(__name__)
 
-typing_attrs = (
-    "AbstractSet",
-    "Any",
-    "AnyStr",
-    "AsyncIterable",
-    "AsyncIterator",
-    "Awaitable",
-    "BinaryIO",
-    "ByteString",
-    "Callable",
-    "ClassVar",
-    "Collection",
-    "Container",
-    "ContextManager",
-    "Coroutine",
-    "DefaultDict",
-    "Dict",
-    "FrozenSet",
-    "Generator",
-    "Hashable",
-    "IO",
-    "ItemsView",
-    "Iterable",
-    "Iterator",
-    "KeysView",
-    "List",
-    "Mapping",
-    "MappingView",
-    "MutableMapping",
-    "MutableSequence",
-    "MutableSet",
-    "NamedTuple",
-    "Optional",
-    "Pattern",
-    "Reversible",
-    "Sequence",
-    "Set",
-    "Sized",
-    "SupportsAbs",
-    "SupportsBytes",
-    "SupportsComplex",
-    "SupportsFloat",
-    "SupportsInt",
-    "SupportsRound",
-    "Text",
-    "TextIO",
-    "Tuple",
-    "Type",
-    "TypeVar",
-    "Union",
-    "ValuesView",
-)
 
 
 __all__ = ["get_type", "get_type_func"]
@@ -80,17 +28,43 @@ __all__ = ["get_type", "get_type_func"]
 type_comment_reg = re.compile(r"# +type: ([\w ,\[\]\.]+)")
 type_comment_sig_reg = re.compile(r"# +type: \(([\w ,\[\]\.]*)\) +-> +([\w ,\[\]\.]+)")
 type_attr_reg = re.compile(
-    r"(?:^|(?<=[, \[]))(?:typing\.)?({})\b".format("|".join(typing_attrs))
+    r"(?:^|(?<=[, \[]))(?:typing\.)?({})\b".format("|".join(TYPING_ATTRS))
 )
 
 _cache_type = Cache(500)
 _cache_func_type = Cache(500)
 
+# TODO: clean this all up.
+# TODO: Use Items as entry points.
 
-# TODO: Maybe come back to this. Just use existing flawed typing logic at the moment.
-# TODO: re-jig func type getter to output ordered dict / list tuples
+# TODO: Maybe come back to this. Just use existing messy typing logic at the moment.
 # TODO: clean things up with new nody style traversal
 # TODO: THEN tackle new typing, and new module-first traversal.
+
+
+class TypeCollector(object):
+    """ Collect types on behalf of Item objects """
+
+    _cache_func_type = Cache(500)
+
+    def get_type_func(self, item): # type: (FunctionItem) -> Tuple[Dict[str, str], str]
+        item_id = id(item.item)
+        cache_value = self._cache_func_type.get(item_id, None)
+        if cache_value is None:
+            self._cache_func_type[item_id] = cache_value = (
+                get_comment_type_func(item.item)
+                or get_docstring_type_func(item.item)
+                or get_annotate_type_func(item.item, item.name)
+            )
+        return cache_value
+
+
+
+
+
+
+
+
 
 
 def format_annotation(ann):  # type: (Any) -> str
