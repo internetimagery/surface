@@ -143,16 +143,18 @@ class Cache(collections.MutableMapping):
     def __init__(self, size):  # type: (int) -> None
         """ Cache stuff. Up to size (mb) """
         self.size = size * 1000000  # mb to bytes
-        self._cache = collections.OrderedDict()
+        self._cache = (
+            collections.OrderedDict()
+        )  # type: collections.OrderedDict[Any, Any]
         self._current_size = 0
 
-    def __getitem__(self, key):
+    def __getitem__(self, key):  # type: (Any) -> Any
         """ Move item to front of the queue """
         item = self._cache.pop(key)
         self._cache[key] = item
         return item[0]
 
-    def __setitem__(self, key, value):
+    def __setitem__(self, key, value):  # type: (Any, Any) -> None
         """ Add new item. Drop old items to make space """
         value_size = self._get_size(value) + self._get_size(key)
         self._current_size += value_size
@@ -193,13 +195,17 @@ class Cache(collections.MutableMapping):
                 for obj_cls in obj.__class__.__mro__:
                     if "__dict__" in obj_cls.__dict__:
                         d = obj_cls.__dict__["__dict__"]
-                        if inspect.isgetsetdescriptor(d) or inspect.ismemberdescriptor(d):
+                        if inspect.isgetsetdescriptor(d) or inspect.ismemberdescriptor(
+                            d
+                        ):
                             size += cls._get_size(obj.__dict__, seen)
                         break
             if isinstance(obj, dict):
                 size += sum(cls._get_size(v, seen) for v in obj.values())
                 size += sum(cls._get_size(k, seen) for k in obj.keys())
-            elif hasattr(obj, "__iter__") and not isinstance(obj, (str, bytes, bytearray)):
+            elif hasattr(obj, "__iter__") and not isinstance(
+                obj, (str, bytes, bytearray)
+            ):
                 size += sum(cls._get_size(i, seen) for i in obj)
 
             if hasattr(obj, "__slots__"):  # can have __slots__ with __dict__
@@ -208,7 +214,7 @@ class Cache(collections.MutableMapping):
                     for s in obj.__slots__
                     if hasattr(obj, s)
                 )
-        except Exception: # This should not cause program to fail.
+        except Exception:  # This should not cause program to fail.
             LOG.debug("Error get_size in cache")
             LOG.debug(traceback.format_exc())
         return size
