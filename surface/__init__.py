@@ -6,7 +6,12 @@ if False:  # type checking
 __version__ = "0.4.1"
 
 import re as _re
-from surface._utils import import_module as _import_module, import_times, to_dict, from_dict
+from surface._utils import (
+    import_module as _import_module,
+    import_times,
+    to_dict,
+    from_dict,
+)
 from surface._traversal import Traversal, recurse
 from surface._compare import compare, PATCH, MINOR, MAJOR, RULES
 from surface._base import (

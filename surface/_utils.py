@@ -114,10 +114,10 @@ def normalize_type(type_string, context):  # type: (str, Dict[str, Any]) -> str
 # TODO: xml might be a better representation for this data?
 # https://docs.python.org/2/library/xml.etree.elementtree.html#module-xml.etree.ElementTree
 # can include comments as well, which would be helpful for creation dates etc.
-def to_dict(node): # type: (Any) -> Any
+def to_dict(node):  # type: (Any) -> Any
     """ Break a node structure (above types)
         into a dict representation for serialization."""
-    data = {"class": type(node).__name__} # type: Dict[str, Any]
+    data = {"class": type(node).__name__}  # type: Dict[str, Any]
     for key, val in node._asdict().items():
         if isinstance(val, (Var, Arg, Func, Class, Module, Unknown)):
             data[key] = to_dict(val)
@@ -128,19 +128,21 @@ def to_dict(node): # type: (Any) -> Any
     return data
 
 
-def from_dict(node): # type: (Dict[str, Any]) -> Any
+def from_dict(node):  # type: (Dict[str, Any]) -> Any
     """ Reassemble from a dict """
     # Expand everything
-    node = {k: tuple(from_dict(n) for n in v) if isinstance(v, (tuple, list)) else v for k, v in node.items()}
+    node = {
+        k: tuple(from_dict(n) for n in v) if isinstance(v, (tuple, list)) else v
+        for k, v in node.items()
+    }
     struct = globals()[node.pop("class")]
     return struct(**node)
 
 
 class Cache(collections.MutableMapping):
-
-    def __init__(self, size): # type: (int) -> None
+    def __init__(self, size):  # type: (int) -> None
         """ Cache stuff. Up to size (mb) """
-        self.size = size * 1000000 # mb to bytes
+        self.size = size * 1000000  # mb to bytes
         self._cache = collections.OrderedDict()
         self._current_size = 0
 
@@ -174,7 +176,7 @@ class Cache(collections.MutableMapping):
         item = self._cache.pop(key)
         self._current_size -= item[1]
 
-    @classmethod # https://stackoverflow.com/a/38515297
+    @classmethod  # https://stackoverflow.com/a/38515297
     def _get_size(cls, obj, seen=None):
         """Recursively finds size of objects in bytes"""
         size = sys.getsizeof(obj)
@@ -186,27 +188,35 @@ class Cache(collections.MutableMapping):
         # Important mark as seen *before* entering recursion to gracefully handle
         # self-referential objects
         seen.add(obj_id)
-        if hasattr(obj, '__dict__'):
-            for obj_cls in obj.__class__.__mro__:
-                if '__dict__' in obj_cls.__dict__:
-                    d = obj_cls.__dict__['__dict__']
-                    if inspect.isgetsetdescriptor(d) or inspect.ismemberdescriptor(d):
-                        size += cls._get_size(obj.__dict__, seen)
-                    break
-        if isinstance(obj, dict):
-            size += sum(cls._get_size(v, seen) for v in obj.values())
-            size += sum(cls._get_size(k, seen) for k in obj.keys())
-        elif hasattr(obj, '__iter__') and not isinstance(obj, (str, bytes, bytearray)):
-            size += sum(cls._get_size(i, seen) for i in obj)
+        try:
+            if hasattr(obj, "__dict__"):
+                for obj_cls in obj.__class__.__mro__:
+                    if "__dict__" in obj_cls.__dict__:
+                        d = obj_cls.__dict__["__dict__"]
+                        if inspect.isgetsetdescriptor(d) or inspect.ismemberdescriptor(d):
+                            size += cls._get_size(obj.__dict__, seen)
+                        break
+            if isinstance(obj, dict):
+                size += sum(cls._get_size(v, seen) for v in obj.values())
+                size += sum(cls._get_size(k, seen) for k in obj.keys())
+            elif hasattr(obj, "__iter__") and not isinstance(obj, (str, bytes, bytearray)):
+                size += sum(cls._get_size(i, seen) for i in obj)
 
-        if hasattr(obj, '__slots__'): # can have __slots__ with __dict__
-            size += sum(cls._get_size(getattr(obj, s), seen) for s in obj.__slots__ if hasattr(obj, s))
-
+            if hasattr(obj, "__slots__"):  # can have __slots__ with __dict__
+                size += sum(
+                    cls._get_size(getattr(obj, s), seen)
+                    for s in obj.__slots__
+                    if hasattr(obj, s)
+                )
+        except Exception: # This should not cause program to fail.
+            LOG.debug(traceback.format_exc())
         return size
 
 
 _cache_sig = Cache(500)
 _empty = object()
+
+
 def get_signature(func):  # type: (Any) -> Optional[sigtools.Signature]
     func_id = id(func)
     cache_value = _cache_sig.get(func_id, _empty)
