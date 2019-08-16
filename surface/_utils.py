@@ -209,6 +209,7 @@ class Cache(collections.MutableMapping):
                     if hasattr(obj, s)
                 )
         except Exception: # This should not cause program to fail.
+            LOG.debug("Error get_size in cache")
             LOG.debug(traceback.format_exc())
         return size
 
