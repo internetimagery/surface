@@ -166,6 +166,7 @@ def run_compare(args):  # type: (Any) -> int
 @contextlib.contextmanager
 def profile(sort):
     if not sort:
+        yield
         return
     sort_columns = (
         "calls",
