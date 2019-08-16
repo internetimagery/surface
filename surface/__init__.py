@@ -3,7 +3,7 @@
 if False:  # type checking
     from typing import *
 
-__version__ = "0.4.0"
+__version__ = "0.4.1"
 
 import re as _re
 from surface._utils import import_module as _import_module, import_times
