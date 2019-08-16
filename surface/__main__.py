@@ -43,6 +43,7 @@ import argparse
 import logging
 import traceback
 import functools
+import contextlib
 from surface.git import Git
 
 # Global logger
@@ -162,6 +163,42 @@ def run_compare(args):  # type: (Any) -> int
     return 0
 
 
+@contextlib.contextmanager
+def profile(sort):
+    if not sort:
+        return
+    sort_columns = (
+        "calls",
+        "cumtime",
+        "file",
+        "ncalls",
+        "pcalls",
+        "line",
+        "name",
+        "nfl",
+        "stdname",
+        "time",
+        "tottime",
+    )
+    if sort not in sort_columns:
+        raise RuntimeError(
+            "{} not a valid sort column. Please use one of {}".format(
+                sort, ", ".join(sort_columns)
+            )
+        )
+    try:
+        from cProfile import Profile
+    except ImportError:
+        from Profile import Profile
+    prof = Profile()
+    prof.enable()
+    print("HERE")
+    yield
+    print("HERE2")
+    prof.create_stats()
+    prof.print_stats(sort=sort)
+
+
 def main():
     # -----------------
     # Global options
@@ -170,6 +207,7 @@ def main():
         description="Generate representations of publicly exposed Python API's."
     )
     parser.add_argument("--debug", action="store_true", help="Show debug messages.")
+    parser.add_argument("--profile", help="Run profiler, column to sort.")
     parser.add_argument("--rules", action="store_true", help="Show Semantic Rules.")
     parser.add_argument(
         "--no-colour", action="store_true", help="Disable coloured output."
@@ -263,7 +301,9 @@ def main():
         LOG.info(surface.RULES)
         sys.exit(0)
     try:
-        sys.exit(args.func(args))
+        with profile(args.profile):
+            ret_code = args.func(args)
+        sys.exit(ret_code)
     except KeyboardInterrupt:
         sys.exit(0)
     except Exception as err:

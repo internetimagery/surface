@@ -21,7 +21,7 @@ def parse_docstring(func):  # type: (Any) -> Optional[Tuple[Dict[str, str], str]
     doc = inspect.getdoc(func)
     if not doc:
         return None
-    context = func.__globals__
+    context = getattr(func, "__globals__", {})
     return handle_google(doc, context)
 
 

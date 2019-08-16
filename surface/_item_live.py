@@ -78,6 +78,7 @@ class ModuleItem(LiveItem):
     __slots__ = []  # type: ignore
 
     ALL_FILTER = False
+    BLACK_LIST = "pkg_resources"
 
     @classmethod
     def is_this_type(cls, item, parent):
@@ -89,6 +90,8 @@ class ModuleItem(LiveItem):
     def get_children_names(self):
         if self.name in sys.builtin_module_names:
             return []  # Don't bother traversing built in stuff...
+        if self.name in self.BLACK_LIST:  # Ignore specific modules
+            return []
         names = (
             name for name in sorted(dir(self.item)) if name and not name.startswith("_")
         )

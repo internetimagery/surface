@@ -174,7 +174,7 @@ def get_comment(func):  # type: (Any) -> Optional[Tuple[Dict[str, str], str]]
     param_comment, return_comment = sig_parts
 
     # Normalize return_type
-    context = func.__globals__
+    context = getattr(func, "__globals__", {})
     return_type = normalize_type(return_comment, context)
 
     if not param_comment:  # No parameters, nothing more to do.
