@@ -23,7 +23,6 @@ LOG = logging.getLogger(__name__)
 import_times = {}  # type: Dict[str, float]
 
 # Cache stuff
-cache_sig = {}  # type: Dict[int, sigtools.Signature]
 
 
 def import_module(name):  # type: (str) -> Any
@@ -39,29 +38,6 @@ def import_module(name):  # type: (str) -> Any
 def clean_repr(err):  # type: (Any) -> str
     """ Strip out memory parts of an error """
     return re.sub(r"<(.+) at (0x[0-9A-Fa-f]+)>", r"<\1 at memory_address>", str(err))
-
-
-def get_signature(func):  # type: (Any) -> Optional[sigtools.Signature]
-    func_id = id(func)
-    if func_id in cache_sig:
-        return cache_sig[func_id]
-
-    # handle bug in funcsigs
-    restore_attr = False
-    if hasattr(func, "__annotations__") and func.__annotations__ is None:
-        func.__annotations__ = {}
-        restore_attr = True
-    try:
-        cache_sig[func_id] = sigtools.signature(func)
-    except (SyntaxError, ValueError) as err:
-        LOG.debug("Error getting signature for {}".format(func))
-        LOG.debug(traceback.format_exc())
-        return None
-    else:
-        return cache_sig[func_id]
-    finally:
-        if restore_attr:
-            func.__annotations__ = None
 
 
 def get_source(func):  # type: (Any) -> str
@@ -227,3 +203,30 @@ class Cache(collections.MutableMapping):
             size += sum(cls._get_size(getattr(obj, s), seen) for s in obj.__slots__ if hasattr(obj, s))
 
         return size
+
+
+_cache_sig = Cache(500)
+_empty = object()
+def get_signature(func):  # type: (Any) -> Optional[sigtools.Signature]
+    func_id = id(func)
+    cache_value = _cache_sig.get(func_id, _empty)
+    if cache_value is not _empty:
+        return cache_value
+
+    # handle bug in funcsigs
+    restore_attr = False
+    if hasattr(func, "__annotations__") and func.__annotations__ is None:
+        func.__annotations__ = {}
+        restore_attr = True
+    try:
+        _cache_sig[func_id] = cache_value = sigtools.signature(func)
+    except (SyntaxError, ValueError) as err:
+        LOG.debug("Error getting signature for {}".format(func))
+        LOG.debug(traceback.format_exc())
+        _cache_sig[func_id] = None
+        return None
+    else:
+        return cache_value
+    finally:
+        if restore_attr:
+            func.__annotations__ = None
