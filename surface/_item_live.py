@@ -193,17 +193,8 @@ class FunctionItem(LiveItem):
             source_func = sorted(sig.sources["+depths"].items(), key=lambda s: s[1])[
                 -1
             ][0]
-            try:
-                source = inspect.getsource(source_func)
-            except (IOError, TypeError) as err:
-                LOG.debug(traceback.format_exc())
-            else:
-                if (
-                    source
-                    and not "@staticmethod" in source
-                    and not "@classmethod" in source
-                ):
-                    params = params[1:]  # chop off self
+            if self.is_method:
+                params = params[1:]  # chop off self
         return params
 
     def get_return_type(self):
@@ -214,7 +205,19 @@ class FunctionItem(LiveItem):
 
     @property
     def is_method(self):
-        return isinstance(self.parent, ClassItem)
+        """ Check if function is a method (also not staticmethod or classmethod) """
+        if not isinstance(self.parent, ClassItem):
+            return False
+        name = self.name
+        for parent in inspect.getmro(self.parent.item):
+            dct = getattr(parent, "__dict__", {})
+            if name not in dct:
+                continue
+            func = dct[name]
+            if isinstance(func, (staticmethod, classmethod)):
+                return False
+            break
+        return True
 
 
 class ParameterItem(LiveItem):
