@@ -17,7 +17,7 @@ import collections
 from surface._base import UNKNOWN, PY2
 from surface._doc import parse_docstring
 from surface._comment import get_comment
-from surface._utils import get_signature, get_source
+from surface._utils import get_signature, get_source, Cache
 
 LOG = logging.getLogger(__name__)
 
@@ -83,8 +83,8 @@ type_attr_reg = re.compile(
     r"(?:^|(?<=[, \[]))(?:typing\.)?({})\b".format("|".join(typing_attrs))
 )
 
-_cache_type = {}  # type: Dict[int, str]
-_cache_func_type = {}  # type: Dict[int, Tuple[Dict[str, str], str]]
+_cache_type = Cache(500)
+_cache_func_type = Cache(500)
 
 
 # TODO: Maybe come back to this. Just use existing flawed typing logic at the moment.
@@ -134,28 +134,34 @@ def format_annotation(ann):  # type: (Any) -> str
 
 def get_type(value, name="", parent=None):  # type: (Any, str, Any) -> str
     value_id = id(value)
-    if value_id in _cache_type:
-        return _cache_type[value_id]
+    cache_value = _cache_type.get(value_id, None)
+    if cache_value is not None:
+        return cache_value
 
-    _cache_type[value_id] = (
+    cache_value = (
         get_comment_type(value, name, parent)
         or get_annotate_type(value, name, parent)
         or get_live_type(value)
     )
-    return _cache_type[value_id]
+    _cache_type[value_id] = cache_value
+    return cache_value
 
 
 def get_type_func(
     value, name="", parent=None
 ):  # type: (Any, str, Any) -> Tuple[Dict[str, str], str]
     value_id = id(value)
-    if value_id not in _cache_func_type:
-        _cache_func_type[value_id] = (
-            get_comment_type_func(value)
-            or get_docstring_type_func(value)
-            or get_annotate_type_func(value, name)
-        )
-    return _cache_func_type[value_id]
+    cache_value = _cache_func_type.get(value_id, None)
+    if cache_value is not None:
+        return cache_value
+
+    cache_value = (
+        get_comment_type_func(value)
+        or get_docstring_type_func(value)
+        or get_annotate_type_func(value, name)
+    )
+    _cache_func_type[value_id] = cache_value
+    return cache_value
 
 
 def get_comment_type_func(value):  # type: (Any) -> Optional[Tuple[Dict[str, str], str]]

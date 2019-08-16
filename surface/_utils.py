@@ -14,8 +14,9 @@ import tokenize
 import importlib
 import traceback
 import sigtools  # type: ignore
+import collections
 
-from surface._base import UNKNOWN, TYPING_ATTRS
+from surface._base import *
 
 LOG = logging.getLogger(__name__)
 
@@ -132,3 +133,97 @@ def normalize_type(type_string, context):  # type: (str, Dict[str, Any]) -> str
         for i in sorted(updates.keys(), reverse=True):
             type_string = "{}{}.{}".format(type_string[:i], updates[i], type_string[i:])
     return type_string
+
+
+# TODO: xml might be a better representation for this data?
+# https://docs.python.org/2/library/xml.etree.elementtree.html#module-xml.etree.ElementTree
+# can include comments as well, which would be helpful for creation dates etc.
+def to_dict(node): # type: (Any) -> Any
+    """ Break a node structure (above types)
+        into a dict representation for serialization."""
+    data = {"class": type(node).__name__} # type: Dict[str, Any]
+    for key, val in node._asdict().items():
+        if isinstance(val, (Var, Arg, Func, Class, Module, Unknown)):
+            data[key] = to_dict(val)
+        elif isinstance(val, (tuple, list)):
+            data[key] = [to_dict(n) for n in val]
+        else:
+            data[key] = val
+    return data
+
+
+def from_dict(node): # type: (Dict[str, Any]) -> Any
+    """ Reassemble from a dict """
+    # Expand everything
+    node = {k: tuple(from_dict(n) for n in v) if isinstance(v, (tuple, list)) else v for k, v in node.items()}
+    struct = globals()[node.pop("class")]
+    return struct(**node)
+
+
+class Cache(collections.MutableMapping):
+
+    def __init__(self, size): # type: (int) -> None
+        """ Cache stuff. Up to size (mb) """
+        self.size = size * 1000000 # mb to bytes
+        self._cache = collections.OrderedDict()
+        self._current_size = 0
+
+    def __getitem__(self, key):
+        """ Move item to front of the queue """
+        item = self._cache.pop(key)
+        self._cache[key] = item
+        return item[0]
+
+    def __setitem__(self, key, value):
+        """ Add new item. Drop old items to make space """
+        value_size = self._get_size(value) + self._get_size(key)
+        self._current_size += value_size
+        try:
+            item = self._cache.pop(key)
+            self._current_size -= item[1]
+        except KeyError:
+            pass
+        while self._current_size > self.size:
+            _, item = self._cache.popitem(last=False)
+            self._current_size -= item[1]
+        self._cache[key] = value, value_size
+
+    def __len__(self):
+        return len(self._cache)
+
+    def __iter__(self):
+        return iter(self._cache)
+
+    def __delitem__(self, key):
+        item = self._cache.pop(key)
+        self._current_size -= item[1]
+
+    @classmethod # https://stackoverflow.com/a/38515297
+    def _get_size(cls, obj, seen=None):
+        """Recursively finds size of objects in bytes"""
+        size = sys.getsizeof(obj)
+        if seen is None:
+            seen = set()
+        obj_id = id(obj)
+        if obj_id in seen:
+            return 0
+        # Important mark as seen *before* entering recursion to gracefully handle
+        # self-referential objects
+        seen.add(obj_id)
+        if hasattr(obj, '__dict__'):
+            for obj_cls in obj.__class__.__mro__:
+                if '__dict__' in obj_cls.__dict__:
+                    d = obj_cls.__dict__['__dict__']
+                    if inspect.isgetsetdescriptor(d) or inspect.ismemberdescriptor(d):
+                        size += cls._get_size(obj.__dict__, seen)
+                    break
+        if isinstance(obj, dict):
+            size += sum(cls._get_size(v, seen) for v in obj.values())
+            size += sum(cls._get_size(k, seen) for k in obj.keys())
+        elif hasattr(obj, '__iter__') and not isinstance(obj, (str, bytes, bytearray)):
+            size += sum(cls._get_size(i, seen) for i in obj)
+
+        if hasattr(obj, '__slots__'): # can have __slots__ with __dict__
+            size += sum(cls._get_size(getattr(obj, s), seen) for s in obj.__slots__ if hasattr(obj, s))
+
+        return size
