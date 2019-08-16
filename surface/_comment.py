@@ -174,8 +174,9 @@ def get_comment(func):  # type: (Any) -> Optional[Tuple[Dict[str, str], str]]
     param_comment, return_comment = sig_parts
 
     # Normalize return_type
-    context = getattr(func, "__globals__", {})
-    return_type = normalize_type(return_comment, context)
+    local_context = getattr(func, "__globals__", {})
+    local_module = getattr(inspect.getmodule(func), "__name__", "")
+    return_type = normalize_type(return_comment, "", [], local_module, local_context)
 
     if not param_comment:  # No parameters, nothing more to do.
         return {}, return_type
@@ -183,7 +184,7 @@ def get_comment(func):  # type: (Any) -> Optional[Tuple[Dict[str, str], str]]
     if param_comment == "...":  # We have external typing
         # Individual parameters must have typing...
         params = {
-            name: normalize_type(typ, context)
+            name: normalize_type(typ, "", [], local_module, local_context)
             for name, typ in func_map.get_params().items()
         }
         return params, return_type
@@ -201,7 +202,7 @@ def get_comment(func):  # type: (Any) -> Optional[Tuple[Dict[str, str], str]]
         param_types = reversed(param_map.get_params())
 
         params = {
-            name: normalize_type(typ, context)
+            name: normalize_type(typ, "", [], local_module, local_context)
             for name, typ in zip(param_names, param_types)
         }
         return params, return_type

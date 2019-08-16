@@ -21,13 +21,14 @@ def parse_docstring(func):  # type: (Any) -> Optional[Tuple[Dict[str, str], str]
     doc = inspect.getdoc(func)
     if not doc:
         return None
-    context = getattr(func, "__globals__", {})
-    return handle_google(doc, context)
+    local_context = getattr(func, "__globals__", {})
+    local_module = getattr(inspect.getmodule(func), "__name__", "")
+    return handle_google(doc, local_module, local_context)
 
 
 def handle_google(
-    docstring, context
-):  # type: (str, Dict[str, Any]) -> Optional[Tuple[Dict[str, str], str]]
+    docstring, local_module, local_context
+):  # type: (str, str, Sequence[str]) -> Optional[Tuple[Dict[str, str], str]]
     # Find the first header, to establish indent
     header = re.search(r"^([ \t]*)[a-zA-Z]+:\s*$", docstring, re.M)
     if not header:
@@ -45,7 +46,7 @@ def handle_google(
         header_name = header.group(1).lower()
         if header_name in ("arg", "args", "arguments", "parameters"):
             params = {
-                p.group(1): normalize_type(p.group(2), context)
+                p.group(1): normalize_type(p.group(2), "", [], local_module, local_context)
                 for p in re.finditer(
                     r"^{}[ \t]+([\w\-]+) *\(`?({})`?\)(?: *: .+| *)$".format(
                         header_indent, TYPE_CHARS
@@ -65,7 +66,7 @@ def handle_google(
                 re.M,
             )
             if returns:
-                return_type = normalize_type(returns.group(1), context)
+                return_type = normalize_type(returns.group(1), "", [], local_module, local_context)
                 if "yield" in header_name:
                     return_type = "typing.Iterable[{}]".format(return_type)
     if params or return_type:

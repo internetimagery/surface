@@ -22,10 +22,9 @@ LOG = logging.getLogger(__name__)
 
 import_times = {}  # type: Dict[str, float]
 
-# Cache stuff
-
 
 def import_module(name):  # type: (str) -> Any
+    """ Import a module, and time how long it takes """
     start = time.time()
     try:
         LOG.debug("Importing: {}".format(name))
@@ -40,26 +39,10 @@ def clean_repr(err):  # type: (Any) -> str
     return re.sub(r"<(.+) at (0x[0-9A-Fa-f]+)>", r"<\1 at memory_address>", str(err))
 
 
-def get_source(func):  # type: (Any) -> str
-    try:
-        sig = get_signature(func)
-    except ValueError:
-        return ""
-    if not sig:
-        return ""
-    sources = sorted(sig.sources["+depths"].items(), key=lambda s: s[1])
-    try:
-        return inspect.getsource(sources[-1][0]) or ""
-    except IOError:
-        pass
-    except TypeError as err:
-        LOG.debug(err)
-    return ""
-
-
 def get_tokens(source):  # type: (str) -> List[tokenize.TokenInfo]
+    """ Tokenize string """
     try:
-        if sys.version_info.major == 2:
+        if PY2:
             lines_str = (line for line in source.splitlines(True))
             tokens = list(tokenize.generate_tokens(lambda: next(lines_str)))
         else:
@@ -71,7 +54,14 @@ def get_tokens(source):  # type: (str) -> List[tokenize.TokenInfo]
     return tokens
 
 
-def normalize_type(type_string, context):  # type: (str, Dict[str, Any]) -> str
+def normalize_type(
+    type_string, # type: str
+    export_module, # type: str
+    export_context, # type: Sequence[str]
+    local_module, # type: str
+    local_context, # type: Sequence[str]
+):  # type: (...) -> str
+    """ Try to give absolute names for types """
     try:
         root = ast.parse(type_string).body[0].value  # type: ignore
     except (SyntaxError, AttributeError, IndexError):
@@ -84,13 +74,26 @@ def normalize_type(type_string, context):  # type: (str, Dict[str, Any]) -> str
 
         # eg: myVariable
         if isinstance(node, ast.Name):
-            parent = context.get(node.id)  # in scope?
-            if parent:
-                mod = inspect.getmodule(parent)
-                if mod:
-                    updates[node.col_offset] = mod.__name__
+            name = node.id
+            # First check if variable is exported locally, with the function.
+            # If so use that as the type, as that is where it makes sense.
+            # Eg, if function is promoted to public module, and associated types
+            # are also promoted. Don't use the private path to types.
+            if name in export_context:
+                updates[node.col_offset] = export_module
+
+            # If variable is not exported locally, but does exist in the scope the
+            # function was defined, use that.
+            elif name in local_context:
+                updates[node.col_offset] = local_module
+
+            # If variable does not exist in the scope, and it exists in the typing module,
+            # it is probably "statically" imported. ie not present in runtime.
             elif node.id in TYPING_ATTRS:  # special case for typing
                 updates[node.col_offset] = "typing"
+
+            # If we cannot find the name anywhere... there is nothing else we can do...
+            # It is probably an absolute path name already. Leave it be.
 
         # eg: List[something] or Dict[str, int]
         elif isinstance(node, ast.Subscript):
@@ -174,7 +177,7 @@ class Cache(collections.MutableMapping):
     def __iter__(self):
         return iter(self._cache)
 
-    def __delitem__(self, key):
+    def __delitem__(self, key): # type: (Any) -> None
         item = self._cache.pop(key)
         self._current_size -= item[1]
 

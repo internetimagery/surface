@@ -17,7 +17,7 @@ import collections
 from surface._base import UNKNOWN, PY2
 from surface._doc import parse_docstring
 from surface._comment import get_comment
-from surface._utils import get_signature, get_source, Cache
+from surface._utils import get_signature, Cache
 
 LOG = logging.getLogger(__name__)
 
