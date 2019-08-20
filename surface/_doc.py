@@ -27,7 +27,7 @@ def parse_docstring(func):  # type: (Any) -> Optional[Tuple[Dict[str, str], str]
 
 def handle_google(
     docstring, local_context
-):  # type: (str, str, Sequence[str]) -> Optional[Tuple[Dict[str, str], str]]
+):  # type: (str, Dict[str, Any]) -> Optional[Tuple[Dict[str, str], str]]
     # Find the first header, to establish indent
     header = re.search(r"^([ \t]*)[a-zA-Z]+:\s*$", docstring, re.M)
     if not header:
