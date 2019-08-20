@@ -11,7 +11,7 @@ import sigtools  # type: ignore
 
 from surface._base import POSITIONAL, KEYWORD, VARIADIC, DEFAULT, UNKNOWN
 from surface._utils import FuncSig, FuncSigArg, Cache
-from surface._type import get_type, get_type_func, format_annotation
+from surface._type import get_type, FuncType, format_annotation
 
 from surface._item import Item
 
@@ -201,10 +201,8 @@ class FunctionItem(LiveItem):
         return params
 
     def get_return_type(self, ):
-        func_type = get_type_func(self.item)
-        if not func_type:
-            return UNKNOWN
-        return func_type[1]
+        func_type = FuncType(self.item)
+        return func_type.returns
 
     @property
     def is_method(self):
@@ -233,14 +231,8 @@ class ParameterItem(LiveItem):
         return isinstance(item, FuncSigArg)
 
     def get_type(self):
-        if self.item.annotation != FuncSig.EMPTY:
-            print("I HAVE AN ANNOTATION", self.item)
-            return UNKNOWN
-        else:
-            func_type = get_type_func(self.parent.item)
-            if func_type:
-                return func_type[0].get(self.item.name, UNKNOWN)
-        return UNKNOWN
+        func_type = FuncType(self.parent.item)
+        return func_type.params[self.item.name]
 
     def get_kind(self):
         return self.item.kind

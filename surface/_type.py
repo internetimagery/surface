@@ -17,12 +17,11 @@ import collections
 from surface._base import UNKNOWN, PY2, TYPING_ATTRS
 from surface._doc import parse_docstring
 from surface._comment import get_comment
-from surface._utils import FuncSig, Cache
+from surface._utils import FuncSig, Cache, IDCache
 
 LOG = logging.getLogger(__name__)
 
 
-__all__ = ["get_type", "get_type_func"]
 
 type_comment_reg = re.compile(r"# +type: ([\w ,\[\]\.]+)")
 type_comment_sig_reg = re.compile(r"# +type: \(([\w ,\[\]\.]*)\) +-> +([\w ,\[\]\.]+)")
@@ -65,21 +64,63 @@ class FuncType(object):
 # TODO: THEN tackle new typing, and new module-first traversal.
 
 
-class TypeCollector(object):
-    """ Collect types on behalf of Item objects """
+class FuncType(IDCache):
+    """ Collect typing information on a function """
 
-    _cache_func_type = Cache(500)
+    _cache = Cache()
 
-    def get_type_func(self, item):  # type: (FunctionItem) -> Tuple[Dict[str, str], str]
-        item_id = id(item.item)
-        cache_value = self._cache_func_type.get(item_id, None)
-        if cache_value is None:
-            self._cache_func_type[item_id] = cache_value = (
-                get_comment_type_func(item.item)
-                or get_docstring_type_func(item.item)
-                or get_annotate_type_func(item.item, item.name)
-            )
-        return cache_value
+    def __init__(self, func):
+        self.params = collections.OrderedDict()
+        self.returns = UNKNOWN
+
+        sig = FuncSig(func)
+        if sig:
+            self._map_params(sig)
+            self._map_returns(sig)
+
+    def _map_params(self, sig):
+        """ Check annotations first, then type comments, then docstrings """
+        self.params = collections.OrderedDict()
+        for name, param in sig.parameters.items():
+            if param.annotation is not FuncSig.EMPTY:
+                self.params[name] = handle_live_annotation(param.annotation)
+                continue
+            comment_types = get_comment(param.source)
+            if comment_types:
+                self.params[name] = comment_types[0].get(name, UNKNOWN)
+                continue
+            docstring_types = parse_docstring(param.source)
+            if docstring_types:
+                self.params[name] = docstring_types[0].get(name, UNKNOWN)
+                continue
+            # If we have nothing else to go on, check for a default value
+            if param.default is not FuncSig.EMPTY:
+                if param.default is None:
+                    # Value is optional
+                    self.params[name] = "typing.Optional[{}]".format(UNKNOWN)
+                else:
+                    self.params[name] = get_live_type(param.default)
+                continue
+            self.params[name] = UNKNOWN
+
+    def _map_returns(self, sig):
+        if sig.returns.annotation is not FuncSig.EMPTY:
+            self.returns = handle_live_annotation(sig.returns.annotation)
+            return
+        comment_types = get_comment(sig.returns.source)
+        if comment_types:
+            self.returns = comment_types[1]
+            return
+        docstring_types = parse_docstring(sig.returns.source)
+        if docstring_types:
+            self.returns = docstring_types[1]
+            return
+        self.returns = UNKNOWN
+
+
+
+
+
 
 
 def format_annotation(ann):  # type: (Any) -> str

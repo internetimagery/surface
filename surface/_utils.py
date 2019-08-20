@@ -277,6 +277,10 @@ class FuncSig(IDCache):
     __nonzero__ = __bool__
 
     @property
+    def func(self):
+        return self._func
+
+    @property
     def parameters(self):  # type: () -> collections.OrderedDict[str, FuncSigArg]
         if self._sig is None:
             raise RuntimeError("No signature available")
