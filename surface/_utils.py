@@ -19,9 +19,9 @@ import collections
 from surface._base import *
 
 try:
-    from inspect import _empty as EMPTY # type: ignore
+    from inspect import _empty as EMPTY  # type: ignore
 except ImportError:
-    from funcsigs import _empty as EMPTY # type: ignore
+    from funcsigs import _empty as EMPTY  # type: ignore
 
 
 LOG = logging.getLogger(__name__)
@@ -61,11 +61,11 @@ def get_tokens(source):  # type: (str) -> List[tokenize.TokenInfo]
 
 
 def normalize_type(
-    type_string, # type: str
-    export_module, # type: str
-    export_context, # type: Sequence[str]
-    local_module, # type: str
-    local_context, # type: Sequence[str]
+    type_string,  # type: str
+    export_module,  # type: str
+    export_context,  # type: Sequence[str]
+    local_module,  # type: str
+    local_context,  # type: Sequence[str]
 ):  # type: (...) -> str
     """ Try to give absolute names for types """
     try:
@@ -183,7 +183,7 @@ class Cache(collections.MutableMapping):
     def __iter__(self):
         return iter(self._cache)
 
-    def __delitem__(self, key): # type: (Any) -> None
+    def __delitem__(self, key):  # type: (Any) -> None
         item = self._cache.pop(key)
         self._current_size -= item[1]
 
@@ -243,7 +243,9 @@ class IDCache(object):
         return cache_item
 
 
-FuncSigArg = collections.namedtuple("FuncSigArg", ("kind", "default", "annotation", "source"))
+FuncSigArg = collections.namedtuple(
+    "FuncSigArg", ("name", "kind", "default", "annotation", "source")
+)
 
 
 class FuncSig(IDCache):
@@ -260,7 +262,7 @@ class FuncSig(IDCache):
         "VAR_KEYWORD": KEYWORD | VARIADIC,
     }
 
-    def __init__(self, func): # type: (Any) -> None
+    def __init__(self, func):  # type: (Any) -> None
         self._func = func
         self._sig = None
         self._returns = None
@@ -275,13 +277,13 @@ class FuncSig(IDCache):
     __nonzero__ = __bool__
 
     @property
-    def parameters(self): # type: () -> collections.OrderedDict[str, FuncSigArg]
+    def parameters(self):  # type: () -> collections.OrderedDict[str, FuncSigArg]
         if not self._parameters:
             raise RuntimeError("No signature available")
         return self._parameters
 
     @property
-    def returns(self): # type: () -> FuncSigArg
+    def returns(self):  # type: () -> FuncSigArg
         if not self._returns:
             raise RuntimeError("No signature available")
         return self._returns
@@ -290,7 +292,9 @@ class FuncSig(IDCache):
         # handle bug in funcsigs
         restore_attr = False
         restore_val = None
-        if hasattr(self._func, "__annotations__") and not isinstance(self._func.__annotations__, dict):
+        if hasattr(self._func, "__annotations__") and not isinstance(
+            self._func.__annotations__, dict
+        ):
             restore_val = self._func.__annotations__
             self._func.__annotations__ = {}
             restore_attr = True
@@ -307,12 +311,20 @@ class FuncSig(IDCache):
         if not self._sig:
             return
 
-        self._returns = FuncSigArg(None, self.EMPTY, self._sig.return_annotation, sorted(self._sig.sources["+depths"].items(), key=lambda x: x[1])[-1][0])
+        self._returns = FuncSigArg(
+            "",
+            None,
+            self.EMPTY,
+            self._sig.return_annotation,
+            sorted(self._sig.sources["+depths"].items(), key=lambda x: x[1])[-1][0],
+        )
 
-        self._parameters = collections.OrderedDict() # type: Dict[str, FuncSigArg]
+        self._parameters = collections.OrderedDict()  # type: Dict[str, FuncSigArg]
         for name, param in self._sig.parameters.items():
             self._parameters[name] = FuncSigArg(
-                self.KIND_MAP[str(param.kind)] | (0 if param.default is self.EMPTY else DEFAULT),
+                name,
+                self.KIND_MAP[str(param.kind)]
+                | (0 if param.default is self.EMPTY else DEFAULT),
                 param.default,
                 param.annotation,
                 (self._sig.sources.get(name) or [self._returns.source])[0],

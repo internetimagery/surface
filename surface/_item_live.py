@@ -10,7 +10,7 @@ import traceback
 import sigtools  # type: ignore
 
 from surface._base import POSITIONAL, KEYWORD, VARIADIC, DEFAULT, UNKNOWN
-from surface._utils import FuncSig, Cache
+from surface._utils import FuncSig, FuncSigArg, Cache
 from surface._type import get_type, get_type_func, format_annotation
 
 from surface._item import Item
@@ -19,11 +19,6 @@ try:  # python 3
     import builtins  # type: ignore
 except ImportError:
     import __builtin__ as builtins  # type: ignore
-
-try:  # python 3
-    from inspect import Parameter, _empty as Empty  # type: ignore
-except ImportError:
-    from funcsigs import Parameter, _empty as Empty  # type: ignore
 
 LOG = logging.getLogger(__name__)
 
@@ -47,7 +42,7 @@ class ErrorItem(Item):
 class LiveItem(Item):
     """ Wrap and traverse live objects """
 
-    __slots__ = [] # type: ignore
+    __slots__ = []  # type: ignore
     _cache = Cache(500)
 
     @classmethod
@@ -55,7 +50,9 @@ class LiveItem(Item):
         item_id = id(item)
         cache_item = cls._cache.get(item_id, None)
         if cache_item is None:
-            cls._cache[item_id] = cache_item = super(LiveItem, cls).wrap(visitors, item, parent)
+            cls._cache[item_id] = cache_item = super(LiveItem, cls).wrap(
+                visitors, item, parent
+            )
         return cache_item
 
     def __getitem__(self, name):  # type: (str) -> Item
@@ -231,20 +228,12 @@ class ParameterItem(LiveItem):
 
     __slots__ = []  # type: ignore
 
-    KIND_MAP = {
-        "POSITIONAL_ONLY": POSITIONAL,
-        "KEYWORD_ONLY": KEYWORD,
-        "POSITIONAL_OR_KEYWORD": POSITIONAL | KEYWORD,
-        "VAR_POSITIONAL": POSITIONAL | VARIADIC,
-        "VAR_KEYWORD": KEYWORD | VARIADIC,
-    }
-
     @staticmethod
     def is_this_type(item, parent):
-        return isinstance(item, Parameter)
+        return isinstance(item, FuncSigArg)
 
     def get_type(self, collector):
-        if self.item.annotation != Empty:
+        if self.item.annotation != FuncSig.EMPTY:
             print("I HAVE AN ANNOTATION", self.item)
             return UNKNOWN
         else:
@@ -254,7 +243,4 @@ class ParameterItem(LiveItem):
         return UNKNOWN
 
     def get_kind(self):
-        kind = self.KIND_MAP[str(self.item.kind)] | (
-            0 if self.item.default is Empty else DEFAULT
-        )
-        return kind
+        return self.item.kind

@@ -30,7 +30,9 @@ class TestCleanRepr(unittest.TestCase):
 class TestNormalizeType(unittest.TestCase):
     def test_nothing(self):
         self.assertEqual("int", normalize_type("int", "", [], "", []))
-        self.assertEqual("typing.List[str]", normalize_type("List[str]", "", [], "", []))
+        self.assertEqual(
+            "typing.List[str]", normalize_type("List[str]", "", [], "", [])
+        )
         self.assertEqual(
             "typing.Dict[typing.Tuple[int, str], typing.List[str]]",
             normalize_type("Dict[Tuple[int, str], List[str]]", "", [], "", []),
@@ -41,6 +43,7 @@ class TestNormalizeType(unittest.TestCase):
 
     def test_aliases(self):
         import datetime
+
         name = "datetime"
         cxt = list(datetime.__dict__)
 
@@ -68,16 +71,25 @@ class TestNormalizeType(unittest.TestCase):
 
     def test_export(self):
         import datetime
+
         local_name = "datetime"
         local_context = list(datetime.__dict__)
         export_name = "mymodule"
         export_context = ["date"]
 
-        self.assertEqual("mymodule.date", normalize_type("date", export_name, export_context, local_name, local_context))
+        self.assertEqual(
+            "mymodule.date",
+            normalize_type(
+                "date", export_name, export_context, local_name, local_context
+            ),
+        )
         self.assertEqual(
             "typing.List[mymodule.date]",
-            normalize_type("List[date]", export_name, export_context, local_name, local_context),
+            normalize_type(
+                "List[date]", export_name, export_context, local_name, local_context
+            ),
         )
+
 
 if __name__ == "__main__":
     unittest.main()

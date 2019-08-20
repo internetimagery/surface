@@ -22,7 +22,6 @@ from surface._utils import FuncSig, Cache
 LOG = logging.getLogger(__name__)
 
 
-
 __all__ = ["get_type", "get_type_func"]
 
 type_comment_reg = re.compile(r"# +type: ([\w ,\[\]\.]+)")
@@ -38,9 +37,6 @@ _cache_func_type = Cache(500)
 # Collect types as before. normalizing the type to its defined module (as this what annotations do too)
 # make a collection of "exports" from modules / classes. eg things not defined within the module itself
 # use this collection to map onto a type, to move exposed types into the public module
-
-
-
 
 
 class FuncType(object):
@@ -61,11 +57,6 @@ class FuncType(object):
         self._return_type = UNKNOWN
 
 
-
-
-
-
-
 # TODO: clean this all up.
 # TODO: Use Items as entry points.
 
@@ -79,7 +70,7 @@ class TypeCollector(object):
 
     _cache_func_type = Cache(500)
 
-    def get_type_func(self, item): # type: (FunctionItem) -> Tuple[Dict[str, str], str]
+    def get_type_func(self, item):  # type: (FunctionItem) -> Tuple[Dict[str, str], str]
         item_id = id(item.item)
         cache_value = self._cache_func_type.get(item_id, None)
         if cache_value is None:
@@ -89,14 +80,6 @@ class TypeCollector(object):
                 or get_annotate_type_func(item.item, item.name)
             )
         return cache_value
-
-
-
-
-
-
-
-
 
 
 def format_annotation(ann):  # type: (Any) -> str
