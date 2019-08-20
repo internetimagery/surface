@@ -10,7 +10,7 @@ import traceback
 import sigtools  # type: ignore
 
 from surface._base import POSITIONAL, KEYWORD, VARIADIC, DEFAULT, UNKNOWN
-from surface._utils import get_signature, Cache
+from surface._utils import FuncSig, Cache
 from surface._type import get_type, get_type_func, format_annotation
 
 from surface._item import Item
@@ -185,11 +185,11 @@ class FunctionItem(LiveItem):
         return inspect.isfunction(item) or inspect.ismethod(item)
 
     def get_child(self, attr):
-        sig = get_signature(self.item)
+        sig = FuncSig(self.item)
         return sig.parameters[attr]
 
     def get_children_names(self):
-        sig = get_signature(self.item)
+        sig = FuncSig(self.item)
         if not sig:
             return []
 
@@ -199,9 +199,6 @@ class FunctionItem(LiveItem):
             # We want to ignore "self" and "cls", as those are implementation details
             # and are not relevant for API comparisons
             # It seems funcsigs removes "cls" for us in class methods... that is nice.
-            source_func = sorted(sig.sources["+depths"].items(), key=lambda s: s[1])[
-                -1
-            ][0]
             if self.is_method:
                 params = params[1:]  # chop off self
         return params

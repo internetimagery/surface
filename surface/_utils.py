@@ -18,6 +18,12 @@ import collections
 
 from surface._base import *
 
+try:
+    from inspect import _empty as EMPTY # type: ignore
+except ImportError:
+    from funcsigs import _empty as EMPTY # type: ignore
+
+
 LOG = logging.getLogger(__name__)
 
 import_times = {}  # type: Dict[str, float]
@@ -143,7 +149,7 @@ def from_dict(node):  # type: (Dict[str, Any]) -> Any
 
 
 class Cache(collections.MutableMapping):
-    def __init__(self, size):  # type: (int) -> None
+    def __init__(self, size=500):  # type: (int) -> None
         """ Cache stuff. Up to size (mb) """
         self.size = size * 1000000  # mb to bytes
         self._cache = (
@@ -223,30 +229,91 @@ class Cache(collections.MutableMapping):
         return size
 
 
-_cache_sig = Cache(500)
-_empty = object()
+class IDCache(object):
+    """ Generic object that caches based on input object ID """
+
+    _cache = Cache()
+    _empty = object()
+
+    def __new__(cls, item):
+        item_id = id(item)
+        cache_item = cls._cache.get(item_id, cls._empty)
+        if cache_item is cls._empty:
+            cls._cache[item_id] = cache_item = super(IDCache, cls).__new__(cls)
+        return cache_item
 
 
-def get_signature(func):  # type: (Any) -> Optional[sigtools.Signature]
-    func_id = id(func)
-    cache_value = _cache_sig.get(func_id, _empty)
-    if cache_value is not _empty:
-        return cache_value
+FuncSigArg = collections.namedtuple("FuncSigArg", ("kind", "default", "annotation", "source"))
 
-    # handle bug in funcsigs
-    restore_attr = False
-    if hasattr(func, "__annotations__") and func.__annotations__ is None:
-        func.__annotations__ = {}
-        restore_attr = True
-    try:
-        _cache_sig[func_id] = cache_value = sigtools.signature(func)
-    except (SyntaxError, ValueError) as err:
-        LOG.debug("Error getting signature for {}".format(func))
-        LOG.debug(traceback.format_exc())
-        _cache_sig[func_id] = None
-        return None
-    else:
-        return cache_value
-    finally:
-        if restore_attr:
-            func.__annotations__ = None
+
+class FuncSig(IDCache):
+    """ Wrapper around sigtools signature gathering """
+
+    _cache = Cache()
+    EMPTY = EMPTY
+
+    KIND_MAP = {
+        "POSITIONAL_ONLY": POSITIONAL,
+        "KEYWORD_ONLY": KEYWORD,
+        "POSITIONAL_OR_KEYWORD": POSITIONAL | KEYWORD,
+        "VAR_POSITIONAL": POSITIONAL | VARIADIC,
+        "VAR_KEYWORD": KEYWORD | VARIADIC,
+    }
+
+    def __init__(self, func): # type: (Any) -> None
+        self._func = func
+        self._sig = None
+        self._returns = None
+        self._parameters = None
+
+        self._get_signature()
+        self._get_parameters()
+
+    def __bool__(self):
+        return bool(self._sig)
+
+    __nonzero__ = __bool__
+
+    @property
+    def parameters(self): # type: () -> collections.OrderedDict[str, FuncSigArg]
+        if not self._parameters:
+            raise RuntimeError("No signature available")
+        return self._parameters
+
+    @property
+    def returns(self): # type: () -> FuncSigArg
+        if not self._returns:
+            raise RuntimeError("No signature available")
+        return self._returns
+
+    def _get_signature(self):  # type: () -> Optional[sigtools.Signature]
+        # handle bug in funcsigs
+        restore_attr = False
+        restore_val = None
+        if hasattr(self._func, "__annotations__") and not isinstance(self._func.__annotations__, dict):
+            restore_val = self._func.__annotations__
+            self._func.__annotations__ = {}
+            restore_attr = True
+        try:
+            self._sig = sigtools.signature(self._func)
+        except (SyntaxError, ValueError) as err:
+            LOG.debug("Error getting signature for {}".format(self._func))
+            LOG.debug(traceback.format_exc())
+        finally:
+            if restore_attr:
+                self._func.__annotations__ = restore_val
+
+    def _get_parameters(self):
+        if not self._sig:
+            return
+
+        self._returns = FuncSigArg(None, self.EMPTY, self._sig.return_annotation, sorted(self._sig.sources["+depths"].items(), key=lambda x: x[1])[-1][0])
+
+        self._parameters = collections.OrderedDict() # type: Dict[str, FuncSigArg]
+        for name, param in self._sig.parameters.items():
+            self._parameters[name] = FuncSigArg(
+                self.KIND_MAP[str(param.kind)] | (0 if param.default is self.EMPTY else DEFAULT),
+                param.default,
+                param.annotation,
+                (self._sig.sources.get(name) or [self._returns.source])[0],
+            )

@@ -14,7 +14,7 @@ import tokenize
 import traceback
 import collections
 
-from surface._utils import normalize_type, get_signature, get_tokens
+from surface._utils import normalize_type, FuncSig, get_tokens
 from surface._base import TYPE_CHARS, UNKNOWN
 
 LOG = logging.getLogger(__name__)
@@ -194,7 +194,7 @@ def get_comment(func):  # type: (Any) -> Optional[Tuple[Dict[str, str], str]]
         if not param_map:
             return None
         # Match parameters to function values
-        sig = get_signature(func)
+        sig = FuncSig(func)
         if not sig:
             return None
         # reverse args, as a hack to skip "self" without knowing if it's an unbound method

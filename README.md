@@ -74,8 +74,8 @@ Rough todo...
 - [x] Partial support for typing comments.
 - [x] Partial support for docstring typing (google style only, currently)
 - [ ] Search modules from bottom up. So "parent" relationships reflect module heirarchy, not traversal chain.
-- [ ] Utilize sigtools depth feature, to collect typing from comments on all arguments.
-- [ ] Improve typing comparison. Inspecting deeply nested types.
+- [x] Utilize sigtools depth feature, to collect typing from comments on all arguments.
+- [x] Improve typing comparison. Inspecting deeply nested types.
 - [x] Provide features to store api output using git commits
 - [ ] Look into xml as alternate storage to json. Especially useful with comments in a header.
 - [ ] Move some of the cli utility stuff into its own submodule (public).

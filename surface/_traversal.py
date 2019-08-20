@@ -19,7 +19,7 @@ except ImportError:
 
 from surface._base import *
 from surface._type import get_type, get_type_func, TypeCollector
-from surface._utils import clean_repr, import_module, get_signature
+from surface._utils import clean_repr, import_module
 from surface._item_live import (
     ErrorItem,
     ModuleItem,
