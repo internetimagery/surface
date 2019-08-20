@@ -264,7 +264,7 @@ class FuncSig(IDCache):
 
     def __init__(self, func):  # type: (Any) -> None
         self._func = func
-        self._sig = None # type: Optional[sigtools.Signature]
+        self._sig = None  # type: Optional[sigtools.Signature]
         self._returns = None
         self._parameters = None
 

@@ -22,7 +22,6 @@ from surface._utils import FuncSig, Cache, IDCache
 LOG = logging.getLogger(__name__)
 
 
-
 type_comment_reg = re.compile(r"# +type: ([\w ,\[\]\.]+)")
 type_comment_sig_reg = re.compile(r"# +type: \(([\w ,\[\]\.]*)\) +-> +([\w ,\[\]\.]+)")
 type_attr_reg = re.compile(
@@ -36,24 +35,6 @@ _cache_func_type = Cache(500)
 # Collect types as before. normalizing the type to its defined module (as this what annotations do too)
 # make a collection of "exports" from modules / classes. eg things not defined within the module itself
 # use this collection to map onto a type, to move exposed types into the public module
-
-
-class FuncType(object):
-    """ Collect types on function objects """
-
-    _cache = Cache()
-
-    def __new__(cls, func):
-        func_id = id(func)
-        cache_item = cls._cache.get(func_id, None)
-        if cache_item is None:
-            cls._cache[func_id] = cache_item = super(FuncType, cls).__new__(cls)
-        return cache_item
-
-    def __init__(self, func):
-        self._func = func
-        self._params = {}
-        self._return_type = UNKNOWN
 
 
 # TODO: clean this all up.
@@ -77,6 +58,12 @@ class FuncType(IDCache):
         if sig:
             self._map_params(sig)
             self._map_returns(sig)
+
+    def as_var(self):
+        params = (
+            "[{}]".format(", ".join(self.params.values())) if self.params else "..."
+        )
+        return "typing.Callable[{}, {}]".format(params, self.returns)
 
     def _map_params(self, sig):
         """ Check annotations first, then type comments, then docstrings """
@@ -118,9 +105,9 @@ class FuncType(IDCache):
         self.returns = UNKNOWN
 
 
-
-
-
+#########################
+# Clean this mess up
+#########################
 
 
 def format_annotation(ann):  # type: (Any) -> str
@@ -168,141 +155,25 @@ def get_type(value, name="", parent=None):  # type: (Any, str, Any) -> str
     if cache_value is not None:
         return cache_value
 
-    cache_value = (
-        get_comment_type(value, name, parent)
-        or get_annotate_type(value, name, parent)
-        or get_live_type(value)
-    )
+    if inspect.isfunction(value):
+        func_type = FuncType(value)
+        cache_value = func_type.as_var()
+    else:
+        cache_value = (
+            get_comment_type(value, name, parent)
+            or get_annotate_type(value, name, parent)
+            or get_live_type(value)
+        )
     _cache_type[value_id] = cache_value
     return cache_value
 
 
-def get_type_func(
-    value, name="", parent=None
-):  # type: (Any, str, Any) -> Tuple[Dict[str, str], str]
-    value_id = id(value)
-    cache_value = _cache_func_type.get(value_id, None)
-    if cache_value is not None:
-        return cache_value
-
-    cache_value = (
-        get_comment_type_func(value)
-        or get_docstring_type_func(value)
-        or get_annotate_type_func(value, name)
-    )
-    _cache_func_type[value_id] = cache_value
-    return cache_value
-
-
-def get_comment_type_func(value):  # type: (Any) -> Optional[Tuple[Dict[str, str], str]]
-    sig = FuncSig(value)
-    if not sig:
-        return None
-
-    base_typing = get_comment(sig.returns.source)
-    if not base_typing:
-        return None
-    return_type = base_typing[1]
-
-    # map params from each function to attributes.
-    params = collections.OrderedDict()  # type: Dict[str, str]
-    for name, param in sig.parameters.items():
-        source_type = get_comment(param.source)
-        if source_type:
-            params[name] = source_type[0].get(name, UNKNOWN)
-        else:
-            params[name] = UNKNOWN
-    return params, return_type
-
-
-def get_docstring_type_func(
-    value
-):  # type: (Any) -> Optional[Tuple[Dict[str, str], str]]
-    sig = FuncSig(value)
-    if not sig:
-        return None
-
-    base_typing = parse_docstring(sig.returns.source)
-    if not base_typing:
-        return None
-    return_type = base_typing[1]
-
-
-    # map params from each function to attributes.
-    params = collections.OrderedDict()  # type: Dict[str, str]
-    for name, param in sig.parameters.items():
-        source_type = parse_docstring(param.source)  # Just grabbing one for now
-        if source_type:
-            params[name] = source_type[0].get(name, UNKNOWN)
-        else:
-            params[name] = UNKNOWN
-    return params, return_type
-
-
-def get_annotate_type_func(
-    value, name
-):  # type: (Any, str) -> Tuple[Dict[str, str], str]
-    sig = FuncSig(value)
-    if not sig:
-        return {}, UNKNOWN
-
-    return_type = (
-        handle_live_annotation(sig.returns.annotation)
-        if sig.returns.annotation is not FuncSig.EMPTY
-        else UNKNOWN
-    )
-
-    # map params from each function to attributes.
-    params = collections.OrderedDict()  # type: Dict[str, str]
-    for name, param in sig.parameters.items():
-        if param.annotation is not FuncSig.EMPTY:
-            # If we are given an annotation, use it
-            params[name] = handle_live_annotation(param.annotation)
-        elif param.default is not FuncSig.EMPTY:
-            # If we have a default value, use that type
-            if param.default is None:
-                # Value is optional
-                params[name] = "typing.Optional[{}]".format(UNKNOWN)
-            else:
-                params[name] = get_live_type(param.default)
-        else:
-            params[name] = UNKNOWN
-    return params, return_type
-
-
-def get_docstring_type(value, name, parent):  # type: (Any, str, Any) -> Optional[str]
-    if inspect.isfunction(value):
-        result = get_docstring_type_func(value)
-        if result:
-            params, return_type = result
-            return "typing.Callable[{}, {}]".format(
-                "[{}]".format(", ".join(p for p in params.values()))
-                if params
-                else "...",
-                return_type,
-            )
-    return None
-
-
 def get_comment_type(value, name, parent):  # type: (Any, str, Any) -> Optional[str]
-    if inspect.isfunction(value):
-        result = get_comment_type_func(value)
-        if result:
-            params, return_type = result
-            return "typing.Callable[{}, {}]".format(
-                "[{}]".format(", ".join(params.values())) if params else "...",
-                return_type,
-            )
     return None
 
 
 def get_annotate_type(value, name, parent):  # type: (Any, str, Any) -> Optional[str]
-    if type(value) == types.FunctionType:
-        params, return_type = get_annotate_type_func(value, name)
-        return "typing.Callable[{}, {}]".format(
-            "[{}]".format(", ".join(params.values())) if params else "...", return_type
-        )
-    elif inspect.isclass(parent) or inspect.ismodule(parent):
+    if inspect.isclass(parent) or inspect.ismodule(parent):
         annotation = getattr(parent, "__annotations__", {})
         if name in annotation:
             return handle_live_annotation(annotation[name])
@@ -386,11 +257,8 @@ def handle_live_container_type(value, value_type):  # type: (Any, Any) -> Option
 
 def handle_live_abstract(value, value_type):  # type: (Any, Any) -> Optional[str]
     if value_type == types.FunctionType:
-        params, return_type = get_type_func(value)
-        return "typing.Callable[{}, {}]".format(
-            "[{}]".format(", ".join(params.values())) if params else "...", return_type
-        )
-
+        func_type = FuncType(value)
+        return func_type.as_var()
     return None
 
 
@@ -407,11 +275,3 @@ def handle_live_annotation(value):  # type: (Any) -> str
     if type(value) == types.FunctionType:
         return get_live_type(value)
     return UNKNOWN
-
-
-# This is a bit of a brute force way of ensuring typing declarations are abspath.
-# It does not take into account locally overidding names in typing module
-# It is also not making arbitrary types absolute.
-# Could be improved with a lot of static parsing, but for now this should be ok!
-def normalize(type_string):  # type: (str) -> str
-    return type_attr_reg.sub(r"typing.\1", type_string)

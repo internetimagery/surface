@@ -2,12 +2,7 @@ import sys
 import os.path
 import unittest
 
-from surface._type import (
-    get_live_type,
-    get_annotate_type,
-    get_comment_type,
-    get_docstring_type,
-)
+from surface._type import get_live_type, FuncType, get_annotate_type
 
 path = os.path.join(os.path.dirname(__file__), "testdata")
 if path not in sys.path:
@@ -58,31 +53,26 @@ class TestAnnotations(unittest.TestCase):
         import test_annotation
 
         self.assertEqual(
-            get_annotate_type(test_annotation.func1, "func1", test_annotation),
+            FuncType(test_annotation.func1).as_var(),
             "typing.Callable[[int, str], bool]",
         )
         self.assertEqual(
-            get_annotate_type(test_annotation.func2, "func2", test_annotation),
+            FuncType(test_annotation.func2).as_var(),
             "typing.Callable[[typing.Callable[[int, str], bool], typing.List[str]], typing.List[bool]]",
         )
         self.assertEqual(
-            get_annotate_type(test_annotation.func3, "func3", test_annotation),
+            FuncType(test_annotation.func3).as_var(),
             "typing.Callable[[test_annotation.Obj1], bool]",
         )
         self.assertEqual(
-            get_annotate_type(test_annotation.func4, "func4", test_annotation),
+            FuncType(test_annotation.func4).as_var(),
             "typing.Callable[[int, str], bool]",
         )
 
+        # TODO: Re-enable these tests when regular typing is fixed up
+        self.assertEqual(get_annotate_type(test_annotation.Obj1.attr1, "attr1", test_annotation.Obj1), "typing.List[int]")
         self.assertEqual(
-            get_annotate_type(
-                test_annotation.Obj1.attr1, "attr1", test_annotation.Obj1
-            ),
-            "typing.List[int]",
-        )
-        self.assertEqual(
-            get_annotate_type(test_annotation.variable1, "variable1", test_annotation),
-            "typing.List[str]",
+            get_annotate_type(test_annotation.variable1, "variable1", test_annotation), "typing.List[str]"
         )
 
 
@@ -91,15 +81,14 @@ class TestComments(unittest.TestCase):
         import test_comments
 
         self.assertEqual(
-            get_comment_type(test_comments.func1, "func1", test_comments),
+            FuncType(test_comments.func1).as_var(),
             "typing.Callable[[int, str, typing.Dict[str, typing.List[str]]], None]",
         )
         self.assertEqual(
-            get_comment_type(test_comments.func2, "func2", test_comments),
-            "typing.Callable[..., None]",
+            FuncType(test_comments.func2).as_var(), "typing.Callable[..., None]"
         )
         self.assertEqual(
-            get_comment_type(test_comments.func3, "func3", test_comments),
+            FuncType(test_comments.func3).as_var(),
             "typing.Callable[[int, typing.List[str], typing.Dict[str, typing.List[str]]], None]",
         )
 
@@ -109,20 +98,18 @@ class TestDocstring(unittest.TestCase):
         import test_docstring
 
         self.assertEqual(
-            get_docstring_type(test_docstring.func1, "func1", test_docstring),
+            FuncType(test_docstring.func1).as_var(),
             "typing.Callable[[int, str, typing.Dict[str, bool]], None]",
         )
         self.assertEqual(
-            get_docstring_type(test_docstring.func2, "func2", test_docstring),
+            FuncType(test_docstring.func2).as_var(),
             "typing.Callable[[str], typing.Iterable[str]]",
         )
         self.assertEqual(
-            get_docstring_type(test_docstring.func3, "func3", test_docstring),
-            "typing.Callable[..., int]",
+            FuncType(test_docstring.func3).as_var(), "typing.Callable[..., int]"
         )
         self.assertEqual(
-            get_docstring_type(test_docstring.func4, "func4", test_docstring),
-            "typing.Callable[[int], ~unknown]",
+            FuncType(test_docstring.func4).as_var(), "typing.Callable[[int], ~unknown]"
         )
 
 

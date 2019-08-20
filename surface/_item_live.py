@@ -200,7 +200,7 @@ class FunctionItem(LiveItem):
                 params = params[1:]  # chop off self
         return params
 
-    def get_return_type(self, ):
+    def get_return_type(self,):
         func_type = FuncType(self.item)
         return func_type.returns
 
