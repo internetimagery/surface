@@ -200,8 +200,8 @@ class FunctionItem(LiveItem):
                 params = params[1:]  # chop off self
         return params
 
-    def get_return_type(self, collector):
-        func_type = collector.get_type_func(self)
+    def get_return_type(self, ):
+        func_type = get_type_func(self.item)
         if not func_type:
             return UNKNOWN
         return func_type[1]
@@ -232,12 +232,12 @@ class ParameterItem(LiveItem):
     def is_this_type(item, parent):
         return isinstance(item, FuncSigArg)
 
-    def get_type(self, collector):
+    def get_type(self):
         if self.item.annotation != FuncSig.EMPTY:
             print("I HAVE AN ANNOTATION", self.item)
             return UNKNOWN
         else:
-            func_type = collector.get_type_func(self.parent)
+            func_type = get_type_func(self.parent.item)
             if func_type:
                 return func_type[0].get(self.item.name, UNKNOWN)
         return UNKNOWN

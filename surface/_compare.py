@@ -14,9 +14,6 @@ except ImportError:
 from surface._base import *
 
 
-__all__ = ["PATCH", "MINOR", "MAJOR", "compare"]
-
-
 RULES = """
 API Semantic rules, and how they affect versions.
 

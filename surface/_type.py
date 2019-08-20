@@ -168,9 +168,9 @@ def get_comment_type_func(value):  # type: (Any) -> Optional[Tuple[Dict[str, str
     for name, param in sig.parameters.items():
         source_type = get_comment(param.source)
         if source_type:
-            params[param] = source_type[0].get(param, UNKNOWN)
+            params[name] = source_type[0].get(name, UNKNOWN)
         else:
-            params[param] = UNKNOWN
+            params[name] = UNKNOWN
     return params, return_type
 
 
@@ -181,19 +181,20 @@ def get_docstring_type_func(
     if not sig:
         return None
 
-    base_typing = get_comment(sig.returns.source)
+    base_typing = parse_docstring(sig.returns.source)
     if not base_typing:
         return None
     return_type = base_typing[1]
+
 
     # map params from each function to attributes.
     params = collections.OrderedDict()  # type: Dict[str, str]
     for name, param in sig.parameters.items():
         source_type = parse_docstring(param.source)  # Just grabbing one for now
         if source_type:
-            params[param] = source_type[0].get(param, UNKNOWN)
+            params[name] = source_type[0].get(name, UNKNOWN)
         else:
-            params[param] = UNKNOWN
+            params[name] = UNKNOWN
     return params, return_type
 
 

@@ -18,7 +18,7 @@ except ImportError:
     import __builtin__ as builtins  # type: ignore
 
 from surface._base import *
-from surface._type import get_type, get_type_func, TypeCollector
+from surface._type import get_type, get_type_func
 from surface._utils import clean_repr, import_module
 from surface._item_live import (
     ErrorItem,
@@ -82,7 +82,6 @@ class Traversal(object):
         self.exclude_modules = exclude_modules  # Do not follow exposed modules
         self.all_filter = all_filter  # Mimic "import *"
         self.depth = depth  # How far down the rabbit hole do we go?
-        collector = TypeCollector()
         self.item_map = {
             NoneItem: lambda n, s, p: Var(n, "None"),
             VarItem: lambda n, s, p: Var(n, s.get_type()),
@@ -95,9 +94,9 @@ class Traversal(object):
                 tuple([] if self.exclude_modules else self.walk(s, n, p.copy())),
             ),
             FunctionItem: lambda n, s, p: Func(
-                n, tuple(self.walk(s, n, set(p))), s.get_return_type(collector)
+                n, tuple(self.walk(s, n, set(p))), s.get_return_type()
             ),
-            ParameterItem: lambda n, s, p: Arg(n, s.get_type(collector), s.get_kind()),
+            ParameterItem: lambda n, s, p: Arg(n, s.get_type(), s.get_kind()),
         }  # type: Dict[Any, Any]
 
     def traverse(self, module):  # type: (Any) -> Module

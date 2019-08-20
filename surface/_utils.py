@@ -19,9 +19,9 @@ import collections
 from surface._base import *
 
 try:
-    from inspect import _empty as EMPTY  # type: ignore
+    from inspect import _empty as _empty  # type: ignore
 except ImportError:
-    from funcsigs import _empty as EMPTY  # type: ignore
+    from funcsigs import _empty as _empty  # type: ignore
 
 
 LOG = logging.getLogger(__name__)
@@ -252,9 +252,9 @@ class FuncSig(IDCache):
     """ Wrapper around sigtools signature gathering """
 
     _cache = Cache()
-    EMPTY = EMPTY
+    EMPTY = _empty
 
-    KIND_MAP = {
+    _KIND_MAP = {
         "POSITIONAL_ONLY": POSITIONAL,
         "KEYWORD_ONLY": KEYWORD,
         "POSITIONAL_OR_KEYWORD": POSITIONAL | KEYWORD,
@@ -264,7 +264,7 @@ class FuncSig(IDCache):
 
     def __init__(self, func):  # type: (Any) -> None
         self._func = func
-        self._sig = None
+        self._sig = None # type: Optional[sigtools.Signature]
         self._returns = None
         self._parameters = None
 
@@ -278,17 +278,17 @@ class FuncSig(IDCache):
 
     @property
     def parameters(self):  # type: () -> collections.OrderedDict[str, FuncSigArg]
-        if not self._parameters:
+        if self._sig is None:
             raise RuntimeError("No signature available")
         return self._parameters
 
     @property
     def returns(self):  # type: () -> FuncSigArg
-        if not self._returns:
+        if self._sig is None:
             raise RuntimeError("No signature available")
         return self._returns
 
-    def _get_signature(self):  # type: () -> Optional[sigtools.Signature]
+    def _get_signature(self):
         # handle bug in funcsigs
         restore_attr = False
         restore_val = None
@@ -323,7 +323,7 @@ class FuncSig(IDCache):
         for name, param in self._sig.parameters.items():
             self._parameters[name] = FuncSigArg(
                 name,
-                self.KIND_MAP[str(param.kind)]
+                self._KIND_MAP[str(param.kind)]
                 | (0 if param.default is self.EMPTY else DEFAULT),
                 param.default,
                 param.annotation,
