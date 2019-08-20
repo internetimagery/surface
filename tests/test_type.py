@@ -69,10 +69,15 @@ class TestAnnotations(unittest.TestCase):
             "typing.Callable[[int, str], bool]",
         )
 
-        # TODO: Re-enable these tests when regular typing is fixed up
-        self.assertEqual(get_annotate_type(test_annotation.Obj1.attr1, "attr1", test_annotation.Obj1), "typing.List[int]")
         self.assertEqual(
-            get_annotate_type(test_annotation.variable1, "variable1", test_annotation), "typing.List[str]"
+            get_annotate_type(
+                test_annotation.Obj1.attr1, "attr1", test_annotation.Obj1
+            ),
+            "typing.List[int]",
+        )
+        self.assertEqual(
+            get_annotate_type(test_annotation.variable1, "variable1", test_annotation),
+            "typing.List[str]",
         )
 
 

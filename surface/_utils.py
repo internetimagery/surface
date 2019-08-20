@@ -282,13 +282,13 @@ class FuncSig(IDCache):
 
     @property
     def parameters(self):  # type: () -> collections.OrderedDict[str, FuncSigArg]
-        if self._sig is None:
+        if self._sig is None or self._parameters is None:
             raise RuntimeError("No signature available")
         return self._parameters
 
     @property
     def returns(self):  # type: () -> FuncSigArg
-        if self._sig is None:
+        if self._sig is None or self._returns is None:
             raise RuntimeError("No signature available")
         return self._returns
 
