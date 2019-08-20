@@ -7,7 +7,7 @@ import re
 import inspect
 
 from surface._base import UNKNOWN, TYPE_CHARS
-from surface._utils import normalize_type
+from surface._utils import abs_type
 
 
 def parse_docstring(func):  # type: (Any) -> Optional[Tuple[Dict[str, str], str]]
@@ -22,12 +22,11 @@ def parse_docstring(func):  # type: (Any) -> Optional[Tuple[Dict[str, str], str]
     if not doc:
         return None
     local_context = getattr(func, "__globals__", {})
-    local_module = getattr(inspect.getmodule(func), "__name__", "")
-    return handle_google(doc, local_module, local_context)
+    return handle_google(doc, local_context)
 
 
 def handle_google(
-    docstring, local_module, local_context
+    docstring, local_context
 ):  # type: (str, str, Sequence[str]) -> Optional[Tuple[Dict[str, str], str]]
     # Find the first header, to establish indent
     header = re.search(r"^([ \t]*)[a-zA-Z]+:\s*$", docstring, re.M)
@@ -46,9 +45,7 @@ def handle_google(
         header_name = header.group(1).lower()
         if header_name in ("arg", "args", "arguments", "parameters"):
             params = {
-                p.group(1): normalize_type(
-                    p.group(2), "", [], local_module, local_context
-                )
+                p.group(1): abs_type(p.group(2), local_context)
                 for p in re.finditer(
                     r"^{}[ \t]+([\w\-]+) *\(`?({})`?\)(?: *: .+| *)$".format(
                         header_indent, TYPE_CHARS
@@ -68,9 +65,7 @@ def handle_google(
                 re.M,
             )
             if returns:
-                return_type = normalize_type(
-                    returns.group(1), "", [], local_module, local_context
-                )
+                return_type = abs_type(returns.group(1), local_context)
                 if "yield" in header_name:
                     return_type = "typing.Iterable[{}]".format(return_type)
     if params or return_type:

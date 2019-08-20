@@ -60,14 +60,9 @@ def get_tokens(source):  # type: (str) -> List[tokenize.TokenInfo]
     return tokens
 
 
-def normalize_type(
-    type_string,  # type: str
-    export_module,  # type: str
-    export_context,  # type: Sequence[str]
-    local_module,  # type: str
-    local_context,  # type: Sequence[str]
-):  # type: (...) -> str
-    """ Try to give absolute names for types """
+def abs_type(type_string, context):  # type: (str, Dict[str, Any]) -> str
+    """ Convert local type into absolute, eg MyType -> my_module.MyType """
+    # Validate type. If it's not valid, just call it unknown
     try:
         root = ast.parse(type_string).body[0].value  # type: ignore
     except (SyntaxError, AttributeError, IndexError):
@@ -81,25 +76,17 @@ def normalize_type(
         # eg: myVariable
         if isinstance(node, ast.Name):
             name = node.id
-            # First check if variable is exported locally, with the function.
-            # If so use that as the type, as that is where it makes sense.
-            # Eg, if function is promoted to public module, and associated types
-            # are also promoted. Don't use the private path to types.
-            if name in export_context:
-                updates[node.col_offset] = export_module
-
-            # If variable is not exported locally, but does exist in the scope the
-            # function was defined, use that.
-            elif name in local_context:
-                updates[node.col_offset] = local_module
+            value = context.get(name)
+            # If variable exists in local scope (it generally should), get its full name.
+            if value:
+                module = getattr(inspect.getmodule(value), "__name__", "")
+                if module:
+                    updates[node.col_offset] = module
 
             # If variable does not exist in the scope, and it exists in the typing module,
             # it is probably "statically" imported. ie not present in runtime.
-            elif node.id in TYPING_ATTRS:  # special case for typing
+            elif name in TYPING_ATTRS:  # special case for typing
                 updates[node.col_offset] = "typing"
-
-            # If we cannot find the name anywhere... there is nothing else we can do...
-            # It is probably an absolute path name already. Leave it be.
 
         # eg: List[something] or Dict[str, int]
         elif isinstance(node, ast.Subscript):

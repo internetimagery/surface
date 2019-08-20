@@ -3,7 +3,7 @@ import types
 import imp
 import os.path
 
-from surface._utils import clean_repr, normalize_type
+from surface._utils import clean_repr, abs_type
 
 
 class A(object):
@@ -29,66 +29,32 @@ class TestCleanRepr(unittest.TestCase):
 
 class TestNormalizeType(unittest.TestCase):
     def test_nothing(self):
-        self.assertEqual("int", normalize_type("int", "", [], "", []))
-        self.assertEqual(
-            "typing.List[str]", normalize_type("List[str]", "", [], "", [])
-        )
+        self.assertEqual("int", abs_type("int", {}))
+        self.assertEqual("typing.List[str]", abs_type("List[str]", {}))
         self.assertEqual(
             "typing.Dict[typing.Tuple[int, str], typing.List[str]]",
-            normalize_type("Dict[Tuple[int, str], List[str]]", "", [], "", []),
+            abs_type("Dict[Tuple[int, str], List[str]]", {}),
         )
-        self.assertEqual(
-            "typing.Tuple[int, ...]", normalize_type("Tuple[int, ...]", "", [], "", [])
-        )
+        self.assertEqual("typing.Tuple[int, ...]", abs_type("Tuple[int, ...]", {}))
 
     def test_aliases(self):
         import datetime
 
-        name = "datetime"
-        cxt = list(datetime.__dict__)
+        cxt = datetime.__dict__
 
-        self.assertEqual("datetime.date", normalize_type("date", "", [], name, cxt))
-        self.assertEqual(
-            "typing.List[datetime.date]",
-            normalize_type("List[date]", "", [], name, cxt),
-        )
+        self.assertEqual("datetime.date", abs_type("date", cxt))
+        self.assertEqual("typing.List[datetime.date]", abs_type("List[date]", cxt))
         self.assertEqual(
             "typing.Dict[typing.Tuple[int, ...], datetime.date]",
-            normalize_type("Dict[Tuple[int, ...], date]", "", [], name, cxt),
+            abs_type("Dict[Tuple[int, ...], date]", cxt),
         )
         mod = imp.load_source(
             "mymodule",
             os.path.join(os.path.dirname(__file__), "testdata", "test_utils.py"),
         )
-        name = "mymodule"
         cxt = mod.__dict__
-        self.assertEqual(
-            "mymodule.List[int]", normalize_type("List[int]", "", [], name, cxt)
-        )
-        self.assertEqual(
-            "mymodule.List.method", normalize_type("List.method", "", [], name, cxt)
-        )
-
-    def test_export(self):
-        import datetime
-
-        local_name = "datetime"
-        local_context = list(datetime.__dict__)
-        export_name = "mymodule"
-        export_context = ["date"]
-
-        self.assertEqual(
-            "mymodule.date",
-            normalize_type(
-                "date", export_name, export_context, local_name, local_context
-            ),
-        )
-        self.assertEqual(
-            "typing.List[mymodule.date]",
-            normalize_type(
-                "List[date]", export_name, export_context, local_name, local_context
-            ),
-        )
+        self.assertEqual("mymodule.List[int]", abs_type("List[int]", cxt))
+        self.assertEqual("mymodule.List.method", abs_type("List.method", cxt))
 
 
 if __name__ == "__main__":
