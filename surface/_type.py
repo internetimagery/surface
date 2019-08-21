@@ -103,10 +103,26 @@ class LiveType(IDCache):
         return (
             self._handle_container(obj)
             or self._handle_function(obj)
+            or self._handle_property(obj)
+            or self._handle_descriptor(obj)
             or self._handle_builtin(obj)
             or self._handle_class(obj)
             or UNKNOWN
         )
+
+    @staticmethod
+    def _handle_descriptor(desc):
+        if not inspect.isdatadescriptor(desc) and not inspect.ismethoddescriptor(desc):
+            return None
+        func_type = FuncType(desc.__get__)
+        return func_type.returns
+
+    @staticmethod
+    def _handle_property(prop):
+        if not isinstance(prop, property):
+            return None
+        func_type = FuncType(prop.getter)
+        return func_type.returns
 
     @staticmethod
     def _handle_function(func):
