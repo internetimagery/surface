@@ -124,10 +124,9 @@ class FuncMapper(Mapper):
 
 
 class ArgMapper(Mapper):
-
     @classmethod
     def parse(cls, source):
-        if PY2: # python 2 has a bug untokenizing some strings.
+        if PY2:  # python 2 has a bug untokenizing some strings.
             source += "\n"
         return super(ArgMapper, cls).parse(source)
 
