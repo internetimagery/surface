@@ -11,7 +11,7 @@ import sigtools  # type: ignore
 
 from surface._base import POSITIONAL, KEYWORD, VARIADIC, DEFAULT, UNKNOWN
 from surface._utils import FuncSig, FuncSigArg, Cache
-from surface._type import get_type, FuncType, format_annotation
+from surface._type import LiveType, FuncType, format_annotation
 
 from surface._item import Item
 
@@ -140,13 +140,17 @@ class VarItem(LiveItem):
     """ Wrap variable. Fallback. """
 
     __slots__ = []  # type: ignore
+    EMPTY = object()
 
     @staticmethod
     def is_this_type(item, parent):
         return True
 
     def get_type(self):
-        return get_type(self.item)
+        annotation = getattr(self.parent, "__annotations__", {}).get(
+            self.name, self.EMPTY
+        )
+        return str(LiveType(self.item if annotation is self.EMPTY else annotation))
 
 
 class BuiltinItem(LiveItem):

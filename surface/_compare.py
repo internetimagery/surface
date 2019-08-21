@@ -6,12 +6,12 @@ if False:  # type checking
 
 import re
 
-try:
-    from itertools import zip_longest  # type: ignore
-except ImportError:
-    from itertools import izip_longest as zip_longest  # type: ignore
-
 from surface._base import *
+
+if PY2:
+    from itertools import izip_longest as zip_longest  # type: ignore
+else:
+    from itertools import zip_longest  # type: ignore
 
 
 RULES = """

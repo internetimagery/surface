@@ -18,10 +18,10 @@ import collections
 
 from surface._base import *
 
-try:
-    from inspect import _empty as _empty  # type: ignore
-except ImportError:
+if PY2:
     from funcsigs import _empty as _empty  # type: ignore
+else:
+    from inspect import _empty as _empty  # type: ignore
 
 
 LOG = logging.getLogger(__name__)
@@ -266,6 +266,10 @@ class FuncSig(IDCache):
     @property
     def func(self):
         return self._func
+
+    @property
+    def context(self):
+        return getattr(self._func, "__globals__", {})
 
     @property
     def parameters(self):  # type: () -> collections.OrderedDict[str, FuncSigArg]

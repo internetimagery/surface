@@ -12,11 +12,6 @@ import inspect
 import traceback
 import importlib
 
-try:
-    import builtins  # type: ignore
-except ImportError:
-    import __builtin__ as builtins  # type: ignore
-
 from surface._base import *
 from surface._utils import clean_repr, import_module
 from surface._item_live import (
@@ -34,8 +29,6 @@ from surface._item_live import (
 LOG = logging.getLogger(__name__)
 
 import_reg = re.compile(r"__init__\.(py[cwd]?|so)$")
-
-builtin_types = tuple(b for b in builtins.__dict__.values() if isinstance(b, type))
 
 
 def recurse(name):  # type: (str) -> List[str]
