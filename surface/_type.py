@@ -29,13 +29,14 @@ type_attr_reg = re.compile(
 )
 
 _cache_type = Cache(500)
-_cache_func_type = Cache(500)
 
 
 # Collect types as before. normalizing the type to its defined module (as this what annotations do too)
 # make a collection of "exports" from modules / classes. eg things not defined within the module itself
 # use this collection to map onto a type, to move exposed types into the public module
 
+# TODO: since strings can be treated as annotations. Treat comment and docstring types as annotations too!
+# then annotation logic just has to figure out what to do.
 
 # TODO: clean this all up.
 # TODO: Use Items as entry points.
