@@ -79,14 +79,21 @@ def abs_type(type_string, context):  # type: (str, Dict[str, Any]) -> str
             value = context.get(name)
             # If variable exists in local scope (it generally should), get its full name.
             if value:
-                module = getattr(inspect.getmodule(value), "__name__", "")
-                if module:
-                    updates[node.col_offset] = module
+                # If variable is a module, and it was aliased, replace with realname.
+                if isinstance(value, types.ModuleType):
+                    module = getattr(value, "__name__", "")
+                    updates[node.col_offset, node.col_offset + len(name) + 1] = module
+
+                else:
+                    # Otherwise it's a type referenced locally.
+                    module = getattr(inspect.getmodule(value), "__name__", "")
+                    if module:
+                        updates[node.col_offset, node.col_offset] = module
 
             # If variable does not exist in the scope, and it exists in the typing module,
             # it is probably "statically" imported. ie not present in runtime.
             elif name in TYPING_ATTRS:  # special case for typing
-                updates[node.col_offset] = "typing"
+                updates[node.col_offset, node.col_offset] = "typing"
 
         # eg: List[something] or Dict[str, int]
         elif isinstance(node, ast.Subscript):
@@ -102,8 +109,11 @@ def abs_type(type_string, context):  # type: (str, Dict[str, Any]) -> str
             stack.append(node.value)
 
     if updates:
-        for i in sorted(updates.keys(), reverse=True):
-            type_string = "{}{}.{}".format(type_string[:i], updates[i], type_string[i:])
+        for in_, out in sorted(updates.keys(), reverse=True):
+            replace = updates[in_, out]
+            type_string = "{}{}.{}".format(
+                type_string[:in_], replace, type_string[out:]
+            )
     return type_string
 
 
