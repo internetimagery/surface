@@ -5,6 +5,7 @@ import unittest
 from surface import get_api
 from surface._traversal import Traversal, recurse
 from surface._base import *
+from surface._utils import clean_repr
 
 try:
     from importlib import reload
@@ -104,11 +105,15 @@ class TestImporter(unittest.TestCase):
                         (
                             Unknown(
                                 "myMethod",
-                                "Depth Exceeded: <function myClass.myMethod at memory_address>",
+                                "Depth Exceeded: {}".format(
+                                    clean_repr(repr(test_mod_basic.myClass.myMethod))
+                                ),
                             ),
                             Unknown(
                                 "myStatic",
-                                "Depth Exceeded: <function myClass.myStatic at memory_address>",
+                                "Depth Exceeded: {}".format(
+                                    clean_repr(repr(test_mod_basic.myClass.myStatic))
+                                ),
                             ),
                         ),
                     ),
@@ -127,7 +132,14 @@ class TestImporter(unittest.TestCase):
                     Module(
                         "myModule",
                         "test_mod_basic.myModule",
-                        (Unknown("myVar", "Depth Exceeded: [1, 2, 3]"),),
+                        (
+                            Unknown(
+                                "myVar",
+                                "Depth Exceeded: {}".format(
+                                    clean_repr(repr(test_mod_basic.myModule.myVar))
+                                ),
+                            ),
+                        ),
                     ),
                     Var("myVar", "int"),
                 ),
