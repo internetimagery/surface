@@ -15,7 +15,7 @@ import traceback
 import collections
 
 from surface._utils import abs_type, FuncSig, get_tokens
-from surface._base import TYPE_CHARS, UNKNOWN
+from surface._base import TYPE_CHARS, UNKNOWN, PY2
 
 LOG = logging.getLogger(__name__)
 
@@ -59,12 +59,7 @@ class FuncMapper(Mapper):
         if not header:
             return None
         source = source[header.start(1) :]
-        try:
-            mapper = super(FuncMapper, cls).parse(source)
-        except Exception as err:
-            import pdb
-
-            pdb.set_trace()
+        mapper = super(FuncMapper, cls).parse(source)
         return mapper
 
     def get_signature(self):  # type: () -> Optional[Tuple[str, str]]
@@ -129,6 +124,13 @@ class FuncMapper(Mapper):
 
 
 class ArgMapper(Mapper):
+
+    @classmethod
+    def parse(cls, source):
+        if PY2: # python 2 has a bug untokenizing some strings.
+            source += "\n"
+        return super(ArgMapper, cls).parse(source)
+
     def get_params(self):  # type: () -> List[str]
         node = self._ast.value
         # Single variable can just return
@@ -189,7 +191,7 @@ def get_comment(func):  # type: (Any) -> Optional[Tuple[Dict[str, str], str]]
         return params, return_type
 
     else:
-        param_map = ArgMapper.parse(param_comment)
+        param_map = ArgMapper.parse(param_comment + "\n")
         if not param_map:
             return None
         # Match parameters to function values
