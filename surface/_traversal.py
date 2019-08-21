@@ -114,10 +114,11 @@ class Traversal(object):
         LOG.debug("Visiting: {}".format(current_item))
 
         # Recursable types
+        depth_exceeded = False
         if isinstance(current_item, (ModuleItem, ClassItem)):
             if len(path) > self.depth:
                 LOG.debug("Exceeded depth")
-                return
+                depth_exceeded = True
 
             item_id = id(current_item.item)
             if item_id in path:
@@ -131,6 +132,10 @@ class Traversal(object):
             path.add(item_id)
 
         for name, item in current_item.items():
+            if depth_exceeded:
+                yield Unknown(name, "Depth Exceeded: {}".format(clean_repr(repr(item.item))))
+                continue
+
             item_type = type(item)
             api_gen = self.item_map.get(item_type)
             if api_gen:

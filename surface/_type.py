@@ -26,30 +26,6 @@ else:
 
 BUILTIN_TYPES = tuple(b for b in builtins.__dict__.values() if isinstance(b, type))
 
-LOG = logging.getLogger(__name__)
-
-
-type_comment_reg = re.compile(r"# +type: ([\w ,\[\]\.]+)")
-type_comment_sig_reg = re.compile(r"# +type: \(([\w ,\[\]\.]*)\) +-> +([\w ,\[\]\.]+)")
-type_attr_reg = re.compile(
-    r"(?:^|(?<=[, \[]))(?:typing\.)?({})\b".format("|".join(TYPING_ATTRS))
-)
-
-_cache_type = Cache(500)
-
-# make a collection of "exports" from modules / classes. eg things not defined within the module itself
-# use this collection to map onto a type, to move exposed types into the public module
-
-# TODO: since strings can be treated as annotations. Treat comment and docstring types as annotations too!
-# then annotation logic just has to figure out what to do.
-
-# TODO: clean this all up.
-# TODO: Use Items as entry points.
-
-# TODO: Maybe come back to this. Just use existing messy typing logic at the moment.
-# TODO: clean things up with new nody style traversal
-# TODO: THEN tackle new typing, and new module-first traversal.
-
 
 class FuncType(IDCache):
     """ Collect typing information on a function """
