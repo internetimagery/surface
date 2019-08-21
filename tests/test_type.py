@@ -2,7 +2,8 @@ import sys
 import os.path
 import unittest
 
-from surface._type import get_live_type, FuncType, get_annotate_type
+from surface._base import PY2
+from surface._type import LiveType, FuncType, AnnotationType
 
 path = os.path.join(os.path.dirname(__file__), "testdata")
 if path not in sys.path:
@@ -11,31 +12,29 @@ if path not in sys.path:
 
 class TestLiveType(unittest.TestCase):
     def test_standard(self):
-        self.assertEqual("int", get_live_type(123))
-        self.assertEqual("float", get_live_type(123.00))
-        self.assertEqual("complex", get_live_type(2 + 3j))
-        self.assertEqual("str", get_live_type("abc"))
-        self.assertEqual("bool", get_live_type(True))
-        self.assertEqual("None", get_live_type(None))
-        try:
-            self.assertEqual("unicode", get_live_type(unicode("abc")))
-        except NameError:  # python 2
-            pass
+        self.assertEqual("int", str(LiveType(123)))
+        self.assertEqual("float", str(LiveType(123.00)))
+        self.assertEqual("complex", str(LiveType(2 + 3j)))
+        self.assertEqual("str", str(LiveType("abc")))
+        self.assertEqual("bool", str(LiveType(True)))
+        self.assertEqual("None", str(LiveType(None)))
+        if PY2:
+            self.assertEqual("unicode", str(LiveType(unicode("abc"))))
 
     def test_collections(self):
-        self.assertEqual("typing.List[~unknown]", get_live_type([]))
-        self.assertEqual("typing.List[int]", get_live_type([123, 456]))
-        self.assertEqual("typing.Set[~unknown]", get_live_type(set()))
-        self.assertEqual("typing.Set[int]", get_live_type(set([123, 456])))
-        self.assertEqual("typing.Tuple[~unknown, ...]", get_live_type(tuple()))
-        self.assertEqual("typing.Tuple[int, str]", get_live_type(tuple([123, "456"])))
-        self.assertEqual("typing.Dict[~unknown, ~unknown]", get_live_type({}))
-        self.assertEqual("typing.Dict[int, str]", get_live_type({123: "456"}))
-        self.assertEqual("typing.Iterable[int]", get_live_type((a for a in range(5))))
+        self.assertEqual("typing.List[~unknown]", str(LiveType([])))
+        self.assertEqual("typing.List[int]", str(LiveType([123, 456])))
+        self.assertEqual("typing.Set[~unknown]", str(LiveType(set())))
+        self.assertEqual("typing.Set[int]", str(LiveType(set([123, 456]))))
+        self.assertEqual("typing.Tuple[~unknown, ...]", str(LiveType(tuple())))
+        self.assertEqual("typing.Tuple[int, str]", str(LiveType(tuple([123, "456"]))))
+        self.assertEqual("typing.Dict[~unknown, ~unknown]", str(LiveType({})))
+        self.assertEqual("typing.Dict[int, str]", str(LiveType({123: "456"})))
+        self.assertEqual("typing.Iterable[int]", str(LiveType((a for a in range(5)))))
 
     def test_abstract(self):
         self.assertEqual(
-            "typing.Callable[[~unknown], ~unknown]", get_live_type(lambda x: 123)
+            "typing.Callable[[~unknown], ~unknown]", str(LiveType(lambda x: 123))
         )
 
         def test(a, b=None):
@@ -43,11 +42,11 @@ class TestLiveType(unittest.TestCase):
 
         self.assertEqual(
             "typing.Callable[[~unknown, typing.Optional[~unknown]], ~unknown]",
-            get_live_type(test),
+            str(LiveType(test)),
         )
 
 
-@unittest.skipIf(sys.version_info.major < 3, "annotations not available")
+@unittest.skipIf(PY2, "annotations not available")
 class TestAnnotations(unittest.TestCase):
     def test_function(self):
         import test_annotation
@@ -70,13 +69,21 @@ class TestAnnotations(unittest.TestCase):
         )
 
         self.assertEqual(
-            get_annotate_type(
-                test_annotation.Obj1.attr1, "attr1", test_annotation.Obj1
+            str(
+                AnnotationType(
+                    test_annotation.Obj1.__annotations__["attr1"],
+                    test_annotation.__dict__,
+                )
             ),
             "typing.List[int]",
         )
         self.assertEqual(
-            get_annotate_type(test_annotation.variable1, "variable1", test_annotation),
+            str(
+                AnnotationType(
+                    test_annotation.__annotations__["variable1"],
+                    test_annotation.__dict__,
+                )
+            ),
             "typing.List[str]",
         )
 

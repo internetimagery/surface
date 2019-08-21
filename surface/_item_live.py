@@ -7,22 +7,13 @@ import sys
 import inspect
 import logging
 import traceback
-import sigtools  # type: ignore
 
-from surface._base import POSITIONAL, KEYWORD, VARIADIC, DEFAULT, UNKNOWN
 from surface._utils import FuncSig, FuncSigArg, Cache
-from surface._type import LiveType, FuncType, format_annotation
+from surface._type import LiveType, FuncType, AnnotationType, BUILTIN_TYPES
 
 from surface._item import Item
 
-try:  # python 3
-    import builtins  # type: ignore
-except ImportError:
-    import __builtin__ as builtins  # type: ignore
-
 LOG = logging.getLogger(__name__)
-
-BUILTIN_TYPES = tuple(b for b in builtins.__dict__.values() if isinstance(b, type))
 
 
 class ErrorItem(Item):
@@ -31,9 +22,9 @@ class ErrorItem(Item):
     __slots__ = ("type", "trace")
 
     def __new__(cls, parent=None):  # type: (Optional[Any]) -> ErrorItem
-        errType, errVal, errTrace = sys.exc_info()
-        scope = super(ErrorItem, cls).__new__(cls, [], errVal, parent)  # type: Any
-        scope.type = errType
+        err_type, err_val, _ = sys.exc_info()
+        scope = super(ErrorItem, cls).__new__(cls, [], err_val, parent)  # type: Any
+        scope.type = err_type
         scope.trace = traceback.format_exc()
         LOG.debug(scope.trace)  # Alert us of this error
         return scope
@@ -150,7 +141,10 @@ class VarItem(LiveItem):
         annotation = getattr(self.parent, "__annotations__", {}).get(
             self.name, self.EMPTY
         )
-        return str(LiveType(self.item if annotation is self.EMPTY else annotation))
+        if annotation is self.EMPTY:
+            return str(LiveType(self.item))
+        context = getattr(inspect.getmodule(self.item), "__dict__", {})
+        return str(AnnotationType(annotation, context))
 
 
 class BuiltinItem(LiveItem):

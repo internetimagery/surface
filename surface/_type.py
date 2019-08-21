@@ -37,8 +37,6 @@ type_attr_reg = re.compile(
 
 _cache_type = Cache(500)
 
-
-# Collect types as before. normalizing the type to its defined module (as this what annotations do too)
 # make a collection of "exports" from modules / classes. eg things not defined within the module itself
 # use this collection to map onto a type, to move exposed types into the public module
 
@@ -156,6 +154,8 @@ class LiveType(IDCache):
 
     @staticmethod
     def _handle_builtin(obj):
+        if type(obj) == type(None):
+            return "None"
         if obj in BUILTIN_TYPES:
             return obj.__name__
         if isinstance(obj, BUILTIN_TYPES):
@@ -257,175 +257,3 @@ class AnnotationType(object):
             return None
         func = FuncType(obj)
         return func.as_var()
-
-
-#########################
-# Clean this mess up
-#########################
-
-
-def format_annotation(ann):  # type: (Any) -> str
-    if PY2:  # Annotations do not exist in python 2
-        return UNKNOWN
-
-    if isinstance(ann, str):
-        # TODO: Use existing static logic?
-        # TODO: Or do this check outside this function?
-        return UNKNOWN
-
-    if inspect.isclass(ann):
-        if ann.__module__ == "typing":
-            return str(ann)
-        if ann.__module__ == "builtins":
-            return ann.__name__
-        return "{}.{}".format(ann.__module__, ann.__qualname__)
-
-    return UNKNOWN
-
-
-# TODO: handle types in here...
-# TODO: function typer, return ordered dict, name / type
-# TODO: and return type
-# TODO: else a standard type, return string... which is mostly the case now.
-
-# TODO: similar can_handle methodology
-
-
-# def get_type(scope): # type: (Object) -> str
-#     obj_id = id(scope.obj)
-#     if obj_id in _cache_type:
-#         return _cache_type[obj_id]
-#
-#     scope_type = type(scope)
-#     if scope_type == Object:
-#         _cache_type[obj_id] = get_live_type(scope.obj)
-#
-#     return _cache_type.get(obj_id, UNKNOWN)
-
-
-def get_type(value, name="", parent=None):  # type: (Any, str, Any) -> str
-    value_id = id(value)
-    cache_value = _cache_type.get(value_id, None)
-    if cache_value is not None:
-        return cache_value
-
-    if inspect.isfunction(value):
-        func_type = FuncType(value)
-        cache_value = func_type.as_var()
-    else:
-        cache_value = (
-            get_comment_type(value, name, parent)
-            or get_annotate_type(value, name, parent)
-            or get_live_type(value)
-        )
-    _cache_type[value_id] = cache_value
-    return cache_value
-
-
-def get_comment_type(value, name, parent):  # type: (Any, str, Any) -> Optional[str]
-    return None
-
-
-def get_annotate_type(value, name, parent):  # type: (Any, str, Any) -> Optional[str]
-    if inspect.isclass(parent) or inspect.ismodule(parent):
-        annotation = getattr(parent, "__annotations__", {})
-        if name in annotation:
-            return handle_live_annotation(annotation[name])
-    return None
-
-
-def get_live_type(value):  # type: (Any) -> str
-    # Standard types
-    value_type = type(value)
-    return (
-        handle_live_standard_type(value_type)
-        or handle_live_container_type(value, value_type)
-        or handle_live_abstract(value, value_type)
-        or UNKNOWN
-    )
-
-
-def handle_live_standard_type(value_type):  # type: (Any) -> Optional[str]
-    # Numeric
-    if value_type == int:
-        return "int"
-    if value_type == float:
-        return "float"
-    if value_type == complex:
-        return "complex"
-
-    # Strings
-    if value_type == str:
-        return "str"
-    try:  # python 2
-        if value_type == unicode:  # type: ignore
-            return "unicode"
-    except NameError:
-        pass
-
-    # Aaaaaand the rest
-    if value_type == bool:
-        return "bool"
-    if value_type == type(None):
-        return "None"
-
-    return None
-
-
-def handle_live_container_type(value, value_type):  # type: (Any, Any) -> Optional[str]
-    # Sequences
-    if value_type == list:
-        return "typing.List[{}]".format(get_live_type(value[0]) if value else UNKNOWN)
-    if value_type == tuple:
-        internals = [get_live_type(item) for item in value]
-        if not internals:
-            internals = ["{}, ...".format(UNKNOWN)]
-        return "typing.Tuple[{}]".format(", ".join(internals))
-
-    # Hashies!
-    if value_type == set:
-        template = "typing.Set[{}]"
-        for item in value:
-            return template.format(get_live_type(item))
-        return template.format(UNKNOWN)
-    if value_type == dict:
-        template = "typing.Dict[{}, {}]"
-        for k, v in value.items():
-            return template.format(get_live_type(k), get_live_type(v))
-        return template.format(UNKNOWN, UNKNOWN)
-
-    # Generators
-    # IMPORTANT!
-    #     Taking an item out of the generator here to get the type is fine for cli usage.
-    #     But if used during a live session this would be an problem.
-    if value_type == types.GeneratorType:
-        # NOTE: Generator return value can be taken from StopIteration return value if needed.
-        template = "typing.Iterable[{}]"
-        for item in value:
-            return template.format(get_live_type(item))
-        return template.format(UNKNOWN)
-    # TODO: handle types.AsyncGeneratorType
-
-    return None
-
-
-def handle_live_abstract(value, value_type):  # type: (Any, Any) -> Optional[str]
-    if value_type == types.FunctionType:
-        func_type = FuncType(value)
-        return func_type.as_var()
-    return None
-
-
-# Python3 function
-def handle_live_annotation(value):  # type: (Any) -> str
-    import typing
-
-    if type(value) == typing.GenericMeta:
-        return str(value)
-    if inspect.isclass(value):
-        if value.__module__ == "builtins":
-            return value.__name__
-        return "{}.{}".format(value.__module__, value.__name__)
-    if type(value) == types.FunctionType:
-        return get_live_type(value)
-    return UNKNOWN
