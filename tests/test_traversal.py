@@ -99,10 +99,19 @@ class TestImporter(unittest.TestCase):
                 "test_mod_basic",
                 "test_mod_basic",
                 (
-                    Class("myClass", (
-                        Unknown('myMethod', 'Depth Exceeded: <function myClass.myMethod at memory_address>'),
-                        Unknown('myStatic', 'Depth Exceeded: <function myClass.myStatic at memory_address>'),
-                    )),
+                    Class(
+                        "myClass",
+                        (
+                            Unknown(
+                                "myMethod",
+                                "Depth Exceeded: <function myClass.myMethod at memory_address>",
+                            ),
+                            Unknown(
+                                "myStatic",
+                                "Depth Exceeded: <function myClass.myStatic at memory_address>",
+                            ),
+                        ),
+                    ),
                     Func(
                         "myFunc",
                         (
@@ -115,9 +124,11 @@ class TestImporter(unittest.TestCase):
                     Func(
                         "myLambda", (Arg("x", UNKNOWN, POSITIONAL | KEYWORD),), UNKNOWN
                     ),
-                    Module("myModule", "test_mod_basic.myModule", (
-                        Unknown('myVar', 'Depth Exceeded: [1, 2, 3]'),
-                    )),
+                    Module(
+                        "myModule",
+                        "test_mod_basic.myModule",
+                        (Unknown("myVar", "Depth Exceeded: [1, 2, 3]"),),
+                    ),
                     Var("myVar", "int"),
                 ),
             ),
