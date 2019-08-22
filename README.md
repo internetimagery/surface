@@ -80,6 +80,6 @@ Rough todo...
 - [ ] Look into xml as alternate storage to json. Especially useful with comments in a header.
 - [x] Move some of the cli utility stuff into its own submodule (public).
 - [x] clean stuff up
-- [ ] track class and module definitions. When comparing types, check if they still line up with an exposed alias.
+- [ ] When comparing types, check if they line up with an exposed alias.
 - [ ] use import hook to track import time properly (nice to have)
 - [ ] More and more and more tests.

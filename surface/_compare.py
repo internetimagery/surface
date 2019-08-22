@@ -1,5 +1,9 @@
 """ Compare two API's """
 
+# TODO: If type changes, check if there was an existing exposed type that matches (eg class "path")
+# TODO: If an exposed type is found, declare the type unchanged. As changes in the public api will
+# TODO: be picked up by the exposed type entering / leaving the api.
+
 if False:  # type checking
     from typing import *
 
