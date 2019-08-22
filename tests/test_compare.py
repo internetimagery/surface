@@ -24,6 +24,11 @@ class TestCompare(unittest.TestCase):
         changes = compare(patchA, patchA)
         self.assertEqual(changes, set())
 
+        publicA = self.get_module("publicA")
+        publicB = self.get_module("publicB", "publicA")
+        changes = compare(publicA, publicB)
+        self.assertEqual(changes, set())
+
     def test_patch(self):
         patchA = self.get_module("patchA")
         patchB = self.get_module("patchB", "patchA")
