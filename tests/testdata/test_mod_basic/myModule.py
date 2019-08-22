@@ -4,5 +4,5 @@ import enum as _enum
 
 myVar = [1, 2, 3]
 
-class MyEnumGroup(_enum.Enum):
+class MyEnumGroup(int, _enum.Enum):
     myEnumVar = 123

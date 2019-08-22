@@ -34,7 +34,7 @@ Arg     = _nt("Arg",     ("name", "type", "kind"))
 
 Func    = _nt("Func",    ("name", "args", "returns"))
 
-Class   = _nt("Class",   ("name", "body"))
+Class   = _nt("Class",   ("name", "path", "body"))
 
 Module  = _nt("Module",  ("name", "path", "body"))
 

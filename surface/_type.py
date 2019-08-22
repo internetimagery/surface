@@ -146,12 +146,14 @@ class LiveType(IDCache):
 
     @staticmethod
     def _handle_builtin(obj):
-        if type(obj) == type(None):
+        obj_type = type(obj)
+        if obj_type == type(None):
             return "None"
-        if obj in BUILTIN_TYPES:
-            return obj.__name__
-        if isinstance(obj, BUILTIN_TYPES):
-            return type(obj).__name__
+        for builtin_type in BUILTIN_TYPES:
+            if obj is builtin_type:
+                return obj.__name__
+            if obj_type is builtin_type:
+                return obj_type.__name__
         return None
 
     def _handle_container(self, obj):

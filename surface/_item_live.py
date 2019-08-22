@@ -58,14 +58,6 @@ class LiveItem(Item):
     def name(self):
         return getattr(self.item, "__name__", "")
 
-    def get_context(self):
-        item = self
-        context = set()
-        while item:
-            context = context.union(item)
-            item = item.parent
-        return context
-
     def __repr__(self):
         return "<{}: {}>".format(self.__class__.__name__, self.name)
 
@@ -102,6 +94,9 @@ class ModuleItem(LiveItem):
                 names = (name for name in names if name in all_filter)
         return names
 
+    def get_type(self):
+        return getattr(self.item, "__name__", "")
+
 
 class ClassItem(LiveItem):
     """ Wrap live class objects """
@@ -126,6 +121,13 @@ class ClassItem(LiveItem):
 
     def get_child(self, attr):
         return getattr(self.item, attr)
+
+    def get_type(self):
+        module = getattr(inspect.getmodule(self.item), "__name__", "")
+        name = getattr(self.item, "__qualname__", "") or getattr(self.item, "__name__", "")
+        if module and name:
+            return "{}.{}".format(module, name)
+        return name
 
 
 class VarItem(LiveItem):

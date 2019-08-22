@@ -81,10 +81,10 @@ class Traversal(object):
             VarItem: lambda n, s, p: Var(n, s.get_type()),
             BuiltinItem: lambda n, s, p: Var(n, s.get_type()),
             ErrorItem: lambda n, s, p: Unknown(n, clean_repr(s.item)),
-            ClassItem: lambda n, s, p: Class(n, tuple(self.walk(s, n, p.copy()))),
+            ClassItem: lambda n, s, p: Class(n, s.get_type(), tuple(self.walk(s, n, p.copy()))),
             ModuleItem: lambda n, s, p: Module(
                 n,
-                s.item.__name__,
+                s.get_type(),
                 tuple([] if self.exclude_modules else self.walk(s, n, p.copy())),
             ),
             FunctionItem: lambda n, s, p: Func(

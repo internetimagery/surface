@@ -47,6 +47,7 @@ class TestImporter(unittest.TestCase):
                 (
                     Class(
                         "myClass",
+                        "test_mod_basic.myClass",
                         (
                             Func(
                                 "myMethod",
@@ -88,6 +89,7 @@ class TestImporter(unittest.TestCase):
                         (
                             Class(
                                 "MyEnumGroup",
+                                "test_mod_basic.myModule.MyEnumGroup",
                                 (
                                     Var("myEnumVar", "int"),
                                     Func(
@@ -115,6 +117,7 @@ class TestImporter(unittest.TestCase):
                 (
                     Class(
                         "myClass",
+                        "test_mod_basic.myClass",
                         (
                             Unknown(
                                 "myMethod",
@@ -236,12 +239,15 @@ class TestImporter(unittest.TestCase):
                 (
                     Class(
                         "CycleA",
+                        "test_mod_basic.cycleA.CycleA",
                         (
                             Class(
                                 "cycle",
+                                "test_mod_basic.cycleB.CycleB",
                                 (
                                     Class(
                                         "cycle",
+                                        "test_mod_basic.cycleA.CycleA",
                                         (
                                             Unknown(
                                                 "cycle",
