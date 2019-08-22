@@ -4,6 +4,32 @@
 # TODO: If an exposed type is found, declare the type unchanged. As changes in the public api will
 # TODO: be picked up by the exposed type entering / leaving the api.
 
+# λ python
+# Python 3.6.0 (v3.6.0:41df79263a11, Dec 23 2016, 08:06:12) [MSC v.1900 64 bit (AMD64)] on win32
+# Type "help", "copyright", "credits" or "license" for more information.
+# >>> t = "typing.Dict[str, typing.List[_a.MyType]]"
+# >>> t
+# 'typing.Dict[str, typing.List[_a.MyType]]'
+# >>> import re
+# >>> re.findall(r"[\w\.~]+", t)
+# ['typing.Dict', 'str', 'typing.List', '_a.MyType']
+# >>> exit()
+
+# Loop through type identifiers.
+# If there is a missmatch...
+# maybe unknown check needs to be separate...
+
+# typing.List[~unknown] -> typing.List[typing.List[str]] # different number of identifiers
+# ok maybe ast is the best way to go...
+
+# need to make an AstItem class, that takes a source string in a parse argument.
+# it needs to do the whole mapping thing, mapping tokens to line/col
+# this needs to be wrapped in a namedtuple, and passed through the instances
+# then similar to the above, can check if types match by looping through them. But
+# will know for sure that we're breaking at the right points, so the unknown example above works.
+# as we can just pass over the unknown
+
+
 if False:  # type checking
     from typing import *
 
@@ -13,7 +39,7 @@ import re
 from surface._base import *
 
 if PY2:
-    from itertools import izip_longest as zip_longest  # type: ignore
+    from itertools import izip_longest as zip_longest, izip as zip  # type: ignore
 else:
     from itertools import zip_longest  # type: ignore
 

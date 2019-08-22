@@ -17,6 +17,9 @@ import collections
 from surface._utils import abs_type, FuncSig, get_tokens
 from surface._base import TYPE_CHARS, UNKNOWN, PY2
 
+if PY2:
+    from itertools import izip as zip
+
 LOG = logging.getLogger(__name__)
 
 func_header_reg = re.compile(r"^[ \t]*(def \w+)", re.M)
