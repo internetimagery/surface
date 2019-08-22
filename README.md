@@ -79,7 +79,7 @@ Rough todo...
 - [x] Provide features to store api output using git commits
 - [ ] Look into xml as alternate storage to json. Especially useful with comments in a header.
 - [x] Move some of the cli utility stuff into its own submodule (public).
-- [ ] clean stuff up
+- [x] clean stuff up
 - [ ] parse typing, and use exposed paths to types where available. eg surface._base.Var becomes surface.Var. search current module first, then function definition module (__globals__)
 - [ ] use import hook to track import time properly (nice to have)
 - [ ] More and more and more tests.

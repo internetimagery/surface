@@ -83,7 +83,18 @@ class TestImporter(unittest.TestCase):
                     Module(
                         "myModule",
                         "test_mod_basic.myModule",
-                        (Var("myVar", "typing.List[int]"),),
+                        (
+                            Class(
+                                "MyEnumGroup",
+                                (
+                                    Var("myEnumVar", "int"),
+                                    Func(
+                                        "__new__", (Arg("value", UNKNOWN, POSITIONAL | KEYWORD),), UNKNOWN
+                                    ),
+                                ),
+                            ),
+                            Var("myVar", "typing.List[int]"),
+                        ),
                     ),
                     Var("myVar", "int"),
                 ),
@@ -93,7 +104,7 @@ class TestImporter(unittest.TestCase):
     def test_depth(self):
         import test_mod_basic
 
-        data = Traversal(depth=0).traverse(test_mod_basic)
+        data = Traversal(depth=1).traverse(test_mod_basic)
         self.assertEqual(
             data,
             Module(
@@ -133,6 +144,12 @@ class TestImporter(unittest.TestCase):
                         "myModule",
                         "test_mod_basic.myModule",
                         (
+                            Unknown(
+                                "MyEnumGroup",
+                                "Depth Exceeded: {}".format(
+                                    clean_repr(repr(test_mod_basic.myModule.MyEnumGroup))
+                                ),
+                            ),
                             Unknown(
                                 "myVar",
                                 "Depth Exceeded: {}".format(

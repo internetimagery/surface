@@ -4,6 +4,7 @@ if False:  # type checking
     from typing import *
 
 import sys
+import enum
 import inspect
 import logging
 import traceback
@@ -154,10 +155,29 @@ class BuiltinItem(LiveItem):
 
     @staticmethod
     def is_this_type(item, parent):
-        return item in BUILTIN_TYPES
+        for builtin_type in BUILTIN_TYPES:
+            if item is builtin_type:
+                return True
+        return False
 
     def get_type(self):
         return self.item.__name__
+
+class EnumItem(LiveItem):
+    """ Wrap enum. """
+
+    __slots__ = []  # type: ignore
+
+    @staticmethod
+    def is_this_type(item, parent):
+        return isinstance(item, enum.Enum)
+
+    def get_type(self):
+        return str(LiveType(self.item.value))
+
+    @property
+    def name(self):
+        return self.item.name
 
 
 class NoneItem(LiveItem):

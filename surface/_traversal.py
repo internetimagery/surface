@@ -19,6 +19,7 @@ from surface._item_live import (
     ModuleItem,
     ClassItem,
     VarItem,
+    EnumItem,
     BuiltinItem,
     NoneItem,
     FunctionItem,
@@ -76,6 +77,7 @@ class Traversal(object):
         self.depth = depth  # How far down the rabbit hole do we go?
         self.item_map = {
             NoneItem: lambda n, s, p: Var(n, "None"),
+            EnumItem: lambda n, s, p: Var(n, s.get_type()),
             VarItem: lambda n, s, p: Var(n, s.get_type()),
             BuiltinItem: lambda n, s, p: Var(n, s.get_type()),
             ErrorItem: lambda n, s, p: Unknown(n, clean_repr(s.item)),
@@ -95,6 +97,7 @@ class Traversal(object):
         """ Entry point to generating an API representation. """
         visitors = [
             NoneItem,
+            EnumItem,
             BuiltinItem,
             ParameterItem,
             FunctionItem,
@@ -116,7 +119,7 @@ class Traversal(object):
         # Recursable types
         depth_exceeded = False
         if isinstance(current_item, (ModuleItem, ClassItem)):
-            if len(path) > self.depth:
+            if len(path) >= self.depth:
                 LOG.debug("Exceeded depth")
                 depth_exceeded = True
 
