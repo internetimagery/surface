@@ -22,5 +22,5 @@ class myClass(object):
     myVar = 123
 
     @property
-    def myProp(self): # type: () -> int
+    def myProp(self):  # type: () -> int
         return 123

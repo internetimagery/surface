@@ -125,7 +125,9 @@ class ClassItem(LiveItem):
 
     def get_type(self):
         module = getattr(inspect.getmodule(self.item), "__name__", "")
-        name = getattr(self.item, "__qualname__", "") or getattr(self.item, "__name__", "")
+        name = getattr(self.item, "__qualname__", "") or getattr(
+            self.item, "__name__", ""
+        )
         if module and name:
             return "{}.{}".format(module, name)
         return name
@@ -165,6 +167,7 @@ class BuiltinItem(LiveItem):
 
     def get_type(self):
         return self.item.__name__
+
 
 class EnumItem(LiveItem):
     """ Wrap enum. """

@@ -93,7 +93,9 @@ class TestImporter(unittest.TestCase):
                                 (
                                     Var("myEnumVar", "int"),
                                     Func(
-                                        "__new__", (Arg("value", UNKNOWN, POSITIONAL | KEYWORD),), UNKNOWN
+                                        "__new__",
+                                        (Arg("value", UNKNOWN, POSITIONAL | KEYWORD),),
+                                        UNKNOWN,
                                     ),
                                 ),
                             ),
@@ -164,7 +166,9 @@ class TestImporter(unittest.TestCase):
                             Unknown(
                                 "MyEnumGroup",
                                 "Depth Exceeded: {}".format(
-                                    clean_repr(repr(test_mod_basic.myModule.MyEnumGroup))
+                                    clean_repr(
+                                        repr(test_mod_basic.myModule.MyEnumGroup)
+                                    )
                                 ),
                             ),
                             Unknown(
