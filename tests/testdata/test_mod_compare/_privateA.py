@@ -1,0 +1,4 @@
+
+
+class MyType(object):
+    pass
