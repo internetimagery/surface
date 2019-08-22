@@ -57,6 +57,7 @@ class TestImporter(unittest.TestCase):
                                 ),
                                 UNKNOWN,
                             ),
+                            Var("myProp", "int"),
                             Func(
                                 "myStatic",
                                 (
@@ -66,6 +67,7 @@ class TestImporter(unittest.TestCase):
                                 ),
                                 UNKNOWN,
                             ),
+                            Var("myVar", "int"),
                         ),
                     ),
                     Func(
@@ -121,9 +123,21 @@ class TestImporter(unittest.TestCase):
                                 ),
                             ),
                             Unknown(
+                                "myProp",
+                                "Depth Exceeded: {}".format(
+                                    clean_repr(repr(test_mod_basic.myClass.myProp))
+                                ),
+                            ),
+                            Unknown(
                                 "myStatic",
                                 "Depth Exceeded: {}".format(
                                     clean_repr(repr(test_mod_basic.myClass.myStatic))
+                                ),
+                            ),
+                            Unknown(
+                                "myVar",
+                                "Depth Exceeded: {}".format(
+                                    clean_repr(repr(test_mod_basic.myClass.myVar))
                                 ),
                             ),
                         ),

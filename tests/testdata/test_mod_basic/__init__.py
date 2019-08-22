@@ -18,3 +18,9 @@ class myClass(object):
     @staticmethod
     def myStatic(a, b, *c):
         return a + b + c
+
+    myVar = 123
+
+    @property
+    def myProp(self): # type: () -> int
+        return 123

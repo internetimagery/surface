@@ -121,7 +121,7 @@ class LiveType(IDCache):
     def _handle_property(prop):
         if not isinstance(prop, property):
             return None
-        func_type = FuncType(prop.getter)
+        func_type = FuncType(prop.fget)
         return func_type.returns
 
     @staticmethod
