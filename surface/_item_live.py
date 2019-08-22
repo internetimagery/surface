@@ -9,6 +9,7 @@ import inspect
 import logging
 import traceback
 
+from surface._base import PY2
 from surface._utils import FuncSig, FuncSigArg, Cache
 from surface._type import LiveType, FuncType, AnnotationType, BUILTIN_TYPES
 
@@ -236,6 +237,8 @@ class FunctionItem(LiveItem):
                 continue
             func = dct[name]
             if isinstance(func, (staticmethod, classmethod)):
+                if PY2 and name == "__new__":
+                    return True
                 return False
             break
         return True
