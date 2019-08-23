@@ -36,6 +36,16 @@ if False:  # type checking
 import re
 
 from surface._base import *
+from surface._item_static import (
+    ModuleAst,
+    SubscriptAst,
+    NameAst,
+    TupleAst,
+    UnknownAst,
+    AttributeAst,
+    SliceAst,
+    EllipsisAst,
+)
 
 if PY2:
     from itertools import izip_longest as zip_longest, izip as zip  # type: ignore
@@ -97,6 +107,48 @@ subtype_map = {
     ),
 }  # type: Dict[str, Tuple[str, ...]]
 
+type_visitors = (
+    ModuleAst,
+    SubscriptAst,
+    NameAst,
+    TupleAst,
+    UnknownAst,
+    AttributeAst,
+    SliceAst,
+    EllipsisAst,
+)
+
+
+class Comparison(object):
+    """
+        Compare two API's, and return resulting changes.
+
+        patch: version when you make backwards-compatible bug fixes.
+        minor: version when you add functionality in a backwards-compatible manner.
+        major: version when you make incompatible API changes.
+    """
+
+    def compare_types(self, old_type, new_type):
+        print(old_type, new_type)
+        # if old_type == new_type:
+        #     return None
+
+        # TODO: Check for syntax errors, and then have a fallback
+        old_ast = ModuleAst.parse(type_visitors, old_type)
+        new_ast = ModuleAst.parse(type_visitors, new_type)
+
+        changes = self._deep_compare_type(old_ast, new_ast)
+
+
+    def _deep_compare_type(self, old_ast, new_ast, changes=None):
+        if changes is None:
+            changes = []
+
+        if type(old_ast) != type(new_ast):
+            print("TYPE CHANGE", old_ast, new_ast)
+        for old_child, new_child in zip(old_ast.values(), new_ast.values()):
+            self._deep_compare_type(old_child, new_child, changes)
+
 
 def compare(
     api_old,  # type: Sequence[Module]
@@ -134,6 +186,10 @@ def compare_names(
         yield Change(MAJOR, "Removed", join(basename, name))
     for name in added:  # Added
         yield Change(MINOR, "Added", join(basename, name))
+
+
+# def compare_types(old_type, new_type):
+
 
 
 def compare_deep(
@@ -174,6 +230,9 @@ def compare_deep(
         elif isinstance(new_item, Func):
             changes.update(compare_func(abs_name, old_item, new_item))
         elif isinstance(new_item, Var):
+
+            Comparison().compare_types(old_item.type, new_item.type)
+
             if old_item.type != new_item.type:
                 if is_uncovered(old_item.type, new_item.type):
                     changes.add(Change(PATCH, "Uncovered Type", abs_name))
@@ -194,6 +253,9 @@ def compare_deep(
 def compare_func(basename, old_func, new_func):  # type: (str, Func, Func) -> Set[Any]
     changes = set()  # type: Set[Change]
 
+    Comparison().compare_types(old_func.returns, new_func.returns)
+
+
     if old_func.returns != new_func.returns:
         level = PATCH if is_uncovered(old_func.returns, new_func.returns) else MAJOR
         changes.add(
@@ -208,6 +270,11 @@ def compare_func(basename, old_func, new_func):  # type: (str, Func, Func) -> Se
     old_positional = (arg for arg in old_func.args if arg.kind & POSITIONAL)
     new_positional = (arg for arg in new_func.args if arg.kind & POSITIONAL)
     for old_arg, new_arg in zip_longest(old_positional, new_positional):
+
+        if old_arg and new_arg:
+            Comparison().compare_types(old_arg.type, new_arg.type)
+
+
         if old_arg == new_arg:
             continue
         elif not old_arg:

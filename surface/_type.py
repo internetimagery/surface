@@ -33,7 +33,7 @@ class FuncType(IDCache):
     _cache = Cache()
 
     def __init__(self, func):
-        self.params = None
+        self.params = collections.OrderedDict()
         self.returns = UNKNOWN
 
         sig = FuncSig(func)
@@ -43,16 +43,13 @@ class FuncType(IDCache):
 
     def as_var(self):
         params = (
-            "[{}]".format(", ".join(self.params.values()))
-            if self.params is not None
-            else "..."
+            "[{}]".format(", ".join(self.params.values())) if self.params else "..."
         )
         return "typing.Callable[{}, {}]".format(params, self.returns)
 
     def _map_params(self, sig):
         """ Check annotations first, then type comments, then docstrings """
         context = sig.context
-        self.params = collections.OrderedDict()
         for name, param in sig.parameters.items():
             if param.annotation is not FuncSig.EMPTY:
                 self.params[name] = str(AnnotationType(param.annotation, context))

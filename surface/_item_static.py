@@ -66,22 +66,9 @@ class SubscriptAst(AstItem):
             raise KeyError("Index {} is not here.".format(index))
 
 
-class IndexAst(AstItem):
-
-    wraps = ast.Index
-
-    def get_children_names(self):
-        return [0]
-
-    def get_child(self, index):
-        if index == 0:
-            return self.item.value
-        else:
-            raise KeyError("Invalid index {}".format(index))
-
 class SliceAst(AstItem):
 
-    wraps = ast.Slice
+    wraps = (ast.Index, ast.Slice, ast.ExtSlice)
 
     def get_children_names(self):
         return range(len(self._children()))
@@ -90,6 +77,10 @@ class SliceAst(AstItem):
         return self._children()[index]
 
     def _children(self):
+        if isinstance(self.item, ast.Index):
+            return [self.item.value]
+        if isinstance(self.item, ast.ExtSlice):
+            return self.item.dims
         children = []
         if self.item.lower:
             children.append(self.item.lower)
@@ -98,17 +89,6 @@ class SliceAst(AstItem):
         if self.item.step:
             children.append(self.item.step)
         return children
-
-
-class ExtSliceAst(AstItem):
-
-    wraps = ast.ExtSlice
-
-    def get_children_names(self):
-        return range(len(self.item.dims))
-
-    def get_child(self, index):
-        return self.item.dims[index]
 
 
 class TupleAst(AstItem):
@@ -145,11 +125,13 @@ class AttributeAst(AstItem):
 
 class NameAst(AstItem):
 
-    wraps = ast.Name
+    wraps = (ast.Name, ast.NameConstant)
 
     @property
     def name(self):
-        return self.item.id
+        if isinstance(self.item, ast.Name):
+            return self.item.id
+        return repr(self.item.value)
 
 
 class EllipsisAst(AstItem):
@@ -169,7 +151,7 @@ class UnknownAst(AstItem):
 
 
 if __name__ == "__main__":
-    typestring = "typing.Dict[str, typing.List[int, ...]]"
+    typestring = "typing.Dict[str, typing.List[None]]"
 
     visitors = [
         ModuleAst,
@@ -178,10 +160,8 @@ if __name__ == "__main__":
         TupleAst,
         UnknownAst,
         AttributeAst,
-        IndexAst,
         SliceAst,
         EllipsisAst,
-        ExtSliceAst,
     ]
 
     p = AstItem.parse(visitors, typestring)
