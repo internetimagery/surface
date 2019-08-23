@@ -119,7 +119,8 @@ type_visitors = (
 )
 
 
-# TODO: pull everything into a class
+# TODO: pull everything into classes? typing checker, function checker? etc?
+# TODO: or maybe not... who knows.
 
 
 class Comparison(object):

@@ -107,14 +107,11 @@ class ClassItem(LiveItem):
 
     def get_children_names(self):
         names = [name for name in sorted(dir(self.item)) if not name.startswith("_")]
-        if hasattr(self.item, "__init__") and FunctionItem.is_this_type(
-            self.item.__init__, self
-        ):
-            names.append("__init__")
-        if hasattr(self.item, "__new__") and FunctionItem.is_this_type(
-            self.item.__new__, self
-        ):
-            names.append("__new__")
+        for attr in ("__init__", "__new__", "__call__"):
+            if hasattr(self.item, attr) and FunctionItem.is_this_type(
+                getattr(self.item, attr), self
+            ):
+                names.append(attr)
         return names
 
     def get_child(self, attr):
