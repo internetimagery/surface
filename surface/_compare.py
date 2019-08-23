@@ -119,6 +119,9 @@ type_visitors = (
 )
 
 
+# TODO: pull everything into a class
+
+
 class Comparison(object):
     """
         Compare two API's, and return resulting changes.
@@ -186,10 +189,6 @@ def compare_names(
         yield Change(MAJOR, "Removed", join(basename, name))
     for name in added:  # Added
         yield Change(MINOR, "Added", join(basename, name))
-
-
-# def compare_types(old_type, new_type):
-
 
 
 def compare_deep(
