@@ -11,7 +11,7 @@ import os.path
 import importlib
 
 from surface._base import *
-from surface._utils import clean_repr
+from surface._utils import clean_repr, clamp_string
 from surface._item_live import (
     ErrorItem,
     ModuleItem,
@@ -78,7 +78,7 @@ class Traversal(object):
             EnumItem: lambda n, s, p: Var(n, s.get_type()),
             VarItem: lambda n, s, p: Var(n, s.get_type()),
             BuiltinItem: lambda n, s, p: Var(n, s.get_type()),
-            ErrorItem: lambda n, s, p: Unknown(n, clean_repr(s.item)),
+            ErrorItem: lambda n, s, p: Unknown(n, clamp_string(clean_repr(s.item))),
             ClassItem: lambda n, s, p: Class(
                 n, s.get_type(), tuple(self.walk(s, n, p.copy()))
             ),
@@ -128,7 +128,7 @@ class Traversal(object):
                 yield Unknown(
                     current_name,
                     "Circular Reference: {}".format(
-                        clean_repr(repr(current_item.item))
+                        clamp_string(clean_repr(repr(current_item.item)))
                     ),
                 )
                 return
@@ -137,7 +137,7 @@ class Traversal(object):
         for name, item in current_item.items():
             if depth_exceeded:
                 yield Unknown(
-                    name, "Depth Exceeded: {}".format(clean_repr(repr(item.item)))
+                    name, "Depth Exceeded: {}".format(clamp_string(clean_repr(repr(item.item))))
                 )
                 continue
 

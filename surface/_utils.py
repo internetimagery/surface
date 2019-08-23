@@ -31,6 +31,14 @@ def clean_repr(err):  # type: (Any) -> str
     return re.sub(r"<(.+) at (0x[0-9A-Fa-f]+)>", r"<\1 at memory_address>", str(err))
 
 
+def clamp_string(text, limit=200): # type: (str, int) -> str
+    text_len = len(text)
+    if text_len <= limit:
+        return text
+    cutoff = limit * 0.5 - 2
+    return text[:cutoff] + "..." + text[text_len - cutoff:]
+
+
 def get_tokens(source):  # type: (str) -> List[tokenize.TokenInfo]
     """ Tokenize string """
     try:
