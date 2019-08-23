@@ -6,12 +6,8 @@ if False:  # type checking
 __version__ = "0.4.2"
 
 import re as _re
-from surface._utils import (
-    import_module as _import_module,
-    import_times,
-    to_dict,
-    from_dict,
-)
+import importlib as _importlib
+from surface._utils import to_dict, from_dict
 from surface._traversal import Traversal, recurse
 from surface._compare import compare, PATCH, MINOR, MAJOR, RULES
 from surface._base import (
@@ -44,7 +40,7 @@ def get_api(
         Returns:
             Tuple[Module, ...]: Representation of API
     """
-    mod = _import_module(name)
+    mod = _importlib.import_module(name)
     traversal = Traversal(
         exclude_modules=exclude_modules, all_filter=all_filter, depth=depth
     )

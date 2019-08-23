@@ -11,7 +11,6 @@ import types
 import inspect
 import logging
 import tokenize
-import importlib
 import traceback
 import sigtools  # type: ignore
 import collections
@@ -19,25 +18,12 @@ import collections
 from surface._base import *
 
 if PY2:
-    from funcsigs import _empty as _empty  # type: ignore
+    from funcsigs import _empty  # type: ignore
 else:
-    from inspect import _empty as _empty  # type: ignore
+    from inspect import _empty  # type: ignore
 
 
 LOG = logging.getLogger(__name__)
-
-import_times = {}  # type: Dict[str, float]
-
-
-def import_module(name):  # type: (str) -> Any
-    """ Import a module, and time how long it takes """
-    start = time.time()
-    try:
-        LOG.debug("Importing: {}".format(name))
-        return importlib.import_module(name)
-    finally:
-        if name not in import_times:
-            import_times[name] = time.time() - start
 
 
 def clean_repr(err):  # type: (Any) -> str

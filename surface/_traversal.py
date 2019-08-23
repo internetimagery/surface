@@ -8,12 +8,10 @@ import sys
 import types
 import logging
 import os.path
-import inspect
-import traceback
 import importlib
 
 from surface._base import *
-from surface._utils import clean_repr, import_module
+from surface._utils import clean_repr
 from surface._item_live import (
     ErrorItem,
     ModuleItem,
@@ -40,7 +38,7 @@ def recurse(name):  # type: (str) -> List[str]
 
     while stack:
         import_name = stack.pop()
-        module = import_module(import_name)
+        module = importlib.import_module(import_name)
         paths.append(import_name)
         try:
             module_path = module.__file__

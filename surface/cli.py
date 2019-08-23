@@ -12,8 +12,35 @@ import logging as _logging
 import contextlib as _contextlib
 import surface as _surface
 from surface.git import Git as _Git
+from surface._base import PY2
+
+if PY2:
+    import __builtin__ as builtins
+else:
+    import builtins
 
 LOG = _logging.getLogger(__name__)
+
+import_times = {} # type: Dict[str, float]
+
+
+@_contextlib.contextmanager
+def time_imports():
+    origin = builtins.__import__
+
+    def runner(name, *args, **kwargs):
+        start = _time.time()
+        LOG.debug("Importing: {}".format(name))
+        module = origin(name, *args, **kwargs)
+        if name not in import_times:
+            import_times[name] = _time.time() - start
+        return module
+
+    builtins.__import__ = runner
+    try:
+        yield
+    finally:
+        builtins.__import__ = origin
 
 
 def run_dump(args):  # type: (Any) -> int
@@ -25,36 +52,37 @@ def run_dump(args):  # type: (Any) -> int
     for path in pythonpath:
         _sys.path.insert(0, path)
 
-    modules = (
-        set(r for m in args.modules for r in _surface.recurse(m))
-        if args.recurse
-        else args.modules
-    )
+    with time_imports():
+        modules = (
+            set(r for m in args.modules for r in _surface.recurse(m))
+            if args.recurse
+            else args.modules
+        )
 
-    module_api = []
-    for module in modules:
-        try:
-            api = _surface.get_api(
-                module, args.exclude_modules, args.all_filter, args.depth
-            )
-        except ImportError as err:
-            LOG.info(
-                (
-                    "Failed to import '{}'.\n"
-                    "{}\n"
-                    "Is the module and all its dependencies in your PYTHONPATH?"
-                ).format(module, err)
-            )
-            return 1
-        else:
-            module_api.append(api)
+        module_api = []
+        for module in modules:
+            try:
+                api = _surface.get_api(
+                    module, args.exclude_modules, args.all_filter, args.depth
+                )
+            except ImportError as err:
+                LOG.info(
+                    (
+                        "Failed to import '{}'.\n"
+                        "{}\n"
+                        "Is the module and all its dependencies in your PYTHONPATH?"
+                    ).format(module, err)
+                )
+                return 1
+            else:
+                module_api.append(api)
 
     if not args.quiet:
         yellow = ("{}" if args.no_colour else "\033[33m{}\033[0m").format
         for mod in module_api:
             _sys.stdout.write(
-                "[{}]({}s)\n".format(
-                    yellow(mod.path), round(_surface.import_times.get(mod.path, 0), 2)
+                "[{}]({:.2f}s)\n".format(
+                    yellow(mod.path), round(import_times.get(mod.path, 0.0), 2)
                 )
             )
             _sys.stdout.write(_surface.format_api(mod.body, not args.no_colour, "    "))
