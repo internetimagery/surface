@@ -36,7 +36,7 @@ class LiveItem(Item):
     """ Wrap and traverse live objects """
 
     __slots__ = []  # type: ignore
-    _cache = Cache(500)
+    _cache = Cache()
 
     @classmethod
     def wrap(cls, visitors, item, parent=None):

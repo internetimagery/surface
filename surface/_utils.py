@@ -148,31 +148,25 @@ def from_dict(node):  # type: (Dict[str, Any]) -> Any
 class Cache(collections.MutableMapping):
     def __init__(self, size=500):  # type: (int) -> None
         """ Cache stuff. Up to size (mb) """
-        self.size = size * 1000000  # mb to bytes
+        self.size = size
         self._cache = (
             collections.OrderedDict()
         )  # type: collections.OrderedDict[Any, Any]
-        self._current_size = 0
 
     def __getitem__(self, key):  # type: (Any) -> Any
         """ Move item to front of the queue """
         item = self._cache.pop(key)
         self._cache[key] = item
-        return item[0]
+        return item
 
     def __setitem__(self, key, value):  # type: (Any, Any) -> None
         """ Add new item. Drop old items to make space """
-        value_size = self._get_size(value) + self._get_size(key)
-        self._current_size += value_size
         try:
-            item = self._cache.pop(key)
-            self._current_size -= item[1]
+            self._cache.pop(key)
         except KeyError:
-            pass
-        while self._current_size > self.size:
-            _, item = self._cache.popitem(last=False)
-            self._current_size -= item[1]
-        self._cache[key] = value, value_size
+            if len(self._cache) > self.size:
+                self._cache.popitem(last=False)
+        self._cache[key] = value
 
     def __len__(self):
         return len(self._cache)
@@ -181,49 +175,7 @@ class Cache(collections.MutableMapping):
         return iter(self._cache)
 
     def __delitem__(self, key):  # type: (Any) -> None
-        item = self._cache.pop(key)
-        self._current_size -= item[1]
-
-    @classmethod  # https://stackoverflow.com/a/38515297
-    def _get_size(cls, obj, seen=None):
-        """Recursively finds size of objects in bytes"""
-        size = sys.getsizeof(obj)
-        if seen is None:
-            seen = set()
-        obj_id = id(obj)
-        if obj_id in seen:
-            return 0
-        # Important mark as seen *before* entering recursion to gracefully handle
-        # self-referential objects
-        seen.add(obj_id)
-        try:
-            if hasattr(obj, "__dict__"):
-                for obj_cls in obj.__class__.__mro__:
-                    if "__dict__" in obj_cls.__dict__:
-                        d = obj_cls.__dict__["__dict__"]
-                        if inspect.isgetsetdescriptor(d) or inspect.ismemberdescriptor(
-                            d
-                        ):
-                            size += cls._get_size(obj.__dict__, seen)
-                        break
-            if isinstance(obj, dict):
-                size += sum(cls._get_size(v, seen) for v in obj.values())
-                size += sum(cls._get_size(k, seen) for k in obj.keys())
-            elif hasattr(obj, "__iter__") and not isinstance(
-                obj, (str, bytes, bytearray)
-            ):
-                size += sum(cls._get_size(i, seen) for i in obj)
-
-            if hasattr(obj, "__slots__"):  # can have __slots__ with __dict__
-                size += sum(
-                    cls._get_size(getattr(obj, s), seen)
-                    for s in obj.__slots__
-                    if hasattr(obj, s)
-                )
-        except Exception:  # This should not cause program to fail.
-            LOG.debug("Error get_size in cache")
-            LOG.debug(traceback.format_exc())
-        return size
+        del self._cache[key]
 
 
 class IDCache(object):
