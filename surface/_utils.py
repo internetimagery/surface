@@ -31,12 +31,12 @@ def clean_repr(err):  # type: (Any) -> str
     return re.sub(r"<(.+) at (0x[0-9A-Fa-f]+)>", r"<\1 at memory_address>", str(err))
 
 
-def clamp_string(text, limit=200): # type: (str, int) -> str
+def clamp_string(text, limit=200):  # type: (str, int) -> str
     text_len = len(text)
     if text_len <= limit:
         return text
     cutoff = limit * 0.5 - 2
-    return text[:cutoff] + "..." + text[text_len - cutoff:]
+    return text[:cutoff] + "..." + text[text_len - cutoff :]
 
 
 def get_tokens(source):  # type: (str) -> List[tokenize.TokenInfo]
@@ -254,7 +254,7 @@ class FuncSig(IDCache):
         except (SyntaxError, ValueError) as err:
             LOG.debug("Error getting signature for {}".format(self._func))
             LOG.debug(traceback.format_exc())
-        except RuntimeError as err: # https://github.com/epsy/sigtools/issues/10
+        except RuntimeError as err:  # https://github.com/epsy/sigtools/issues/10
             LOG.debug("Error getting signature for {}".format(self._func))
         finally:
             if restore_attr:

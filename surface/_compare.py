@@ -4,7 +4,6 @@
 # TODO: If an exposed type is found, declare the type unchanged. As changes in the public api will
 # TODO: be picked up by the exposed type entering / leaving the api.
 
-# λ python
 # Python 3.6.0 (v3.6.0:41df79263a11, Dec 23 2016, 08:06:12) [MSC v.1900 64 bit (AMD64)] on win32
 # Type "help", "copyright", "credits" or "license" for more information.
 # >>> t = "typing.Dict[str, typing.List[_a.MyType]]"

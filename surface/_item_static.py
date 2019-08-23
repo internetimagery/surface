@@ -10,44 +10,39 @@ from surface._utils import get_tokens
 # TODO: Once this is done. This can be reused in the comment parsing functionality.
 
 
-class TokenMap(collections.namedtuple("TokenMap", ("stream", "index"))):
-    """ Map token stream to its positional information """
-
-    def __new__(cls, source):
-        stream = get_tokens(source) or []
-        index = {tok[2]: i for i, tok in enumerate(stream)}
-        return super(TokenMap, cls).__new__(cls, stream, index)
-
-    def __bool__(self):
-        return bool(self.stream)
-
-    __nonzero__ = __bool__
+# class TokenMap(collections.namedtuple("TokenMap", ("stream", "index"))):
+#     """ Map token stream to its positional information """
+#
+#     def __new__(cls, source):
+#         stream = get_tokens(source) or []
+#         index = {tok[2]: i for i, tok in enumerate(stream)}
+#         return super(TokenMap, cls).__new__(cls, stream, index)
+#
+#     def __bool__(self):
+#         return bool(self.stream)
+#
+#     __nonzero__ = __bool__
 
 
 class AstItem(Item):
-    # TODO: add a parse method that passes in source and generates ast + mapping
-    # TODO: override wrap, to also send the mapping info to any child classes
-    __slots__ = ["_mapping"]
+
+    wraps = None
+
+    __slots__ = []
 
     @classmethod
     def parse(cls, visitors, source):
         module = ast.parse(source)
-        inst = cls.wrap(visitors, module)
-        inst._mapping = TokenMap(source)
-        return inst
+        return cls.wrap(visitors, module)
 
     @classmethod
-    def wrap(cls, visitors, item, parent=None):
-        inst = super(AstItem, cls).wrap(visitors, item, parent)
-        if parent is not None:
-            inst._mapping = parent._mapping
-        return inst
+    def is_this_type(cls, item, parent):
+        return isinstance(item, cls.wraps)
 
 
 class ModuleAst(AstItem):
-    @staticmethod
-    def is_this_type(item, parent):
-        return isinstance(item, ast.Module)
+
+    wraps = ast.Module
 
     def get_children_names(self):
         return range(len(self.item.body))
@@ -57,26 +52,68 @@ class ModuleAst(AstItem):
 
 
 class SubscriptAst(AstItem):
-    @staticmethod
-    def is_this_type(item, parent):
-        return isinstance(item, ast.Subscript)
+    wraps = ast.Subscript
 
     def get_children_names(self):
-        return [0, 1]
+        return ("value", "slice")
 
     def get_child(self, index):
-        if index is 0:
+        if index == "value":
             return self.item.value
-        elif index is 1:
-            return self.item.slice.value
+        elif index == "slice":
+            return self.item.slice
         else:
             raise KeyError("Index {} is not here.".format(index))
 
 
+class IndexAst(AstItem):
+
+    wraps = ast.Index
+
+    def get_children_names(self):
+        return [0]
+
+    def get_child(self, index):
+        if index == 0:
+            return self.item.value
+        else:
+            raise KeyError("Invalid index {}".format(index))
+
+class SliceAst(AstItem):
+
+    wraps = ast.Slice
+
+    def get_children_names(self):
+        return range(len(self._children()))
+
+    def get_child(self, index):
+        return self._children()[index]
+
+    def _children(self):
+        children = []
+        if self.item.lower:
+            children.append(self.item.lower)
+        if self.item.upper:
+            children.append(self.item.upper)
+        if self.item.step:
+            children.append(self.item.step)
+        return children
+
+
+class ExtSliceAst(AstItem):
+
+    wraps = ast.ExtSlice
+
+    def get_children_names(self):
+        return range(len(self.item.dims))
+
+    def get_child(self, index):
+        return self.item.dims[index]
+
+
 class TupleAst(AstItem):
-    @staticmethod
-    def is_this_type(item, parent):
-        return isinstance(item, ast.Tuple)
+
+    wraps = ast.Tuple
 
     def get_children_names(self):
         return range(len(self.item.elts))
@@ -86,9 +123,8 @@ class TupleAst(AstItem):
 
 
 class AttributeAst(AstItem):
-    @staticmethod
-    def is_this_type(item, parent):
-        return isinstance(item, ast.Attribute)
+
+    wraps = ast.Attribute
 
     @property
     def name(self):
@@ -108,13 +144,17 @@ class AttributeAst(AstItem):
 
 
 class NameAst(AstItem):
-    @staticmethod
-    def is_this_type(item, parent):
-        return isinstance(item, ast.Name)
+
+    wraps = ast.Name
 
     @property
     def name(self):
         return self.item.id
+
+
+class EllipsisAst(AstItem):
+
+    wraps = ast.Ellipsis
 
 
 class UnknownAst(AstItem):
@@ -129,9 +169,20 @@ class UnknownAst(AstItem):
 
 
 if __name__ == "__main__":
-    typestring = "typing.Dict[str, typing.List[~unknown]]"
+    typestring = "typing.Dict[str, typing.List[int, ...]]"
 
-    visitors = [ModuleAst, SubscriptAst, NameAst, TupleAst, UnknownAst, AttributeAst]
+    visitors = [
+        ModuleAst,
+        SubscriptAst,
+        NameAst,
+        TupleAst,
+        UnknownAst,
+        AttributeAst,
+        IndexAst,
+        SliceAst,
+        EllipsisAst,
+        ExtSliceAst,
+    ]
 
     p = AstItem.parse(visitors, typestring)
 

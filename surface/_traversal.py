@@ -137,7 +137,10 @@ class Traversal(object):
         for name, item in current_item.items():
             if depth_exceeded:
                 yield Unknown(
-                    name, "Depth Exceeded: {}".format(clamp_string(clean_repr(repr(item.item))))
+                    name,
+                    "Depth Exceeded: {}".format(
+                        clamp_string(clean_repr(repr(item.item)))
+                    ),
                 )
                 continue
 

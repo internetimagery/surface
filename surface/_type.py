@@ -33,7 +33,7 @@ class FuncType(IDCache):
     _cache = Cache()
 
     def __init__(self, func):
-        self.params = collections.OrderedDict()
+        self.params = None
         self.returns = UNKNOWN
 
         sig = FuncSig(func)
@@ -43,7 +43,9 @@ class FuncType(IDCache):
 
     def as_var(self):
         params = (
-            "[{}]".format(", ".join(self.params.values())) if self.params else "..."
+            "[{}]".format(", ".join(self.params.values()))
+            if self.params is not None
+            else "..."
         )
         return "typing.Callable[{}, {}]".format(params, self.returns)
 

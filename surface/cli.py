@@ -21,7 +21,7 @@ else:
 
 LOG = _logging.getLogger(__name__)
 
-import_times = {} # type: Dict[str, float]
+import_times = {}  # type: Dict[str, float]
 
 
 @_contextlib.contextmanager
