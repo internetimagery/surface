@@ -56,20 +56,20 @@ else:
 RULES = """
 API Semantic rules, and how they affect versions.
 
-MAJOR:
+SemVer.MAJOR:
   * Removing anything.
   * Renaming keyword-arguments.
   * Adding positional-arguments.
   * Changing types (except where input types become generics).
 
-MINOR:
+SemVer.MINOR:
   * Adding new variables, functions, classes, modules, optional-keyword-arguments, *args, **kwargs.
   * Changing positional-only-argument to positional+keyword.
   * Provide a default to a positional argument.
   * Changing input types to be generics, eg: List to Sequence, Dict to Mapping etc.
   * Unable to verify the change (ie attribute access failed / recursive object).
 
-PATCH:
+SemVer.PATCH:
   * Renaming positional-only-arguments.
   * Adding new typing information (ie was ~unknown, now concrete type).
   * API.Unknown type remains API.Unknown.
@@ -78,9 +78,10 @@ PATCH:
 
 
 # Semantic types
-PATCH = "patch"
-MINOR = "minor"
-MAJOR = "major"
+class SemVer(object):
+    PATCH = "patch"
+    MINOR = "minor"
+    MAJOR = "major"
 
 # Templates
 _was = '{}, Was: "{}", Now: "{}"'.format
@@ -175,9 +176,9 @@ class AddRemoveCheck(Check):
 
     def check(self, path, old, new):
         if old is None:
-            return [Change(MINOR, "Added", path)]
+            return [Change(SemVer.MINOR, "Added", path)]
         if new is None:
-            return [Change(MAJOR, "Removed", path)]
+            return [Change(SemVer.MAJOR, "Removed", path)]
         return []
 
 
@@ -191,7 +192,7 @@ class CannotVerifyCheck(Check):
 
     def check(self, path, old, new):
         info = old.info if isinstance(old, API.Unknown) else new.info
-        return [Change(MINOR, "Could not verify", "{}: {}".format(path, info))]
+        return [Change(SemVer.MINOR, "Could not verify", "{}: {}".format(path, info))]
 
 
 class TypeMatchCheck(Check):
@@ -209,7 +210,7 @@ class TypeMatchCheck(Check):
         return True
 
     def check(self, path, old, new):
-        return [Change(MAJOR, "Type Changed", _was(path, type(old), type(new)))]
+        return [Change(SemVer.MAJOR, "Type Changed", _was(path, type(old), type(new)))]
 
 
 class TypingCheck(Check):
@@ -220,11 +221,11 @@ class TypingCheck(Check):
         if old.type == new.type:
             return []
         if is_uncovered(old.type, new.type):
-            level = PATCH
+            level = SemVer.PATCH
         elif is_subtype(old.type, new.type):
-            level = MINOR
+            level = SemVer.MINOR
         else:
-            level = MAJOR
+            level = SemVer.MAJOR
         return [Change(level, "Type Changed", _was(path, old.type, new.type))]
 
 
@@ -243,11 +244,11 @@ class ArgKindCheck(Check):
             if old_arg is None or old_arg.kind == new_arg.kind:
                 continue
             if new_arg.kind == old_arg.kind | Kind.KEYWORD:
-                level = MINOR  # Adding keyword is not breaking.
+                level = SemVer.MINOR  # Adding keyword is not breaking.
             elif new_arg.kind == old_arg.kind | Kind.DEFAULT:
-                level = MINOR  # Adding default is not breaking.
+                level = SemVer.MINOR  # Adding default is not breaking.
             else:
-                level = MAJOR
+                level = SemVer.MAJOR
             changes.append(Change(level, "Kind Changed", _arg(path, name)))
         return changes
 
@@ -264,23 +265,23 @@ class ArgAddRemoveCheck(ArgKindCheck):
                 # Adding a new optional arg (ie: arg=None) or variadic (ie *args / **kwargs)
                 # is not a breaking change. Adding anything else is.
                 level = (
-                    MINOR if new_arg.kind & (Kind.VARIADIC | Kind.DEFAULT) else MAJOR
+                    SemVer.MINOR if new_arg.kind & (Kind.VARIADIC | Kind.DEFAULT) else SemVer.MAJOR
                 )
                 changes.append(Change(level, "Added API.Arg", _arg(path, new_arg.name)))
             elif not new_arg:
                 # Removing an argument is always a breaking change.
                 changes.append(
-                    Change(MAJOR, "Removed API.Arg", _arg(path, old_arg.name))
+                    Change(SemVer.MAJOR, "Removed API.Arg", _arg(path, old_arg.name))
                 )
             elif old_arg.name != new_arg.name:
                 # It's not breaking to rename variadic or positional-only args, but is for anything else
                 level = (
-                    PATCH
+                    SemVer.PATCH
                     if new_arg.kind == old_arg.kind
                     and (
                         new_arg.kind & Kind.VARIADIC or new_arg.kind == Kind.POSITIONAL
                     )
-                    else MAJOR
+                    else SemVer.MAJOR
                 )
                 changes.append(
                     Change(
@@ -297,9 +298,9 @@ class ArgAddRemoveCheck(ArgKindCheck):
             if old_kwarg == new_kwarg:
                 continue
             elif old_kwarg is None:
-                return [Change(MINOR, "Added API.Arg", _arg(path, name))]
+                return [Change(SemVer.MINOR, "Added API.Arg", _arg(path, name))]
             elif new_kwarg is None:
-                return [Change(MAJOR, "Removed API.Arg", _arg(path, name))]
+                return [Change(SemVer.MAJOR, "Removed API.Arg", _arg(path, name))]
         return changes
 
     @staticmethod
@@ -345,11 +346,11 @@ class ArgTypeCheck(ArgAddRemoveCheck):
                 continue
             if old_arg.type != new_arg.type:
                 if is_uncovered(old_arg.type, new_arg.type):
-                    level = PATCH
+                    level = SemVer.PATCH
                 elif is_subtype(old_arg.type, new_arg.type):
-                    level = MINOR
+                    level = SemVer.MINOR
                 else:
-                    level = MAJOR
+                    level = SemVer.MAJOR
                 changes.append(
                     Change(
                         level,
@@ -365,11 +366,11 @@ class ArgTypeCheck(ArgAddRemoveCheck):
                 continue
             if old_kwarg.type != new_kwarg.type:
                 if is_uncovered(old_kwarg.type, new_kwarg.type):
-                    level = PATCH
+                    level = SemVer.PATCH
                 elif is_subtype(old_kwarg.type, new_kwarg.type):
-                    level = MINOR
+                    level = SemVer.MINOR
                 else:
-                    level = MAJOR
+                    level = SemVer.MAJOR
                 changes.append(
                     Change(
                         level,
@@ -382,9 +383,9 @@ class ArgTypeCheck(ArgAddRemoveCheck):
 
         if old.returns != new.returns:
             if is_uncovered(old.returns, new.returns):
-                level = PATCH
+                level = SemVer.PATCH
             else:
-                level = MAJOR
+                level = SemVer.MAJOR
             changes.append(
                 Change(
                     level, "Return Type Changed", _was(path, old.returns, new.returns)
@@ -422,8 +423,8 @@ class UncoveredTypingCheck(Check):
         if isinstance(old, UnknownAst):
             if isinstance(new, UnknownAst):
                 return []
-            return [Change(PATCH, "Uncovered Type", _was(path, old, new))]
-        return [Change(MINOR, "Lost Type", _was(path, old, new))]
+            return [Change(SemVer.PATCH, "Uncovered Type", _was(path, old, new))]
+        return [Change(SemVer.MINOR, "Lost Type", _was(path, old, new))]
 
 
 ESC_UNKNOWN = re.escape(UNKNOWN)  # For search replace

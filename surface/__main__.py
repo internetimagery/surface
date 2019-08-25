@@ -108,7 +108,7 @@ def main():
     compare_parser.add_argument(
         "-c",
         "--check",
-        choices=[surface.MINOR, surface.MAJOR],
+        choices=[surface.SemVer.MINOR, surface.SemVer.MAJOR],
         help="For use in a CI environment. Exit 1 if API bumps version equal or above specified.",
     )
     compare_parser.set_defaults(func=run_compare)

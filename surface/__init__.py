@@ -9,7 +9,7 @@ import re as _re
 import importlib as _importlib
 from surface._utils import to_dict, from_dict
 from surface._traversal import Traversal, recurse
-from surface._compare import Changes, PATCH, MINOR, MAJOR, RULES
+from surface._compare import Changes, SemVer, RULES
 from surface._base import Kind, API, UNKNOWN
 
 
@@ -80,19 +80,19 @@ def bump_semantic_version(level, version):  # type: (str, str) -> str
     parts = _re.match(r"(\d+)(?:\.(\d+)(?:\.(\d+)|$)|$)", version)
     if not parts:
         raise ValueError("Not a valid semantic version: {}".format(version))
-    if level not in (PATCH, MINOR, MAJOR):
+    if level not in (SemVer.PATCH, SemVer.MINOR, SemVer.MAJOR):
         raise ValueError("Invalid level {}".format(level))
 
     major = int(parts.group(1))
     minor = int(parts.group(2) or 0)
     patch = int(parts.group(3) or 0)
 
-    if level == PATCH:
+    if level == SemVer.PATCH:
         patch += 1
-    elif level == MINOR or (level == MAJOR and major == 0):
+    elif level == SemVer.MINOR or (level == SemVer.MAJOR and major == 0):
         minor += 1
         patch = 0
-    elif level == MAJOR:
+    elif level == SemVer.MAJOR:
         major += 1
         minor = patch = 0
     return "{}.{}.{}".format(major, minor, patch)

@@ -128,28 +128,28 @@ def run_compare(args):  # type: (Any) -> int
 
     purple = ("{}" if args.no_colour else "\033[35m{}\033[0m").format
     colours = {
-        _surface.PATCH: ("{}" if args.no_colour else "\033[36m{}\033[0m").format,
-        _surface.MINOR: ("{}" if args.no_colour else "\033[32m{}\033[0m").format,
-        _surface.MAJOR: ("{}" if args.no_colour else "\033[31m{}\033[0m").format,
+        _surface.SemVer.PATCH: ("{}" if args.no_colour else "\033[36m{}\033[0m").format,
+        _surface.SemVer.MINOR: ("{}" if args.no_colour else "\033[32m{}\033[0m").format,
+        _surface.SemVer.MAJOR: ("{}" if args.no_colour else "\033[31m{}\033[0m").format,
     }
 
-    highest_level = _surface.PATCH
+    highest_level = _surface.SemVer.PATCH
     changes = _surface.Changes().compare(old_api, new_api)
     for level, change_type, note in changes:
         if not args.quiet:
             LOG.info(
                 "[{}] {}: {}".format(colours[level](level), purple(change_type), note)
             )
-        if level == _surface.MAJOR:
+        if level == _surface.SemVer.MAJOR:
             highest_level = level
-        elif level == _surface.MINOR and highest_level != _surface.MAJOR:
+        elif level == _surface.SemVer.MINOR and highest_level != _surface.SemVer.MAJOR:
             highest_level = level
 
     if args.bump:
         _sys.stdout.write(_surface.bump_semantic_version(highest_level, args.bump))
     else:
         _sys.stdout.write(highest_level)
-    if args.check and (args.check == highest_level or highest_level == _surface.MAJOR):
+    if args.check and (args.check == highest_level or highest_level == _surface.SemVer.MAJOR):
         return 1
     return 0
 
