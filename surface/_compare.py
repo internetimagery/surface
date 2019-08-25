@@ -202,7 +202,7 @@ class TypeMatchCheck(Check):
     """ Check for type changes with the same name. """
 
     def will_check(self, old, new):
-        if old is None or new is None or type(old) == type(new):
+        if old is None or new is None or type(old) == type(new) or isinstance(old, Unknown) or isinstance(new, Unknown):
             return False
         return True
 
