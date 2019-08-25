@@ -9,7 +9,7 @@ import re as _re
 import importlib as _importlib
 from surface._utils import to_dict, from_dict
 from surface._traversal import Traversal, recurse
-from surface._compare import compare, PATCH, MINOR, MAJOR, RULES
+from surface._compare import Changes, PATCH, MINOR, MAJOR, RULES
 from surface._base import (
     POSITIONAL,
     KEYWORD,
