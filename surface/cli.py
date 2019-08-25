@@ -134,7 +134,7 @@ def run_compare(args):  # type: (Any) -> int
     }
 
     highest_level = _surface.PATCH
-    changes = _surface.compare(old_api, new_api)
+    changes = _surface.Changes().compare(old_api, new_api)
     for level, change_type, note in changes:
         if not args.quiet:
             LOG.info(

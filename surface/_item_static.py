@@ -1,34 +1,20 @@
 """ Wrapping static ast objects """
 
+if False:  # type checking
+    from typing import *
+
 import ast
 import collections
 
 from surface._base import UNKNOWN, PY2
 from surface._item import Item
-from surface._utils import get_tokens
-
-# TODO: Once this is done. This can be reused in the comment parsing functionality.
-
-
-# class TokenMap(collections.namedtuple("TokenMap", ("stream", "index"))):
-#     """ Map token stream to its positional information """
-#
-#     def __new__(cls, source):
-#         stream = get_tokens(source) or []
-#         index = {tok[2]: i for i, tok in enumerate(stream)}
-#         return super(TokenMap, cls).__new__(cls, stream, index)
-#
-#     def __bool__(self):
-#         return bool(self.stream)
-#
-#     __nonzero__ = __bool__
 
 
 class AstItem(Item):
 
-    wraps = None
+    wraps = None # type: Any
 
-    __slots__ = []
+    __slots__ = [] # type: ignore
 
     @classmethod
     def parse(cls, visitors, source):

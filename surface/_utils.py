@@ -35,7 +35,7 @@ def clamp_string(text, limit=200):  # type: (str, int) -> str
     text_len = len(text)
     if text_len <= limit:
         return text
-    cutoff = limit * 0.5 - 2
+    cutoff = int(limit * 0.5 - 2)
     return text[:cutoff] + "..." + text[text_len - cutoff :]
 
 

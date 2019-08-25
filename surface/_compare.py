@@ -107,17 +107,6 @@ subtype_map = {
     ),
 }  # type: Dict[str, Tuple[str, ...]]
 
-type_visitors = (
-    ModuleAst,
-    SubscriptAst,
-    NameAst,
-    TupleAst,
-    UnknownAst,
-    AttributeAst,
-    SliceAst,
-    EllipsisAst,
-)
-
 
 class Changes(object):
     def compare(
@@ -129,7 +118,7 @@ class Changes(object):
             ("", {mod.name: mod for mod in old_api}, {mod.name: mod for mod in new_api})
         ]
         checks = self._prep_checks()
-        changes = set()
+        changes = set() # type: Set[Change]
 
         while stack:
             path, old, new = stack.pop()
@@ -222,8 +211,8 @@ class TypeMatchCheck(Check):
     def check(self, path, old, new):
         return [Change(MAJOR, "Type Changed", _was(path, type(old), type(new)))]
 
-class TypingCheck(Check):
 
+class TypingCheck(Check):
     def will_check(self, old, new):
         return isinstance(old, Var) and isinstance(new, Var)
 
@@ -288,7 +277,11 @@ class ArgAddRemoveCheck(ArgKindCheck):
                     else MAJOR
                 )
                 changes.append(
-                    Change(level, "Renamed Arg", _was(_arg(path, new_arg.name), old_arg.name, new_arg.name))
+                    Change(
+                        level,
+                        "Renamed Arg",
+                        _was(_arg(path, new_arg.name), old_arg.name, new_arg.name),
+                    )
                 )
 
         old_kwargs, new_kwargs = self.keywords(old.args, new.args)
@@ -306,8 +299,16 @@ class ArgAddRemoveCheck(ArgKindCheck):
     @staticmethod
     def positionals(old, new):
         return zip_longest(
-            (arg for arg in old if arg.kind & POSITIONAL or arg.kind == (KEYWORD | VARIADIC)),
-            (arg for arg in new if arg.kind & POSITIONAL or arg.kind == (KEYWORD | VARIADIC)),
+            (
+                arg
+                for arg in old
+                if arg.kind & POSITIONAL or arg.kind == (KEYWORD | VARIADIC)
+            ),
+            (
+                arg
+                for arg in new
+                if arg.kind & POSITIONAL or arg.kind == (KEYWORD | VARIADIC)
+            ),
         )
 
     @staticmethod
@@ -319,7 +320,6 @@ class ArgAddRemoveCheck(ArgKindCheck):
 
 
 class ArgTypeCheck(ArgAddRemoveCheck):
-
     @classmethod
     def check(self, path, old, new):
         changes = []
@@ -334,7 +334,13 @@ class ArgTypeCheck(ArgAddRemoveCheck):
                     level = MINOR
                 else:
                     level = MAJOR
-                changes.append(Change(level, "Type Changed", _was(_arg(path, new_arg.name), old_arg.type, new_arg.type)))
+                changes.append(
+                    Change(
+                        level,
+                        "Type Changed",
+                        _was(_arg(path, new_arg.name), old_arg.type, new_arg.type),
+                    )
+                )
 
         old_kwargs, new_kwargs = self.keywords(old.args, new.args)
         for name, new_kwarg in new_kwargs.items():
@@ -348,19 +354,60 @@ class ArgTypeCheck(ArgAddRemoveCheck):
                     level = MINOR
                 else:
                     level = MAJOR
-                changes.append(Change(level, "Type Changed", _was(_arg(path, new_kwarg.name), old_kwarg.type, new_kwarg.type)))
+                changes.append(
+                    Change(
+                        level,
+                        "Type Changed",
+                        _was(
+                            _arg(path, new_kwarg.name), old_kwarg.type, new_kwarg.type
+                        ),
+                    )
+                )
 
         if old.returns != new.returns:
             if is_uncovered(old.returns, new.returns):
                 level = PATCH
             else:
                 level = MAJOR
-            changes.append(Change(level, "Return Type Changed", _was(path, old.returns, new.returns)))
+            changes.append(
+                Change(
+                    level, "Return Type Changed", _was(path, old.returns, new.returns)
+                )
+            )
 
         return changes
 
 
-##########################
+class TypingChanges(object):
+
+    _type_visitors = (
+        ModuleAst,
+        SubscriptAst,
+        NameAst,
+        TupleAst,
+        UnknownAst,
+        AttributeAst,
+        SliceAst,
+        EllipsisAst,
+    )
+
+    def compare(self, old, new):
+        pass
+
+    def _prep_checks(self):
+        return []
+
+
+class UncoveredTypingCheck(Check):
+    def will_check(self, old, new):
+        return isinstance(old, UnknownAst) or isinstance(new, UnknownAst)
+
+    def check(self, path, old, new):
+        if isinstance(old, UnknownAst):
+            if isinstance(new, UnknownAst):
+                return []
+            return [Change(PATCH, "Uncovered Type", _was(path, old, new))]
+        return [Change(MINOR, "Lost Type", _was(path, old, new))]
 
 
 ESC_UNKNOWN = re.escape(UNKNOWN)  # For search replace
