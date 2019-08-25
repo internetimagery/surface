@@ -101,13 +101,15 @@ class ClassItem(LiveItem):
 
     __slots__ = []  # type: ignore
 
+    magic_methods = tuple("__{}__".format(_m) for _m in ("new", "init", "call"))
+
     @staticmethod
     def is_this_type(item, parent):
         return inspect.isclass(item)
 
     def get_children_names(self):
         names = [name for name in sorted(dir(self.item)) if not name.startswith("_")]
-        for attr in ("__init__", "__new__", "__call__"):
+        for attr in self.magic_methods:
             if hasattr(self.item, attr) and FunctionItem.is_this_type(
                 getattr(self.item, attr), self
             ):
@@ -234,9 +236,7 @@ class FunctionItem(LiveItem):
                 continue
             func = dct[name]
             if isinstance(func, (staticmethod, classmethod)):
-                if PY2 and name == "__new__":
-                    return True
-                return False
+                return name == "__new__"
             break
         return True
 
