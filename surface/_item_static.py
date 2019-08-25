@@ -3,7 +3,7 @@
 import ast
 import collections
 
-from surface._base import UNKNOWN
+from surface._base import UNKNOWN, PY2
 from surface._item import Item
 from surface._utils import get_tokens
 
@@ -125,7 +125,7 @@ class AttributeAst(AstItem):
 
 class NameAst(AstItem):
 
-    wraps = (ast.Name, ast.NameConstant)
+    wraps = ast.Name if PY2 else (ast.Name, ast.NameConstant)
 
     @property
     def name(self):

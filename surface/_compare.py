@@ -119,6 +119,103 @@ type_visitors = (
 )
 
 
+class Changes(object):
+    def compare(
+        self, old_api, new_api
+    ):  # type: (Sequence[Module], Sequence[Module]) -> Set[Change]
+        """ Run checks over old and new API representations. """
+
+        stack = [
+            ("", {mod.name: mod for mod in old_api}, {mod.name: mod for mod in new_api})
+        ]
+        checks = self._prep_checks()
+        changes = set()
+
+        while stack:
+            path, old, new = stack.pop()
+            children = set(old) | set(new)
+            for child in children:
+                old_child = old.get(child)
+                new_child = new.get(child)
+                if old_child == new_child:
+                    continue
+                new_path = "{}.{}".format(path, child) if path else child
+                for check in checks:
+                    if check.will_check(old_child, new_child):
+                        changes.update(
+                            check.check(new_path, old_child, new_child) or []
+                        )
+                if isinstance(old_child, (Module, Class)) and isinstance(
+                    new_child, (Module, Class)
+                ):
+                    stack.append(
+                        (
+                            new_path,
+                            {item.name: item for item in old_child.body},
+                            {item.name: item for item in new_child.body},
+                        )
+                    )
+
+        return changes
+
+    def _prep_checks(self):
+        return [AddRemoveCheck(), CannotVerifyCheck(), TypeChangeCheck()]
+
+
+class Check(object):
+    """ Base check object, used for all checks """
+
+    def will_check(self, old, new):  # type: (Any, Any) -> bool
+        return False
+
+    def check(self, path, old, new):  # type: (str, Any, Any) -> Optional[List[Change]]
+        pass
+
+
+class AddRemoveCheck(Check):
+    """ Check things have been added / removed. """
+
+    def will_check(self, _, __):
+        return True
+
+    def check(self, path, old, new):
+        if old is None:
+            return [Change(MINOR, "Added", path)]
+        if new is None:
+            return [Change(MAJOR, "Removed", path)]
+
+
+class CannotVerifyCheck(Check):
+    """ Check for unverifyable changes. """
+
+    def will_check(self, old, new):
+        if old is None or new is None:
+            return False
+        return isinstance(old, Unknown) or isinstance(new, Unknown)
+
+    def check(self, path, old, new):
+        info = old.info if isinstance(old, Unknown) else new.info
+        return [Change(MINOR, "Could not verify", "{}: {}".format(path, info))]
+
+
+class TypeChangeCheck(Check):
+    """ Check for type changes with the same name. """
+
+    def will_check(self, old, new):
+        if old is None or new is None or type(old) == type(new):
+            return False
+        return True
+
+    def check(self, path, old, new):
+        return [Change(MAJOR, "Type Changed", _was(path, type(old), type(new)))]
+
+
+# Break everything into checks
+# Run through all checks
+
+# if type missmatch, check if function and class with __call__ method.
+
+
 # TODO: pull everything into classes? typing checker, function checker? etc?
 # TODO: or maybe not... who knows.
 
@@ -142,7 +239,6 @@ class Comparison(object):
         new_ast = ModuleAst.parse(type_visitors, new_type)
 
         changes = self._deep_compare_type(old_ast, new_ast)
-
 
     def _deep_compare_type(self, old_ast, new_ast, changes=None):
         if changes is None:
@@ -231,7 +327,7 @@ def compare_deep(
             changes.update(compare_func(abs_name, old_item, new_item))
         elif isinstance(new_item, Var):
 
-            Comparison().compare_types(old_item.type, new_item.type)
+            # Comparison().compare_types(old_item.type, new_item.type)
 
             if old_item.type != new_item.type:
                 if is_uncovered(old_item.type, new_item.type):
@@ -255,7 +351,6 @@ def compare_func(basename, old_func, new_func):  # type: (str, Func, Func) -> Se
 
     Comparison().compare_types(old_func.returns, new_func.returns)
 
-
     if old_func.returns != new_func.returns:
         level = PATCH if is_uncovered(old_func.returns, new_func.returns) else MAJOR
         changes.add(
@@ -273,7 +368,6 @@ def compare_func(basename, old_func, new_func):  # type: (str, Func, Func) -> Se
 
         if old_arg and new_arg:
             Comparison().compare_types(old_arg.type, new_arg.type)
-
 
         if old_arg == new_arg:
             continue

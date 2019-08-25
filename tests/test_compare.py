@@ -21,18 +21,18 @@ class TestCompare(unittest.TestCase):
 
     def test_no_change(self):
         patchA = self.get_module("patchA")
-        changes = compare(patchA, patchA)
+        changes = Changes().compare(patchA, patchA)
         self.assertEqual(changes, set())
 
         publicA = self.get_module("publicA")
         publicB = self.get_module("publicB", "publicA")
-        changes = compare(publicA, publicB)
+        changes = Changes().compare(publicA, publicB)
         self.assertEqual(changes, set())
 
     def test_patch(self):
         patchA = self.get_module("patchA")
         patchB = self.get_module("patchB", "patchA")
-        changes = compare(patchA, patchB)
+        changes = Changes().compare(patchA, patchB)
         # fmt: off
         self.assertEqual(
             changes,
@@ -51,7 +51,7 @@ class TestCompare(unittest.TestCase):
     def test_minor(self):
         minorA = self.get_module("minorA")
         minorB = self.get_module("minorB", "minorA")
-        changes = compare(minorA, minorB)
+        changes = Changes().compare(minorA, minorB)
         # fmt: off
         self.assertEqual(
             changes,
@@ -75,15 +75,15 @@ class TestCompare(unittest.TestCase):
         # fmt: on
         minorC = self.get_module("minorC")
         minorD = self.get_module("minorD", "minorC")
-        changes = compare(minorC, minorD)
+        changes = Changes().compare(minorC, minorD)
         self.assertEqual(changes, set([Change("minor", "Added", "minorC.something")]))
-        changes = compare([], minorC)
+        changes = Changes().compare([], minorC)
         self.assertEqual(changes, set([Change("minor", "Added", "minorC")]))
 
     def test_major(self):
         majorA = self.get_module("majorA")
         majorB = self.get_module("majorB", "majorA")
-        changes = compare(majorA, majorB)
+        changes = Changes().compare(majorA, majorB)
         # fmt: off
         self.assertEqual(
             changes,
@@ -114,9 +114,9 @@ class TestCompare(unittest.TestCase):
         # fmt: on
         majorC = self.get_module("majorC")
         majorD = self.get_module("majorD", "majorC")
-        changes = compare(majorC, majorD)
+        changes = Changes().compare(majorC, majorD)
         self.assertEqual(changes, set([Change("major", "Removed", "majorC.var_gone")]))
-        changes = compare(majorD, [])
+        changes = Changes().compare(majorD, [])
         self.assertEqual(changes, set([Change("major", "Removed", "majorC")]))
 
 

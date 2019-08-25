@@ -97,6 +97,54 @@ class TestImporter(unittest.TestCase):
                                         (Arg("value", UNKNOWN, POSITIONAL | KEYWORD),),
                                         UNKNOWN,
                                     ),
+                                    Func(
+                                        "__call__",
+                                        (
+                                            Arg(
+                                                "names",
+                                                "typing.Optional[{}]".format(UNKNOWN),
+                                                POSITIONAL | KEYWORD | DEFAULT,
+                                            ),
+                                            Arg(
+                                                "module",
+                                                "typing.Optional[{}]".format(UNKNOWN),
+                                                POSITIONAL | KEYWORD | DEFAULT,
+                                            ),
+                                            Arg(
+                                                "type",
+                                                "typing.Optional[{}]".format(UNKNOWN),
+                                                POSITIONAL | KEYWORD | DEFAULT,
+                                            ),
+                                            Arg(
+                                                "start",
+                                                "int",
+                                                POSITIONAL | KEYWORD | DEFAULT,
+                                            ),
+                                        ) if PY2 else (
+                                            Arg(
+                                                "names",
+                                                "typing.Optional[{}]".format(UNKNOWN),
+                                                POSITIONAL | KEYWORD | DEFAULT,
+                                            ),
+                                            Arg(
+                                                "module",
+                                                "typing.Optional[{}]".format(UNKNOWN),
+                                                KEYWORD | DEFAULT,
+                                            ),
+                                            Arg(
+                                                "qualname",
+                                                "typing.Optional[{}]".format(UNKNOWN),
+                                                KEYWORD | DEFAULT,
+                                            ),
+                                            Arg(
+                                                "type",
+                                                "typing.Optional[{}]".format(UNKNOWN),
+                                                KEYWORD | DEFAULT,
+                                            ),
+                                            Arg("start", "int", KEYWORD | DEFAULT),
+                                        ),
+                                        UNKNOWN,
+                                    ),
                                 ),
                             ),
                             Var("myVar", "typing.List[int]"),
