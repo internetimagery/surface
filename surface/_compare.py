@@ -263,6 +263,7 @@ class ArgAddRemoveCheck(ArgKindCheck):
                 changes.append(Change(MAJOR, "Removed Arg", _arg(path, old_arg.name)))
             elif old_arg.name != new_arg.name:
                 # It's not breaking to rename variadic or positional-only args, but is for anything else
+                print(_arg(path, new_arg.name))
                 level = (
                     PATCH
                     if new_arg.kind == old_arg.kind
