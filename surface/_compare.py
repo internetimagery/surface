@@ -159,7 +159,7 @@ class Changes(object):
         return changes
 
     def _prep_checks(self):
-        return [AddRemoveCheck(), CannotVerifyCheck(), TypeChangeCheck()]
+        return [AddRemoveCheck(), CannotVerifyCheck(), TypeMatchCheck(), ArgKindCheck()]
 
 
 class Check(object):
@@ -198,7 +198,7 @@ class CannotVerifyCheck(Check):
         return [Change(MINOR, "Could not verify", "{}: {}".format(path, info))]
 
 
-class TypeChangeCheck(Check):
+class TypeMatchCheck(Check):
     """ Check for type changes with the same name. """
 
     def will_check(self, old, new):
@@ -208,6 +208,26 @@ class TypeChangeCheck(Check):
 
     def check(self, path, old, new):
         return [Change(MAJOR, "Type Changed", _was(path, type(old), type(new)))]
+
+
+class ArgKindCheck(Check):
+
+    def will_check(self, old, new):
+        return isinstance(old, Func) and isinstance(new, Func)
+
+    def check(self, path, old, new):
+        old_names = {arg.name: arg for arg in old.args}
+        new_names = {arg.name: arg for arg in new.args}
+        changes = []
+        for name, new_arg in new_names.items():
+            old_arg = old_names.get(name)
+            if old_arg is None or old_arg.kind == new_arg.kind:
+                continue
+            # Adding a default to an argument is not a breaking change.
+            level = MINOR if new_arg.kind == (old_arg.kind | DEFAULT) else MAJOR
+            changes.append(Change(level, "Kind Changed", "{}.({})".format(path, name)))
+        return changes
+
 
 
 # Break everything into checks
