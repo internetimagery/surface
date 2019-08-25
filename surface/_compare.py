@@ -263,7 +263,6 @@ class ArgAddRemoveCheck(ArgKindCheck):
                 changes.append(Change(MAJOR, "Removed Arg", _arg(path, old_arg.name)))
             elif old_arg.name != new_arg.name:
                 # It's not breaking to rename variadic or positional-only args, but is for anything else
-                print(_arg(path, new_arg.name))
                 level = (
                     PATCH
                     if new_arg.kind == old_arg.kind
@@ -274,109 +273,33 @@ class ArgAddRemoveCheck(ArgKindCheck):
                     Change(level, "Renamed Arg", _was(_arg(path, new_arg.name), old_arg.name, new_arg.name))
                 )
 
+        old_kwargs, new_kwargs = self._keywords(old.args, new.args)
+        for name in set(old_kwargs) | set(new_kwargs):
+            old_kwarg = old_kwargs.get(name)
+            new_kwarg = new_kwargs.get(name)
+            if old_kwarg == new_kwarg:
+                continue
+            elif old_kwarg is None:
+                return [Change(MINOR, "Added Arg", _arg(path, name))]
+            elif new_kwarg is None:
+                return [Change(MAJOR, "Removed Arg", _arg(path, name))]
         return changes
-
-
-
-
 
     @staticmethod
     def _positionals(old, new):
         return zip_longest(
-            (arg for arg in old if arg.kind & POSITIONAL),
-            (arg for arg in new if arg.kind & POSITIONAL),
+            (arg for arg in old if arg.kind & POSITIONAL or arg.kind == (KEYWORD | VARIADIC)),
+            (arg for arg in new if arg.kind & POSITIONAL or arg.kind == (KEYWORD | VARIADIC)),
+        )
+
+    @staticmethod
+    def _keywords(old, new):
+        return (
+            {arg.name: arg for arg in old if not arg.kind & (POSITIONAL | VARIADIC)},
+            {arg.name: arg for arg in new if not arg.kind & (POSITIONAL | VARIADIC)},
         )
 
 
-
-
-
-
-
-
-    # # Check for changes to positional args, where order matters
-    # for old_arg, new_arg in zip_longest(old_positional, new_positional):
-    #
-    #     if old_arg and new_arg:
-    #         Comparison().compare_types(old_arg.type, new_arg.type)
-    #
-    #     if old_arg == new_arg:
-    #         continue
-    #     elif not old_arg:
-    #         # Adding a new optional arg (ie: arg=None) or variadic (ie *args / **kwargs)
-    #         # is not a breaking change. Adding anything else is.
-    #         level = MINOR if new_arg.kind & (VARIADIC | DEFAULT) else MAJOR
-    #         changes.add(Change(level, "Added Arg", _arg(basename, new_arg.name)))
-    #         continue
-    #     elif not new_arg:
-    #         # Removing an argument is always a breaking change.
-    #         changes.add(Change(MAJOR, "Removed Arg", _arg(basename, old_arg.name)))
-    #         continue
-    #
-    #     name = _arg(basename, new_arg.name)
-    #     if old_arg.name != new_arg.name:
-    #         # It's not breaking to rename variadic or positional-only args, but is for anything else
-    #         level = (
-    #             PATCH
-    #             if new_arg.kind == old_arg.kind
-    #             and (new_arg.kind & VARIADIC or new_arg.kind == POSITIONAL)
-    #             else MAJOR
-    #         )
-    #         changes.add(
-    #             Change(level, "Renamed Arg", _was(name, old_arg.name, new_arg.name))
-    #         )
-    #     if is_subtype(old_arg.type, new_arg.type):
-    #         changes.add(
-    #             Change(MINOR, "Type Changed", _was(name, old_arg.type, new_arg.type))
-    #         )
-    #     elif old_arg.type != new_arg.type:
-    #         level = PATCH if is_uncovered(old_arg.type, new_arg.type) else MAJOR
-    #         changes.add(
-    #             Change(level, "Type Changed", _was(name, old_arg.type, new_arg.type))
-    #         )
-    #     if old_arg.kind != new_arg.kind:
-    #         # Adding a default to an argument is not a breaking change.
-    #         level = MINOR if new_arg.kind == (old_arg.kind | DEFAULT) else MAJOR
-    #         changes.add(Change(level, "Kind Changed", name))
-    #
-    # # Check for changes to keyword only arguments
-    # old_keyword = set(
-    #     "({})".format(arg.name) for arg in old_func.args if arg.kind == KEYWORD
-    # )
-    # new_keyword = set(
-    #     "({})".format(arg.name) for arg in new_func.args if arg.kind == KEYWORD
-    # )
-    # changes.update(compare_names(basename, old_keyword, new_keyword))
-    #
-    # # Finally, check variadic keyword (eg **kwargs)
-    # old_var_keyword = [
-    #     arg for arg in old_func.args if arg.kind & KEYWORD and arg.kind & VARIADIC
-    # ]
-    # new_var_keyword = [
-    #     arg for arg in new_func.args if arg.kind & KEYWORD and arg.kind & VARIADIC
-    # ]
-    # if new_var_keyword == old_var_keyword:
-    #     pass
-    # elif old_var_keyword and not new_var_keyword:
-    #     changes.add(
-    #         Change(MAJOR, "Removed Arg", _arg(basename, old_var_keyword[0].name))
-    #     )
-    # elif new_var_keyword and not old_var_keyword:
-    #     changes.add(Change(MINOR, "Added Arg", _arg(basename, new_var_keyword[0].name)))
-    # elif new_var_keyword[0].name != old_var_keyword[0].name:
-    #     changes.add(
-    #         Change(
-    #             PATCH,
-    #             "Renamed Arg",
-    #             _was(
-    #                 _arg(basename, new_var_keyword[0].name),
-    #                 old_var_keyword[0].name,
-    #                 new_var_keyword[0].name,
-    #             ),
-    #         )
-    #     )
-    #
-    # return changes
 
 
 
