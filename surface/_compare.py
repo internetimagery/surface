@@ -84,7 +84,7 @@ MAJOR = "major"
 
 # Templates
 _was = '{}, Was: "{}", Now: "{}"'.format
-_arg = "{}.({})".format
+_arg = "{}({})".format
 
 typing_reg = re.compile(r"typing\.(\w+)")
 
