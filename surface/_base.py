@@ -21,10 +21,11 @@ UNKNOWN = "~unknown"
 
 # Arg kind types
 
-POSITIONAL = 0b0001
-KEYWORD    = 0b0010
-VARIADIC   = 0b0100
-DEFAULT    = 0b1000
+class Kind(object):
+    POSITIONAL = 0b0001
+    KEYWORD    = 0b0010
+    VARIADIC   = 0b0100
+    DEFAULT    = 0b1000
 
 # Structs
 

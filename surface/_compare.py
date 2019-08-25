@@ -242,9 +242,9 @@ class ArgKindCheck(Check):
             old_arg = old_names.get(name)
             if old_arg is None or old_arg.kind == new_arg.kind:
                 continue
-            if new_arg.kind == old_arg.kind | KEYWORD:
+            if new_arg.kind == old_arg.kind | Kind.KEYWORD:
                 level = MINOR  # Adding keyword is not breaking.
-            elif new_arg.kind == old_arg.kind | DEFAULT:
+            elif new_arg.kind == old_arg.kind | Kind.DEFAULT:
                 level = MINOR  # Adding default is not breaking.
             else:
                 level = MAJOR
@@ -263,7 +263,7 @@ class ArgAddRemoveCheck(ArgKindCheck):
             elif not old_arg:
                 # Adding a new optional arg (ie: arg=None) or variadic (ie *args / **kwargs)
                 # is not a breaking change. Adding anything else is.
-                level = MINOR if new_arg.kind & (VARIADIC | DEFAULT) else MAJOR
+                level = MINOR if new_arg.kind & (Kind.VARIADIC | Kind.DEFAULT) else MAJOR
                 changes.append(Change(level, "Added Arg", _arg(path, new_arg.name)))
             elif not new_arg:
                 # Removing an argument is always a breaking change.
@@ -273,7 +273,7 @@ class ArgAddRemoveCheck(ArgKindCheck):
                 level = (
                     PATCH
                     if new_arg.kind == old_arg.kind
-                    and (new_arg.kind & VARIADIC or new_arg.kind == POSITIONAL)
+                    and (new_arg.kind & Kind.VARIADIC or new_arg.kind == Kind.POSITIONAL)
                     else MAJOR
                 )
                 changes.append(
@@ -302,20 +302,20 @@ class ArgAddRemoveCheck(ArgKindCheck):
             (
                 arg
                 for arg in old
-                if arg.kind & POSITIONAL or arg.kind == (KEYWORD | VARIADIC)
+                if arg.kind & Kind.POSITIONAL or arg.kind == (Kind.KEYWORD | Kind.VARIADIC)
             ),
             (
                 arg
                 for arg in new
-                if arg.kind & POSITIONAL or arg.kind == (KEYWORD | VARIADIC)
+                if arg.kind & Kind.POSITIONAL or arg.kind == (Kind.KEYWORD | Kind.VARIADIC)
             ),
         )
 
     @staticmethod
     def keywords(old, new):
         return (
-            {arg.name: arg for arg in old if not arg.kind & (POSITIONAL | VARIADIC)},
-            {arg.name: arg for arg in new if not arg.kind & (POSITIONAL | VARIADIC)},
+            {arg.name: arg for arg in old if not arg.kind & (Kind.POSITIONAL | Kind.VARIADIC)},
+            {arg.name: arg for arg in new if not arg.kind & (Kind.POSITIONAL | Kind.VARIADIC)},
         )
 
 

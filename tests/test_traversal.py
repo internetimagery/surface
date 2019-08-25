@@ -52,9 +52,9 @@ class TestImporter(unittest.TestCase):
                             Func(
                                 "myMethod",
                                 (
-                                    Arg("a", UNKNOWN, POSITIONAL | KEYWORD),
-                                    Arg("b", UNKNOWN, POSITIONAL | KEYWORD),
-                                    Arg("c", "int", POSITIONAL | KEYWORD | DEFAULT),
+                                    Arg("a", UNKNOWN, Kind.POSITIONAL | Kind.KEYWORD),
+                                    Arg("b", UNKNOWN, Kind.POSITIONAL | Kind.KEYWORD),
+                                    Arg("c", "int", Kind.POSITIONAL | Kind.KEYWORD | Kind.DEFAULT),
                                 ),
                                 UNKNOWN,
                             ),
@@ -62,9 +62,9 @@ class TestImporter(unittest.TestCase):
                             Func(
                                 "myStatic",
                                 (
-                                    Arg("a", UNKNOWN, POSITIONAL | KEYWORD),
-                                    Arg("b", UNKNOWN, POSITIONAL | KEYWORD),
-                                    Arg("c", UNKNOWN, POSITIONAL | VARIADIC),
+                                    Arg("a", UNKNOWN, Kind.POSITIONAL | Kind.KEYWORD),
+                                    Arg("b", UNKNOWN, Kind.POSITIONAL | Kind.KEYWORD),
+                                    Arg("c", UNKNOWN, Kind.POSITIONAL | Kind.VARIADIC),
                                 ),
                                 UNKNOWN,
                             ),
@@ -74,14 +74,14 @@ class TestImporter(unittest.TestCase):
                     Func(
                         "myFunc",
                         (
-                            Arg("a", UNKNOWN, POSITIONAL | KEYWORD),
-                            Arg("b", UNKNOWN, POSITIONAL | KEYWORD),
-                            Arg("c", UNKNOWN, KEYWORD | VARIADIC),
+                            Arg("a", UNKNOWN, Kind.POSITIONAL | Kind.KEYWORD),
+                            Arg("b", UNKNOWN, Kind.POSITIONAL | Kind.KEYWORD),
+                            Arg("c", UNKNOWN, Kind.KEYWORD | Kind.VARIADIC),
                         ),
                         UNKNOWN,
                     ),
                     Func(
-                        "myLambda", (Arg("x", UNKNOWN, POSITIONAL | KEYWORD),), UNKNOWN
+                        "myLambda", (Arg("x", UNKNOWN, Kind.POSITIONAL | Kind.KEYWORD),), UNKNOWN
                     ),
                     Module(
                         "myModule",
@@ -94,7 +94,7 @@ class TestImporter(unittest.TestCase):
                                     Var("myEnumVar", "int"),
                                     Func(
                                         "__new__",
-                                        (Arg("value", UNKNOWN, POSITIONAL | KEYWORD),),
+                                        (Arg("value", UNKNOWN, Kind.POSITIONAL | Kind.KEYWORD),),
                                         UNKNOWN,
                                     ),
                                     Func(
@@ -103,22 +103,22 @@ class TestImporter(unittest.TestCase):
                                             Arg(
                                                 "names",
                                                 "typing.Optional[{}]".format(UNKNOWN),
-                                                POSITIONAL | KEYWORD | DEFAULT,
+                                                Kind.POSITIONAL | Kind.KEYWORD | Kind.DEFAULT,
                                             ),
                                             Arg(
                                                 "module",
                                                 "typing.Optional[{}]".format(UNKNOWN),
-                                                POSITIONAL | KEYWORD | DEFAULT,
+                                                Kind.POSITIONAL | Kind.KEYWORD | Kind.DEFAULT,
                                             ),
                                             Arg(
                                                 "type",
                                                 "typing.Optional[{}]".format(UNKNOWN),
-                                                POSITIONAL | KEYWORD | DEFAULT,
+                                                Kind.POSITIONAL | Kind.KEYWORD | Kind.DEFAULT,
                                             ),
                                             Arg(
                                                 "start",
                                                 "int",
-                                                POSITIONAL | KEYWORD | DEFAULT,
+                                                Kind.POSITIONAL | Kind.KEYWORD | Kind.DEFAULT,
                                             ),
                                         )
                                         if PY2
@@ -126,24 +126,24 @@ class TestImporter(unittest.TestCase):
                                             Arg(
                                                 "names",
                                                 "typing.Optional[{}]".format(UNKNOWN),
-                                                POSITIONAL | KEYWORD | DEFAULT,
+                                                Kind.POSITIONAL | Kind.KEYWORD | Kind.DEFAULT,
                                             ),
                                             Arg(
                                                 "module",
                                                 "typing.Optional[{}]".format(UNKNOWN),
-                                                KEYWORD | DEFAULT,
+                                                Kind.KEYWORD | Kind.DEFAULT,
                                             ),
                                             Arg(
                                                 "qualname",
                                                 "typing.Optional[{}]".format(UNKNOWN),
-                                                KEYWORD | DEFAULT,
+                                                Kind.KEYWORD | Kind.DEFAULT,
                                             ),
                                             Arg(
                                                 "type",
                                                 "typing.Optional[{}]".format(UNKNOWN),
-                                                KEYWORD | DEFAULT,
+                                                Kind.KEYWORD | Kind.DEFAULT,
                                             ),
-                                            Arg("start", "int", KEYWORD | DEFAULT),
+                                            Arg("start", "int", Kind.KEYWORD | Kind.DEFAULT),
                                         ),
                                         UNKNOWN,
                                     ),
@@ -200,14 +200,14 @@ class TestImporter(unittest.TestCase):
                     Func(
                         "myFunc",
                         (
-                            Arg("a", UNKNOWN, POSITIONAL | KEYWORD),
-                            Arg("b", UNKNOWN, POSITIONAL | KEYWORD),
-                            Arg("c", UNKNOWN, KEYWORD | VARIADIC),
+                            Arg("a", UNKNOWN, Kind.POSITIONAL | Kind.KEYWORD),
+                            Arg("b", UNKNOWN, Kind.POSITIONAL | Kind.KEYWORD),
+                            Arg("c", UNKNOWN, Kind.KEYWORD | Kind.VARIADIC),
                         ),
                         UNKNOWN,
                     ),
                     Func(
-                        "myLambda", (Arg("x", UNKNOWN, POSITIONAL | KEYWORD),), UNKNOWN
+                        "myLambda", (Arg("x", UNKNOWN, Kind.POSITIONAL | Kind.KEYWORD),), UNKNOWN
                     ),
                     Module(
                         "myModule",

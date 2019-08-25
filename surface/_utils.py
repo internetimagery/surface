@@ -198,11 +198,11 @@ class FuncSig(IDCache):
     EMPTY = _empty
 
     _KIND_MAP = {
-        "POSITIONAL_ONLY": POSITIONAL,
-        "KEYWORD_ONLY": KEYWORD,
-        "POSITIONAL_OR_KEYWORD": POSITIONAL | KEYWORD,
-        "VAR_POSITIONAL": POSITIONAL | VARIADIC,
-        "VAR_KEYWORD": KEYWORD | VARIADIC,
+        "POSITIONAL_ONLY": Kind.POSITIONAL,
+        "KEYWORD_ONLY": Kind.KEYWORD,
+        "POSITIONAL_OR_KEYWORD": Kind.POSITIONAL | Kind.KEYWORD,
+        "VAR_POSITIONAL": Kind.POSITIONAL | Kind.VARIADIC,
+        "VAR_KEYWORD": Kind.KEYWORD | Kind.VARIADIC,
     }
 
     def __init__(self, func):  # type: (Any) -> None
@@ -277,7 +277,7 @@ class FuncSig(IDCache):
             self._parameters[name] = FuncSigArg(
                 name,
                 self._KIND_MAP[str(param.kind)]
-                | (0 if param.default is self.EMPTY else DEFAULT),
+                | (0 if param.default is self.EMPTY else Kind.DEFAULT),
                 param.default,
                 param.annotation,
                 (self._sig.sources.get(name) or [self._returns.source])[0],

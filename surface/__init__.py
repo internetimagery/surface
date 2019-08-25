@@ -11,10 +11,7 @@ from surface._utils import to_dict, from_dict
 from surface._traversal import Traversal, recurse
 from surface._compare import Changes, PATCH, MINOR, MAJOR, RULES
 from surface._base import (
-    POSITIONAL,
-    KEYWORD,
-    VARIADIC,
-    DEFAULT,
+    Kind,
     Var,
     Arg,
     Func,
@@ -73,9 +70,9 @@ def format_api(api, colour=False, indent=""):  # type: (Iterable[Any], bool, str
                 )
         elif isinstance(item, Arg):
             name = item.name
-            if item.kind & VARIADIC:
+            if item.kind & Kind.VARIADIC:
                 name = "*" + name
-                if item.kind & KEYWORD:
+                if item.kind & Kind.KEYWORD:
                     name = "*" + name
             result += indent + "{}: {}\n".format(name, green(item.type))
         elif isinstance(item, Var):
