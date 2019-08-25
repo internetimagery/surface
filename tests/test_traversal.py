@@ -120,7 +120,9 @@ class TestImporter(unittest.TestCase):
                                                 "int",
                                                 POSITIONAL | KEYWORD | DEFAULT,
                                             ),
-                                        ) if PY2 else (
+                                        )
+                                        if PY2
+                                        else (
                                             Arg(
                                                 "names",
                                                 "typing.Optional[{}]".format(UNKNOWN),
