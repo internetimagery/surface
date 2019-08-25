@@ -118,7 +118,7 @@ class Changes(object):
             ("", {mod.name: mod for mod in old_api}, {mod.name: mod for mod in new_api})
         ]
         checks = self._prep_checks()
-        changes = set() # type: Set[Change]
+        changes = set()  # type: Set[Change]
 
         while stack:
             path, old, new = stack.pop()

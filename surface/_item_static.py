@@ -12,9 +12,9 @@ from surface._item import Item
 
 class AstItem(Item):
 
-    wraps = None # type: Any
+    wraps = None  # type: Any
 
-    __slots__ = [] # type: ignore
+    __slots__ = []  # type: ignore
 
     @classmethod
     def parse(cls, visitors, source):
