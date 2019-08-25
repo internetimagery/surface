@@ -163,6 +163,7 @@ class Changes(object):
             TypeMatchCheck(),
             ArgKindCheck(),
             ArgAddRemoveCheck(),
+            ArgTypeCheck(),
         ]
 
 
@@ -250,7 +251,7 @@ class ArgAddRemoveCheck(ArgKindCheck):
 
     def check(self, path, old, new):
         changes = []
-        for old_arg, new_arg in self._positionals(old.args, new.args):
+        for old_arg, new_arg in self.positionals(old.args, new.args):
             if old_arg == new_arg:
                 continue
             elif not old_arg:
@@ -273,7 +274,7 @@ class ArgAddRemoveCheck(ArgKindCheck):
                     Change(level, "Renamed Arg", _was(_arg(path, new_arg.name), old_arg.name, new_arg.name))
                 )
 
-        old_kwargs, new_kwargs = self._keywords(old.args, new.args)
+        old_kwargs, new_kwargs = self.keywords(old.args, new.args)
         for name in set(old_kwargs) | set(new_kwargs):
             old_kwarg = old_kwargs.get(name)
             new_kwarg = new_kwargs.get(name)
@@ -286,26 +287,60 @@ class ArgAddRemoveCheck(ArgKindCheck):
         return changes
 
     @staticmethod
-    def _positionals(old, new):
+    def positionals(old, new):
         return zip_longest(
             (arg for arg in old if arg.kind & POSITIONAL or arg.kind == (KEYWORD | VARIADIC)),
             (arg for arg in new if arg.kind & POSITIONAL or arg.kind == (KEYWORD | VARIADIC)),
         )
 
     @staticmethod
-    def _keywords(old, new):
+    def keywords(old, new):
         return (
             {arg.name: arg for arg in old if not arg.kind & (POSITIONAL | VARIADIC)},
             {arg.name: arg for arg in new if not arg.kind & (POSITIONAL | VARIADIC)},
         )
 
 
+class ArgTypeCheck(ArgAddRemoveCheck):
 
+    @classmethod
+    def check(self, path, old, new):
+        changes = []
 
+        for old_arg, new_arg in self.positionals(old.args, new.args):
+            if old_arg is None or new_arg is None:
+                continue
+            if old_arg.type != new_arg.type:
+                if is_uncovered(old_arg.type, new_arg.type):
+                    level = PATCH
+                elif is_subtype(old_arg.type, new_arg.type):
+                    level = MINOR
+                else:
+                    level = MAJOR
+                changes.append(Change(level, "Type Changed", _was(_arg(path, new_arg.name), old_arg.type, new_arg.type)))
 
+        old_kwargs, new_kwargs = self.keywords(old.args, new.args)
+        for name, new_kwarg in new_kwargs.items():
+            old_kwarg = old_kwargs.get(name)
+            if old_kwarg is None:
+                continue
+            if old_kwarg.type != new_kwarg.type:
+                if is_uncovered(old_kwarg.type, new_kwarg.type):
+                    level = PATCH
+                elif is_subtype(old_kwarg.type, new_kwarg.type):
+                    level = MINOR
+                else:
+                    level = MAJOR
+                changes.append(Change(level, "Type Changed", _was(_arg(path, new_kwarg.name), old_kwarg.type, new_kwarg.type)))
 
+        if old.returns != new.returns:
+            if is_uncovered(old.returns, new.returns):
+                level = PATCH
+            else:
+                level = MAJOR
+            changes.append(Change(level, "Return Type Changed", _was(path, old.returns, new.returns)))
 
-
+        return changes
 
 
 
