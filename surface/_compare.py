@@ -191,7 +191,9 @@ class CannotVerifyCheck(Check):
         return isinstance(old, API.Unknown) or isinstance(new, API.Unknown)
 
     def check(self, path, old, new):
-        info = old.info if isinstance(old, API.Unknown) else new.info
+        if isinstance(old, API.Unknown) and isinstance(new, API.Unknown) and old.type == new.type:
+            return [] # Could not verify, but type remains the same. Likely no change.
+        info = new.info if isinstance(new, API.Unknown) else old.info
         return [Change(SemVer.MINOR, "Could not verify", "{}: {}".format(path, info))]
 
 

@@ -27,6 +27,10 @@ from surface._item_live import (
 
 LOG = logging.getLogger(__name__)
 
+
+CircularWarn = "Circular Reference"
+DepthWarn = "Depth Exceeded"
+
 import_reg = re.compile(r"__init__\.(py[cwd]?|so)$")
 
 
@@ -78,7 +82,7 @@ class Traversal(object):
             EnumItem: lambda n, s, p: API.Var(n, s.get_type()),
             VarItem: lambda n, s, p: API.Var(n, s.get_type()),
             BuiltinItem: lambda n, s, p: API.Var(n, s.get_type()),
-            ErrorItem: lambda n, s, p: API.Unknown(n, clamp_string(clean_repr(s.item))),
+            ErrorItem: lambda n, s, p: API.Unknown(n, s.type, clamp_string(clean_repr(s.item))),
             ClassItem: lambda n, s, p: API.Class(
                 n, s.get_type(), tuple(self.walk(s, n, p.copy()))
             ),
@@ -127,9 +131,8 @@ class Traversal(object):
             if item_id in path:
                 yield API.Unknown(
                     current_name,
-                    "Circular Reference: {}".format(
-                        clamp_string(clean_repr(repr(current_item.item)))
-                    ),
+                    CircularWarn,
+                    clamp_string(clean_repr(repr(current_item.item))),
                 )
                 return
             path.add(item_id)
@@ -138,9 +141,8 @@ class Traversal(object):
             if depth_exceeded:
                 yield API.Unknown(
                     name,
-                    "Depth Exceeded: {}".format(
-                        clamp_string(clean_repr(repr(item.item)))
-                    ),
+                    DepthWarn,
+                    clamp_string(clean_repr(repr(item.item))),
                 )
                 continue
 

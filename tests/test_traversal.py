@@ -3,7 +3,7 @@ import os.path
 import unittest
 
 from surface import get_api
-from surface._traversal import Traversal, recurse
+from surface._traversal import Traversal, recurse, CircularWarn, DepthWarn
 from surface._base import *
 from surface._utils import clean_repr
 
@@ -209,27 +209,23 @@ class TestImporter(unittest.TestCase):
                         (
                             API.Unknown(
                                 "myMethod",
-                                "Depth Exceeded: {}".format(
-                                    clean_repr(repr(test_mod_basic.myClass.myMethod))
-                                ),
+                                DepthWarn,
+                                clean_repr(repr(test_mod_basic.myClass.myMethod)),
                             ),
                             API.Unknown(
                                 "myProp",
-                                "Depth Exceeded: {}".format(
-                                    clean_repr(repr(test_mod_basic.myClass.myProp))
-                                ),
+                                DepthWarn,
+                                clean_repr(repr(test_mod_basic.myClass.myProp)),
                             ),
                             API.Unknown(
                                 "myStatic",
-                                "Depth Exceeded: {}".format(
-                                    clean_repr(repr(test_mod_basic.myClass.myStatic))
-                                ),
+                                DepthWarn,
+                                clean_repr(repr(test_mod_basic.myClass.myStatic)),
                             ),
                             API.Unknown(
                                 "myVar",
-                                "Depth Exceeded: {}".format(
-                                    clean_repr(repr(test_mod_basic.myClass.myVar))
-                                ),
+                                DepthWarn,
+                                clean_repr(repr(test_mod_basic.myClass.myVar)),
                             ),
                         ),
                     ),
@@ -253,17 +249,15 @@ class TestImporter(unittest.TestCase):
                         (
                             API.Unknown(
                                 "MyEnumGroup",
-                                "Depth Exceeded: {}".format(
-                                    clean_repr(
-                                        repr(test_mod_basic.myModule.MyEnumGroup)
-                                    )
+                                DepthWarn,
+                                clean_repr(
+                                    repr(test_mod_basic.myModule.MyEnumGroup)
                                 ),
                             ),
                             API.Unknown(
                                 "myVar",
-                                "Depth Exceeded: {}".format(
-                                    clean_repr(repr(test_mod_basic.myModule.myVar))
-                                ),
+                                DepthWarn,
+                                clean_repr(repr(test_mod_basic.myModule.myVar)),
                             ),
                         ),
                     ),
@@ -314,7 +308,7 @@ class TestImporter(unittest.TestCase):
                     API.Class(
                         "Methods",
                         (
-                            API.Unknown("err_method", "more like funtime error"),
+                            API.Unknown("err_method", "RuntimeError", "more like funtime error"),
                             API.Var("ok_method", "str"),
                         ),
                     ),
@@ -346,7 +340,8 @@ class TestImporter(unittest.TestCase):
                                         (
                                             API.Unknown(
                                                 "cycle",
-                                                "Circular Reference: <class 'test_mod_basic.cycleA.CycleA'>",
+                                                CircularWarn,
+                                                "<class 'test_mod_basic.cycleA.CycleA'>",
                                             ),
                                         ),
                                     ),

@@ -30,7 +30,7 @@ class API(object):
     Func    = _nt("Func",    ("name", "args", "returns"))
     Class   = _nt("Class",   ("name", "path", "body"))
     Module  = _nt("Module",  ("name", "path", "body"))
-    Unknown = _nt("Unknown", ("name", "info"))
+    Unknown = _nt("Unknown", ("name", "type", "info"))
 # fmt: on
 
 Change = _nt("Change", ("level", "type", "info"))
