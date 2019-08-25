@@ -161,6 +161,7 @@ class Changes(object):
             AddRemoveCheck(),
             CannotVerifyCheck(),
             TypeMatchCheck(),
+            TypingCheck(),
             ArgKindCheck(),
             ArgAddRemoveCheck(),
             ArgTypeCheck(),
@@ -220,6 +221,22 @@ class TypeMatchCheck(Check):
 
     def check(self, path, old, new):
         return [Change(MAJOR, "Type Changed", _was(path, type(old), type(new)))]
+
+class TypingCheck(Check):
+
+    def will_check(self, old, new):
+        return isinstance(old, Var) and isinstance(new, Var)
+
+    def check(self, path, old, new):
+        if old.type == new.type:
+            return []
+        if is_uncovered(old.type, new.type):
+            level = PATCH
+        elif is_subtype(old.type, new.type):
+            level = MINOR
+        else:
+            level = MAJOR
+        return [Change(level, "Type Changed", _was(path, old.type, new.type))]
 
 
 class ArgKindCheck(Check):
