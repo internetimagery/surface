@@ -41,118 +41,154 @@ class TestImporter(unittest.TestCase):
         data = Traversal().traverse(test_mod_basic)
         self.assertEqual(
             data,
-            Module(
+            API.Module(
                 "test_mod_basic",
                 "test_mod_basic",
                 (
-                    Class(
+                    API.Class(
                         "myClass",
                         "test_mod_basic.myClass",
                         (
-                            Func(
+                            API.Func(
                                 "myMethod",
                                 (
-                                    Arg("a", UNKNOWN, Kind.POSITIONAL | Kind.KEYWORD),
-                                    Arg("b", UNKNOWN, Kind.POSITIONAL | Kind.KEYWORD),
-                                    Arg("c", "int", Kind.POSITIONAL | Kind.KEYWORD | Kind.DEFAULT),
+                                    API.Arg(
+                                        "a", UNKNOWN, Kind.POSITIONAL | Kind.KEYWORD
+                                    ),
+                                    API.Arg(
+                                        "b", UNKNOWN, Kind.POSITIONAL | Kind.KEYWORD
+                                    ),
+                                    API.Arg(
+                                        "c",
+                                        "int",
+                                        Kind.POSITIONAL | Kind.KEYWORD | Kind.DEFAULT,
+                                    ),
                                 ),
                                 UNKNOWN,
                             ),
-                            Var("myProp", "int"),
-                            Func(
+                            API.Var("myProp", "int"),
+                            API.Func(
                                 "myStatic",
                                 (
-                                    Arg("a", UNKNOWN, Kind.POSITIONAL | Kind.KEYWORD),
-                                    Arg("b", UNKNOWN, Kind.POSITIONAL | Kind.KEYWORD),
-                                    Arg("c", UNKNOWN, Kind.POSITIONAL | Kind.VARIADIC),
+                                    API.Arg(
+                                        "a", UNKNOWN, Kind.POSITIONAL | Kind.KEYWORD
+                                    ),
+                                    API.Arg(
+                                        "b", UNKNOWN, Kind.POSITIONAL | Kind.KEYWORD
+                                    ),
+                                    API.Arg(
+                                        "c", UNKNOWN, Kind.POSITIONAL | Kind.VARIADIC
+                                    ),
                                 ),
                                 UNKNOWN,
                             ),
-                            Var("myVar", "int"),
+                            API.Var("myVar", "int"),
                         ),
                     ),
-                    Func(
+                    API.Func(
                         "myFunc",
                         (
-                            Arg("a", UNKNOWN, Kind.POSITIONAL | Kind.KEYWORD),
-                            Arg("b", UNKNOWN, Kind.POSITIONAL | Kind.KEYWORD),
-                            Arg("c", UNKNOWN, Kind.KEYWORD | Kind.VARIADIC),
+                            API.Arg("a", UNKNOWN, Kind.POSITIONAL | Kind.KEYWORD),
+                            API.Arg("b", UNKNOWN, Kind.POSITIONAL | Kind.KEYWORD),
+                            API.Arg("c", UNKNOWN, Kind.KEYWORD | Kind.VARIADIC),
                         ),
                         UNKNOWN,
                     ),
-                    Func(
-                        "myLambda", (Arg("x", UNKNOWN, Kind.POSITIONAL | Kind.KEYWORD),), UNKNOWN
+                    API.Func(
+                        "myLambda",
+                        (API.Arg("x", UNKNOWN, Kind.POSITIONAL | Kind.KEYWORD),),
+                        UNKNOWN,
                     ),
-                    Module(
+                    API.Module(
                         "myModule",
                         "test_mod_basic.myModule",
                         (
-                            Class(
+                            API.Class(
                                 "MyEnumGroup",
                                 "test_mod_basic.myModule.MyEnumGroup",
                                 (
-                                    Var("myEnumVar", "int"),
-                                    Func(
+                                    API.Var("myEnumVar", "int"),
+                                    API.Func(
                                         "__new__",
-                                        (Arg("value", UNKNOWN, Kind.POSITIONAL | Kind.KEYWORD),),
+                                        (
+                                            API.Arg(
+                                                "value",
+                                                UNKNOWN,
+                                                Kind.POSITIONAL | Kind.KEYWORD,
+                                            ),
+                                        ),
                                         UNKNOWN,
                                     ),
-                                    Func(
+                                    API.Func(
                                         "__call__",
                                         (
-                                            Arg(
+                                            API.Arg(
                                                 "names",
                                                 "typing.Optional[{}]".format(UNKNOWN),
-                                                Kind.POSITIONAL | Kind.KEYWORD | Kind.DEFAULT,
+                                                Kind.POSITIONAL
+                                                | Kind.KEYWORD
+                                                | Kind.DEFAULT,
                                             ),
-                                            Arg(
+                                            API.Arg(
                                                 "module",
                                                 "typing.Optional[{}]".format(UNKNOWN),
-                                                Kind.POSITIONAL | Kind.KEYWORD | Kind.DEFAULT,
+                                                Kind.POSITIONAL
+                                                | Kind.KEYWORD
+                                                | Kind.DEFAULT,
                                             ),
-                                            Arg(
+                                            API.Arg(
                                                 "type",
                                                 "typing.Optional[{}]".format(UNKNOWN),
-                                                Kind.POSITIONAL | Kind.KEYWORD | Kind.DEFAULT,
+                                                Kind.POSITIONAL
+                                                | Kind.KEYWORD
+                                                | Kind.DEFAULT,
                                             ),
-                                            Arg(
+                                            API.Arg(
                                                 "start",
                                                 "int",
-                                                Kind.POSITIONAL | Kind.KEYWORD | Kind.DEFAULT,
+                                                Kind.POSITIONAL
+                                                | Kind.KEYWORD
+                                                | Kind.DEFAULT,
                                             ),
                                         )
                                         if PY2
                                         else (
-                                            Arg(
+                                            API.Arg(
                                                 "names",
                                                 "typing.Optional[{}]".format(UNKNOWN),
-                                                Kind.POSITIONAL | Kind.KEYWORD | Kind.DEFAULT,
+                                                Kind.POSITIONAL
+                                                | Kind.KEYWORD
+                                                | Kind.DEFAULT,
                                             ),
-                                            Arg(
+                                            API.Arg(
                                                 "module",
                                                 "typing.Optional[{}]".format(UNKNOWN),
                                                 Kind.KEYWORD | Kind.DEFAULT,
                                             ),
-                                            Arg(
+                                            API.Arg(
                                                 "qualname",
                                                 "typing.Optional[{}]".format(UNKNOWN),
                                                 Kind.KEYWORD | Kind.DEFAULT,
                                             ),
-                                            Arg(
+                                            API.Arg(
                                                 "type",
                                                 "typing.Optional[{}]".format(UNKNOWN),
                                                 Kind.KEYWORD | Kind.DEFAULT,
                                             ),
-                                            Arg("start", "int", Kind.KEYWORD | Kind.DEFAULT),
+                                            API.Arg(
+                                                "start",
+                                                "int",
+                                                Kind.KEYWORD | Kind.DEFAULT,
+                                            ),
                                         ),
                                         UNKNOWN,
                                     ),
                                 ),
                             ),
-                            Var("myVar", "typing.List[int]"),
+                            API.Var("myVar", "typing.List[int]"),
                         ),
                     ),
-                    Var("myVar", "int"),
+                    API.Var("myVar", "int"),
                 ),
             ),
         )
@@ -163,33 +199,33 @@ class TestImporter(unittest.TestCase):
         data = Traversal(depth=1).traverse(test_mod_basic)
         self.assertEqual(
             data,
-            Module(
+            API.Module(
                 "test_mod_basic",
                 "test_mod_basic",
                 (
-                    Class(
+                    API.Class(
                         "myClass",
                         "test_mod_basic.myClass",
                         (
-                            Unknown(
+                            API.Unknown(
                                 "myMethod",
                                 "Depth Exceeded: {}".format(
                                     clean_repr(repr(test_mod_basic.myClass.myMethod))
                                 ),
                             ),
-                            Unknown(
+                            API.Unknown(
                                 "myProp",
                                 "Depth Exceeded: {}".format(
                                     clean_repr(repr(test_mod_basic.myClass.myProp))
                                 ),
                             ),
-                            Unknown(
+                            API.Unknown(
                                 "myStatic",
                                 "Depth Exceeded: {}".format(
                                     clean_repr(repr(test_mod_basic.myClass.myStatic))
                                 ),
                             ),
-                            Unknown(
+                            API.Unknown(
                                 "myVar",
                                 "Depth Exceeded: {}".format(
                                     clean_repr(repr(test_mod_basic.myClass.myVar))
@@ -197,23 +233,25 @@ class TestImporter(unittest.TestCase):
                             ),
                         ),
                     ),
-                    Func(
+                    API.Func(
                         "myFunc",
                         (
-                            Arg("a", UNKNOWN, Kind.POSITIONAL | Kind.KEYWORD),
-                            Arg("b", UNKNOWN, Kind.POSITIONAL | Kind.KEYWORD),
-                            Arg("c", UNKNOWN, Kind.KEYWORD | Kind.VARIADIC),
+                            API.Arg("a", UNKNOWN, Kind.POSITIONAL | Kind.KEYWORD),
+                            API.Arg("b", UNKNOWN, Kind.POSITIONAL | Kind.KEYWORD),
+                            API.Arg("c", UNKNOWN, Kind.KEYWORD | Kind.VARIADIC),
                         ),
                         UNKNOWN,
                     ),
-                    Func(
-                        "myLambda", (Arg("x", UNKNOWN, Kind.POSITIONAL | Kind.KEYWORD),), UNKNOWN
+                    API.Func(
+                        "myLambda",
+                        (API.Arg("x", UNKNOWN, Kind.POSITIONAL | Kind.KEYWORD),),
+                        UNKNOWN,
                     ),
-                    Module(
+                    API.Module(
                         "myModule",
                         "test_mod_basic.myModule",
                         (
-                            Unknown(
+                            API.Unknown(
                                 "MyEnumGroup",
                                 "Depth Exceeded: {}".format(
                                     clean_repr(
@@ -221,7 +259,7 @@ class TestImporter(unittest.TestCase):
                                     )
                                 ),
                             ),
-                            Unknown(
+                            API.Unknown(
                                 "myVar",
                                 "Depth Exceeded: {}".format(
                                     clean_repr(repr(test_mod_basic.myModule.myVar))
@@ -229,7 +267,7 @@ class TestImporter(unittest.TestCase):
                             ),
                         ),
                     ),
-                    Var("myVar", "int"),
+                    API.Var("myVar", "int"),
                 ),
             ),
         )
@@ -240,10 +278,10 @@ class TestImporter(unittest.TestCase):
         data = Traversal(all_filter=True).traverse(test_all_filter)
         self.assertEqual(
             data,
-            Module(
+            API.Module(
                 "test_all_filter",
                 "test_all_filter",
-                (Func("A", (), UNKNOWN), Func("B", (), UNKNOWN)),
+                (API.Func("A", (), UNKNOWN), API.Func("B", (), UNKNOWN)),
             ),
         )
 
@@ -253,10 +291,13 @@ class TestImporter(unittest.TestCase):
         data = Traversal(exclude_modules=True).traverse(test_exclude_modules)
         self.assertEqual(
             data,
-            Module(
+            API.Module(
                 "test_exclude_modules",
                 "test_exclude_modules",
-                (Module("af", "test_all_filter", ()), Func("func", (), UNKNOWN)),
+                (
+                    API.Module("af", "test_all_filter", ()),
+                    API.Func("func", (), UNKNOWN),
+                ),
             ),
         )
 
@@ -266,15 +307,15 @@ class TestImporter(unittest.TestCase):
         data = Traversal().traverse(errMethod)
         self.assertEqual(
             data,
-            Module(
+            API.Module(
                 "errMethod",
                 "test_mod_errors.errMethod",
                 (
-                    Class(
+                    API.Class(
                         "Methods",
                         (
-                            Unknown("err_method", "more like funtime error"),
-                            Var("ok_method", "str"),
+                            API.Unknown("err_method", "more like funtime error"),
+                            API.Var("ok_method", "str"),
                         ),
                     ),
                 ),
@@ -287,23 +328,23 @@ class TestImporter(unittest.TestCase):
         data = Traversal().traverse(cycleA)
         self.assertEqual(
             data,
-            Module(
+            API.Module(
                 "cycleA",
                 "test_mod_basic.cycleA",
                 (
-                    Class(
+                    API.Class(
                         "CycleA",
                         "test_mod_basic.cycleA.CycleA",
                         (
-                            Class(
+                            API.Class(
                                 "cycle",
                                 "test_mod_basic.cycleB.CycleB",
                                 (
-                                    Class(
+                                    API.Class(
                                         "cycle",
                                         "test_mod_basic.cycleA.CycleA",
                                         (
-                                            Unknown(
+                                            API.Unknown(
                                                 "cycle",
                                                 "Circular Reference: <class 'test_mod_basic.cycleA.CycleA'>",
                                             ),

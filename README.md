@@ -82,5 +82,5 @@ Rough todo...
 - [x] clean stuff up
 - [ ] When comparing types, check if they line up with an exposed alias.
 - [ ] use import hook to track import time properly (nice to have)
-- [ ] Unknown have a type field for comparisons. Instead of full text comparison.
+- [ ] API.Unknown have a type field for comparisons. Instead of full text comparison.
 - [ ] More and more and more tests.

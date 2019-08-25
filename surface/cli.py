@@ -121,10 +121,10 @@ def run_compare(args):  # type: (Any) -> int
 
     old_api = sorted(
         (_surface.from_dict(mod) for mod in _json.loads(old_data)), key=lambda m: m.path
-    )  # type: List[_surface.Module]
+    )  # type: List[_surface.API.Module]
     new_api = sorted(
         (_surface.from_dict(mod) for mod in _json.loads(new_data)), key=lambda m: m.path
-    )  # type: List[_surface.Module]
+    )  # type: List[_surface.API.Module]
 
     purple = ("{}" if args.no_colour else "\033[35m{}\033[0m").format
     colours = {

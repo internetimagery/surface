@@ -105,7 +105,7 @@ class AttributeAst(AstItem):
         elif isinstance(item, ast.Name):
             chain.append(item.id)
         else:
-            raise TypeError("Unknown type {}".format(item))
+            raise TypeError("API.Unknown type {}".format(item))
         return chain
 
 

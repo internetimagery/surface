@@ -10,21 +10,12 @@ import importlib as _importlib
 from surface._utils import to_dict, from_dict
 from surface._traversal import Traversal, recurse
 from surface._compare import Changes, PATCH, MINOR, MAJOR, RULES
-from surface._base import (
-    Kind,
-    Var,
-    Arg,
-    Func,
-    Class,
-    Module,
-    Unknown,
-    UNKNOWN,
-)
+from surface._base import Kind, API, UNKNOWN
 
 
 def get_api(
     name, exclude_modules=False, all_filter=False, depth=6
-):  # type: (str, bool, bool, int) -> Module
+):  # type: (str, bool, bool, int) -> API.Module
     """
         Get a representation of the provided publicly exposed API.
 
@@ -35,7 +26,7 @@ def get_api(
             depth (int): Limit how far to spider out into the modules.
 
         Returns:
-            Tuple[Module, ...]: Representation of API
+            Tuple[API.Module, ...]: Representation of API
     """
     mod = _importlib.import_module(name)
     traversal = Traversal(
@@ -53,13 +44,13 @@ def format_api(api, colour=False, indent=""):  # type: (Iterable[Any], bool, str
     cyan = ("\033[36m{}\033[0m" if colour else "{}").format
     green = ("\033[32m{}\033[0m" if colour else "{}").format
     for item in api:
-        if isinstance(item, (Class, Module)):
+        if isinstance(item, (API.Class, API.Module)):
             result += indent + "{} {}:\n".format(
                 magenta(item.__class__.__name__.lower()), cyan(item.name)
             )
             if item.body:
                 result += format_api(item.body, colour, indent + "    ")
-        elif isinstance(item, Func):
+        elif isinstance(item, API.Func):
             if item.args:
                 result += indent + "{} {}(\n".format(magenta("def"), cyan(item.name))
                 result += format_api(item.args, colour, indent + "    ")
@@ -68,16 +59,16 @@ def format_api(api, colour=False, indent=""):  # type: (Iterable[Any], bool, str
                 result += indent + "{} {}(): -> {}\n".format(
                     magenta("def"), cyan(item.name), green(item.returns)
                 )
-        elif isinstance(item, Arg):
+        elif isinstance(item, API.Arg):
             name = item.name
             if item.kind & Kind.VARIADIC:
                 name = "*" + name
                 if item.kind & Kind.KEYWORD:
                     name = "*" + name
             result += indent + "{}: {}\n".format(name, green(item.type))
-        elif isinstance(item, Var):
+        elif isinstance(item, API.Var):
             result += indent + "{}: {}\n".format(item.name, green(item.type))
-        elif isinstance(item, Unknown):
+        elif isinstance(item, API.Unknown):
             result += indent + "{}? {}\n".format(item.name, yellow(item.info))
         else:
             result += indent + str(item) + "\n"

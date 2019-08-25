@@ -74,26 +74,26 @@ class Traversal(object):
         self.all_filter = all_filter  # Mimic "import *"
         self.depth = depth  # How far down the rabbit hole do we go?
         self.item_map = {
-            NoneItem: lambda n, s, p: Var(n, "None"),
-            EnumItem: lambda n, s, p: Var(n, s.get_type()),
-            VarItem: lambda n, s, p: Var(n, s.get_type()),
-            BuiltinItem: lambda n, s, p: Var(n, s.get_type()),
-            ErrorItem: lambda n, s, p: Unknown(n, clamp_string(clean_repr(s.item))),
-            ClassItem: lambda n, s, p: Class(
+            NoneItem: lambda n, s, p: API.Var(n, "None"),
+            EnumItem: lambda n, s, p: API.Var(n, s.get_type()),
+            VarItem: lambda n, s, p: API.Var(n, s.get_type()),
+            BuiltinItem: lambda n, s, p: API.Var(n, s.get_type()),
+            ErrorItem: lambda n, s, p: API.Unknown(n, clamp_string(clean_repr(s.item))),
+            ClassItem: lambda n, s, p: API.Class(
                 n, s.get_type(), tuple(self.walk(s, n, p.copy()))
             ),
-            ModuleItem: lambda n, s, p: Module(
+            ModuleItem: lambda n, s, p: API.Module(
                 n,
                 s.get_type(),
                 tuple([] if self.exclude_modules else self.walk(s, n, p.copy())),
             ),
-            FunctionItem: lambda n, s, p: Func(
+            FunctionItem: lambda n, s, p: API.Func(
                 n, tuple(self.walk(s, n, set(p))), s.get_return_type()
             ),
-            ParameterItem: lambda n, s, p: Arg(n, s.get_type(), s.get_kind()),
+            ParameterItem: lambda n, s, p: API.Arg(n, s.get_type(), s.get_kind()),
         }  # type: Dict[Any, Any]
 
-    def traverse(self, module):  # type: (Any) -> Module
+    def traverse(self, module):  # type: (Any) -> API.Module
         """ Entry point to generating an API representation. """
         visitors = [
             NoneItem,
@@ -108,7 +108,7 @@ class Traversal(object):
         ModuleItem.ALL_FILTER = self.all_filter
         name = module.__name__.rsplit(".", 1)[-1]
         item = ModuleItem.wrap(visitors, module)
-        api = Module(name, module.__name__, tuple(self.walk(item, name, set())))
+        api = API.Module(name, module.__name__, tuple(self.walk(item, name, set())))
         return api
 
     def walk(
@@ -125,7 +125,7 @@ class Traversal(object):
 
             item_id = id(current_item.item)
             if item_id in path:
-                yield Unknown(
+                yield API.Unknown(
                     current_name,
                     "Circular Reference: {}".format(
                         clamp_string(clean_repr(repr(current_item.item)))
@@ -136,7 +136,7 @@ class Traversal(object):
 
         for name, item in current_item.items():
             if depth_exceeded:
-                yield Unknown(
+                yield API.Unknown(
                     name,
                     "Depth Exceeded: {}".format(
                         clamp_string(clean_repr(repr(item.item)))

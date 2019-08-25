@@ -119,7 +119,9 @@ def to_dict(node):  # type: (Any) -> Any
         into a dict representation for serialization."""
     data = {"class": type(node).__name__}  # type: Dict[str, Any]
     for key, val in node._asdict().items():
-        if isinstance(val, (Var, Arg, Func, Class, Module, Unknown)):
+        if isinstance(
+            val, (API.Var, API.Arg, API.Func, API.Class, API.Module, API.Unknown)
+        ):
             data[key] = to_dict(val)
         elif isinstance(val, (tuple, list)):
             data[key] = [to_dict(n) for n in val]

@@ -72,7 +72,7 @@ MINOR:
 PATCH:
   * Renaming positional-only-arguments.
   * Adding new typing information (ie was ~unknown, now concrete type).
-  * Unknown type remains Unknown.
+  * API.Unknown type remains API.Unknown.
   * Changing nothing.
 """
 
@@ -111,7 +111,7 @@ subtype_map = {
 class Changes(object):
     def compare(
         self, old_api, new_api
-    ):  # type: (Sequence[Module], Sequence[Module]) -> Set[Change]
+    ):  # type: (Sequence[API.Module], Sequence[API.Module]) -> Set[Change]
         """ Run checks over old and new API representations. """
 
         stack = [
@@ -132,8 +132,8 @@ class Changes(object):
                 for check in checks:
                     if check.will_check(old_child, new_child):
                         changes.update(check.check(new_path, old_child, new_child))
-                if isinstance(old_child, (Module, Class)) and isinstance(
-                    new_child, (Module, Class)
+                if isinstance(old_child, (API.Module, API.Class)) and isinstance(
+                    new_child, (API.Module, API.Class)
                 ):
                     stack.append(
                         (
@@ -187,10 +187,10 @@ class CannotVerifyCheck(Check):
     def will_check(self, old, new):
         if old is None or new is None:
             return False
-        return isinstance(old, Unknown) or isinstance(new, Unknown)
+        return isinstance(old, API.Unknown) or isinstance(new, API.Unknown)
 
     def check(self, path, old, new):
-        info = old.info if isinstance(old, Unknown) else new.info
+        info = old.info if isinstance(old, API.Unknown) else new.info
         return [Change(MINOR, "Could not verify", "{}: {}".format(path, info))]
 
 
@@ -202,8 +202,8 @@ class TypeMatchCheck(Check):
             old is None
             or new is None
             or type(old) == type(new)
-            or isinstance(old, Unknown)
-            or isinstance(new, Unknown)
+            or isinstance(old, API.Unknown)
+            or isinstance(new, API.Unknown)
         ):
             return False
         return True
@@ -214,7 +214,7 @@ class TypeMatchCheck(Check):
 
 class TypingCheck(Check):
     def will_check(self, old, new):
-        return isinstance(old, Var) and isinstance(new, Var)
+        return isinstance(old, API.Var) and isinstance(new, API.Var)
 
     def check(self, path, old, new):
         if old.type == new.type:
@@ -232,7 +232,7 @@ class ArgKindCheck(Check):
     """ Check if function arguments changed their type """
 
     def will_check(self, old, new):
-        return isinstance(old, Func) and isinstance(new, Func)
+        return isinstance(old, API.Func) and isinstance(new, API.Func)
 
     def check(self, path, old, new):
         old_names = {arg.name: arg for arg in old.args}
@@ -263,23 +263,29 @@ class ArgAddRemoveCheck(ArgKindCheck):
             elif not old_arg:
                 # Adding a new optional arg (ie: arg=None) or variadic (ie *args / **kwargs)
                 # is not a breaking change. Adding anything else is.
-                level = MINOR if new_arg.kind & (Kind.VARIADIC | Kind.DEFAULT) else MAJOR
-                changes.append(Change(level, "Added Arg", _arg(path, new_arg.name)))
+                level = (
+                    MINOR if new_arg.kind & (Kind.VARIADIC | Kind.DEFAULT) else MAJOR
+                )
+                changes.append(Change(level, "Added API.Arg", _arg(path, new_arg.name)))
             elif not new_arg:
                 # Removing an argument is always a breaking change.
-                changes.append(Change(MAJOR, "Removed Arg", _arg(path, old_arg.name)))
+                changes.append(
+                    Change(MAJOR, "Removed API.Arg", _arg(path, old_arg.name))
+                )
             elif old_arg.name != new_arg.name:
                 # It's not breaking to rename variadic or positional-only args, but is for anything else
                 level = (
                     PATCH
                     if new_arg.kind == old_arg.kind
-                    and (new_arg.kind & Kind.VARIADIC or new_arg.kind == Kind.POSITIONAL)
+                    and (
+                        new_arg.kind & Kind.VARIADIC or new_arg.kind == Kind.POSITIONAL
+                    )
                     else MAJOR
                 )
                 changes.append(
                     Change(
                         level,
-                        "Renamed Arg",
+                        "Renamed API.Arg",
                         _was(_arg(path, new_arg.name), old_arg.name, new_arg.name),
                     )
                 )
@@ -291,9 +297,9 @@ class ArgAddRemoveCheck(ArgKindCheck):
             if old_kwarg == new_kwarg:
                 continue
             elif old_kwarg is None:
-                return [Change(MINOR, "Added Arg", _arg(path, name))]
+                return [Change(MINOR, "Added API.Arg", _arg(path, name))]
             elif new_kwarg is None:
-                return [Change(MAJOR, "Removed Arg", _arg(path, name))]
+                return [Change(MAJOR, "Removed API.Arg", _arg(path, name))]
         return changes
 
     @staticmethod
@@ -302,20 +308,30 @@ class ArgAddRemoveCheck(ArgKindCheck):
             (
                 arg
                 for arg in old
-                if arg.kind & Kind.POSITIONAL or arg.kind == (Kind.KEYWORD | Kind.VARIADIC)
+                if arg.kind & Kind.POSITIONAL
+                or arg.kind == (Kind.KEYWORD | Kind.VARIADIC)
             ),
             (
                 arg
                 for arg in new
-                if arg.kind & Kind.POSITIONAL or arg.kind == (Kind.KEYWORD | Kind.VARIADIC)
+                if arg.kind & Kind.POSITIONAL
+                or arg.kind == (Kind.KEYWORD | Kind.VARIADIC)
             ),
         )
 
     @staticmethod
     def keywords(old, new):
         return (
-            {arg.name: arg for arg in old if not arg.kind & (Kind.POSITIONAL | Kind.VARIADIC)},
-            {arg.name: arg for arg in new if not arg.kind & (Kind.POSITIONAL | Kind.VARIADIC)},
+            {
+                arg.name: arg
+                for arg in old
+                if not arg.kind & (Kind.POSITIONAL | Kind.VARIADIC)
+            },
+            {
+                arg.name: arg
+                for arg in new
+                if not arg.kind & (Kind.POSITIONAL | Kind.VARIADIC)
+            },
         )
 
 
