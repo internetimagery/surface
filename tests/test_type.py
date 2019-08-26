@@ -104,8 +104,7 @@ class TestComments(unittest.TestCase):
             "typing.Callable[[int, typing.List[str], typing.Dict[str, typing.List[str]]], None]",
         )
         self.assertEqual(
-            FuncType(test_comments.func4).as_var(),
-            "typing.Callable[..., ~unknown]",
+            FuncType(test_comments.func4).as_var(), "typing.Callable[..., ~unknown]"
         )
 
 

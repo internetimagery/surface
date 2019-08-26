@@ -15,9 +15,9 @@ from surface.git import Git as _Git
 from surface._base import PY2 as _PY2
 
 if _PY2:
-    import __builtin__ as _builtins
+    import __builtin__ as _builtins  # type: ignore
 else:
-    import builtins as _builtins
+    import builtins as _builtins  # type: ignore
 
 LOG = _logging.getLogger(__name__)
 
@@ -52,7 +52,15 @@ def to_dict(node):  # type: (Any) -> Any
     data = {"class": type(node).__name__}  # type: Dict[str, Any]
     for key, val in node._asdict().items():
         if isinstance(
-            val, (_surface.API.Var, _surface.API.Arg, _surface.API.Func, _surface.API.Class, _surface.API.Module, _surface.API.Unknown)
+            val,
+            (
+                _surface.API.Var,
+                _surface.API.Arg,
+                _surface.API.Func,
+                _surface.API.Class,
+                _surface.API.Module,
+                _surface.API.Unknown,
+            ),
         ):
             data[key] = to_dict(val)
         elif isinstance(val, (tuple, list)):
@@ -62,7 +70,16 @@ def to_dict(node):  # type: (Any) -> Any
     return data
 
 
-_api_lookup = {"Var":_surface.API.Var, "Arg":_surface.API.Arg, "Func":_surface.API.Func, "Class":_surface.API.Class, "Module":_surface.API.Module, "Unknown":_surface.API.Unknown}
+_api_lookup = {
+    "Var": _surface.API.Var,
+    "Arg": _surface.API.Arg,
+    "Func": _surface.API.Func,
+    "Class": _surface.API.Class,
+    "Module": _surface.API.Module,
+    "Unknown": _surface.API.Unknown,
+}
+
+
 def from_dict(node):  # type: (Dict[str, Any]) -> Any
     """ Reassemble from a dict """
     # Expand everything
