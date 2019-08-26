@@ -68,7 +68,7 @@ class TestCompare(unittest.TestCase):
                 Change('minor', 'Added Arg', 'minorA.NewMethArgs.new_meth_arg_var(b)'),
                 Change('minor', 'Added Arg', 'minorA.NewMethArgs.new_meth_kwarg_var(b)'),
                 Change('minor', 'Kind Changed', 'minorA.NewMethArgs.change_meth_arg_opt(a)'),
-                Change('minor', 'Typing Adjusted', 'minorA.type_changed(a), Was: "typing.Dict[str, str]", Now: "typing.Mapping[str, str]"'),
+                Change('minor', 'Arg Typing Adjusted', 'minorA.type_changed(a), Was: "typing.Dict[str, str]", Now: "typing.Mapping[str, str]"'),
                 Change('minor', 'Could not verify', 'minorA.UnknownChange.ohno: ERROR'),
             ]),
         )

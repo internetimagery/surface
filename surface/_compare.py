@@ -460,44 +460,7 @@ class TypingChanges(object):
     def _is_subtype(self, old, new):
         if not len(old) or not len(new):
             return False
-        return new.name in self.subtype_map.get(old.name, [])
+        return old.name in self.subtype_map.get(new.name, [])
 
     def _prep_checks(self):
         return []
-
-
-ESC_UNKNOWN = re.escape(UNKNOWN)  # For search replace
-
-
-def is_uncovered(old_type, new_type):  # type: (str, str) -> bool
-    if old_type == UNKNOWN:
-        return True
-    reg = re.escape(old_type).replace(ESC_UNKNOWN, TYPE_CHARS)
-    if re.match(reg, new_type):
-        return True
-    return False
-
-
-def is_subtype(subtype, supertype):  # type: (str, str) -> bool
-    # If they are the same, nothing to do
-    if subtype == supertype:
-        return False
-
-    # First check structure
-    if typing_reg.sub("~", subtype) != typing_reg.sub("~", supertype):
-        return False
-
-    # Structure is the same, compare matching types.
-    # It's all or nothing. If one type is a subtype, but others aren't
-    # it still needs to be considered false.
-    for subt, supert in zip(
-        typing_reg.finditer(subtype), typing_reg.finditer(supertype)
-    ):
-        if subt.group(1) == supert.group(1):
-            continue
-        subtypes = subtype_map.get(supert.group(1))
-        if subtypes is None:
-            return False
-        if subt.group(1) not in subtypes:
-            return False
-    return True
