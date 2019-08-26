@@ -12,12 +12,12 @@ import logging as _logging
 import contextlib as _contextlib
 import surface as _surface
 from surface.git import Git as _Git
-from surface._base import PY2
+from surface._base import PY2 as _PY2
 
-if PY2:
-    import __builtin__ as builtins
+if _PY2:
+    import __builtin__ as _builtins
 else:
-    import builtins
+    import builtins as _builtins
 
 LOG = _logging.getLogger(__name__)
 
@@ -26,7 +26,7 @@ import_times = {}  # type: Dict[str, float]
 
 @_contextlib.contextmanager
 def time_imports():
-    origin = builtins.__import__
+    origin = _builtins.__import__
 
     def runner(name, *args, **kwargs):
         start = _time.time()
@@ -36,11 +36,42 @@ def time_imports():
             import_times[name] = _time.time() - start
         return module
 
-    builtins.__import__ = runner
+    _builtins.__import__ = runner
     try:
         yield
     finally:
-        builtins.__import__ = origin
+        _builtins.__import__ = origin
+
+
+# TODO: xml might be a better representation for this data?
+# https://docs.python.org/2/library/xml.etree.elementtree.html#module-xml.etree.ElementTree
+# can include comments as well, which would be helpful for creation dates etc.
+def to_dict(node):  # type: (Any) -> Any
+    """ Break a node structure (above types)
+        into a dict representation for serialization."""
+    data = {"class": type(node).__name__}  # type: Dict[str, Any]
+    for key, val in node._asdict().items():
+        if isinstance(
+            val, (_surface.API.Var, _surface.API.Arg, _surface.API.Func, _surface.API.Class, _surface.API.Module, _surface.API.Unknown)
+        ):
+            data[key] = to_dict(val)
+        elif isinstance(val, (tuple, list)):
+            data[key] = [to_dict(n) for n in val]
+        else:
+            data[key] = val
+    return data
+
+
+_api_lookup = {"Var":_surface.API.Var, "Arg":_surface.API.Arg, "Func":_surface.API.Func, "Class":_surface.API.Class, "Module":_surface.API.Module, "Unknown":_surface.API.Unknown}
+def from_dict(node):  # type: (Dict[str, Any]) -> Any
+    """ Reassemble from a dict """
+    # Expand everything
+    node = {
+        k: tuple(from_dict(n) for n in v) if isinstance(v, (tuple, list)) else v
+        for k, v in node.items()
+    }
+    struct = _api_lookup[node.pop("class")]
+    return struct(**node)
 
 
 def run_dump(args):  # type: (Any) -> int
@@ -88,7 +119,7 @@ def run_dump(args):  # type: (Any) -> int
             _sys.stdout.write(_surface.format_api(mod.body, not args.no_colour, "    "))
 
     if args.output or args.git:
-        serialize = [_surface.to_dict(mod) for mod in module_api]
+        serialize = [to_dict(mod) for mod in module_api]
         data = _json.dumps(serialize, indent=2)
 
         if args.output:
@@ -120,10 +151,10 @@ def run_compare(args):  # type: (Any) -> int
             new_data = handle.read()
 
     old_api = sorted(
-        (_surface.from_dict(mod) for mod in _json.loads(old_data)), key=lambda m: m.path
+        (from_dict(mod) for mod in _json.loads(old_data)), key=lambda m: m.path
     )  # type: List[_surface.API.Module]
     new_api = sorted(
-        (_surface.from_dict(mod) for mod in _json.loads(new_data)), key=lambda m: m.path
+        (from_dict(mod) for mod in _json.loads(new_data)), key=lambda m: m.path
     )  # type: List[_surface.API.Module]
 
     purple = ("{}" if args.no_colour else "\033[35m{}\033[0m").format

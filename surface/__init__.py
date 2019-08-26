@@ -7,7 +7,6 @@ __version__ = "0.4.2"
 
 import re as _re
 import importlib as _importlib
-from surface._utils import to_dict, from_dict
 from surface._traversal import Traversal, recurse
 from surface._compare import Changes, SemVer, RULES
 from surface._base import Kind, API, UNKNOWN
