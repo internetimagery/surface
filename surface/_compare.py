@@ -211,15 +211,15 @@ class TypingCheck(Check):
 
         level, reason = self._typer.compare(old.type, new.type)
         if level:
-            return [(
-                Change(
-                    level,
-                    "Typing {}".format(reason),
-                    _was(
-                        path, old.type, new.type
-                    ),
+            return [
+                (
+                    Change(
+                        level,
+                        "Typing {}".format(reason),
+                        _was(path, old.type, new.type),
+                    )
                 )
-            )]
+            ]
         return []
 
 
@@ -434,7 +434,11 @@ class TypingChanges(object):
                 changes.append(self._handle_ast_type_change(old_ast, new_ast))
                 continue
 
-            if isinstance(new_ast, NameAst) and old_ast.name != new_ast.name:
+            if (
+                isinstance(new_ast, NameAst)
+                and isinstance(old_ast, NameAst)
+                and old_ast.name != new_ast.name
+            ):
                 if allow_subtype and self._is_subtype(old_ast, new_ast):
                     changes.append((SemVer.MINOR, "Adjusted"))
                 else:
