@@ -88,6 +88,7 @@ _arg = "{}({})".format
 
 
 class Changes(object):
+
     def compare(
         self, old_api, new_api
     ):  # type: (Sequence[API.Module], Sequence[API.Module]) -> Set[Change]
@@ -96,7 +97,7 @@ class Changes(object):
         stack = [
             ("", {mod.name: mod for mod in old_api}, {mod.name: mod for mod in new_api})
         ]
-        checks = self._prep_checks()
+        checks = self._prep_checks(old_api, new_api)
         changes = set()  # type: Set[Change]
 
         while stack:
@@ -124,8 +125,8 @@ class Changes(object):
 
         return changes
 
-    def _prep_checks(self):
-        typer = TypingChanges()
+    def _prep_checks(self, old, new):
+        typer = TypingChanges(old, new)
         return [
             AddRemoveCheck(),
             CannotVerifyCheck(),
@@ -413,6 +414,11 @@ class TypingChanges(object):
     }  # type: Dict[str, Tuple[str, ...]]
 
     semrank = {SemVer.MAJOR: 3, SemVer.MINOR: 2, SemVer.PATCH: 1}
+
+    def __init__(self, old, new):
+        # TODO: walk the apis, keep track of exposed classes.
+        # TODO: Then later can compare types with those classes.
+        pass
 
     def compare(
         self, old, new, allow_subtype=True
