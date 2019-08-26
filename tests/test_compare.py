@@ -103,7 +103,7 @@ class TestCompare(unittest.TestCase):
                 Change('major', 'Arg Typing Changed', 'majorA.arg_type_change(b), Was: "str", Now: "int"'),
                 Change('major', 'Arg Typing Changed', 'majorA.arg_type_change(c), Was: "bool", Now: "str"'),
                 Change('major', 'Return Typing Changed', 'majorA.arg_type_change, Was: "int", Now: "bool"'),
-                Change('major', 'Return Typing Adjusted', 'majorA.return_type_change_subtype, Was: "typing.List[str]", Now: "typing.Sequence[str]"'),
+                Change('major', 'Return Typing Changed', 'majorA.return_type_change_subtype, Was: "typing.List[str]", Now: "typing.Sequence[str]"'),
                 Change('major', 'Arg Typing Changed', 'majorA.MethTypeChange.meth_type_change(a), Was: "int", Now: "bool"'),
                 Change('major', 'Arg Typing Changed', 'majorA.MethTypeChange.meth_type_change(b), Was: "str", Now: "int"'),
                 Change('major', 'Arg Typing Changed', 'majorA.MethTypeChange.meth_type_change(c), Was: "bool", Now: "str"'),
