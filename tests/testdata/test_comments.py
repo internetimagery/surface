@@ -17,3 +17,7 @@ def func3(
         ):
                 # type: (...) -> None
     return
+
+# Bad type should be ~unknown
+def func4(): # type: () -> Dict[]
+    return None
