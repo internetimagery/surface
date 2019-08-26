@@ -465,6 +465,3 @@ class TypingChanges(object):
         if not len(old) or not len(new):
             return False
         return old.name in self.subtype_map.get(new.name, [])
-
-    def _prep_checks(self):
-        return []
