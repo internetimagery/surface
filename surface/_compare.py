@@ -38,11 +38,9 @@ import re
 from surface._base import *
 from surface._item_static import (
     ModuleAst,
-    SubscriptAst,
     NameAst,
     TupleAst,
     UnknownAst,
-    AttributeAst,
     SliceAst,
     EllipsisAst,
 )
@@ -83,30 +81,10 @@ class SemVer(object):
     MINOR = "minor"
     MAJOR = "major"
 
+
 # Templates
 _was = '{}, Was: "{}", Now: "{}"'.format
 _arg = "{}({})".format
-
-typing_reg = re.compile(r"typing\.(\w+)")
-
-# Subtype mapping
-subtype_map = {
-    "Sequence": ("List", "Tuple", "MutableSequence"),
-    "Mapping": ("Dict", "MutableMapping"),
-    "Set": ("MutableSet",),
-    "FrozenSet": ("Set", "MutableSet"),
-    "Sized": (
-        "Dict",
-        "List",
-        "Set",
-        "Sequence",
-        "Mapping",
-        "MutableSequence",
-        "MutableMapping",
-        "MutableSet",
-        "FrozenSet",
-    ),
-}  # type: Dict[str, Tuple[str, ...]]
 
 
 class Changes(object):
@@ -147,14 +125,15 @@ class Changes(object):
         return changes
 
     def _prep_checks(self):
+        typer = TypingChanges()
         return [
             AddRemoveCheck(),
             CannotVerifyCheck(),
             TypeMatchCheck(),
-            TypingCheck(),
+            TypingCheck(typer),
             ArgKindCheck(),
             ArgAddRemoveCheck(),
-            ArgTypeCheck(),
+            ArgTypingCheck(typer),
         ]
 
 
@@ -191,8 +170,12 @@ class CannotVerifyCheck(Check):
         return isinstance(old, API.Unknown) or isinstance(new, API.Unknown)
 
     def check(self, path, old, new):
-        if isinstance(old, API.Unknown) and isinstance(new, API.Unknown) and old.type == new.type:
-            return [] # Could not verify, but type remains the same. Likely no change.
+        if (
+            isinstance(old, API.Unknown)
+            and isinstance(new, API.Unknown)
+            and old.type == new.type
+        ):
+            return []  # Could not verify, but type remains the same. Likely no change.
         info = new.info if isinstance(new, API.Unknown) else old.info
         return [Change(SemVer.MINOR, "Could not verify", "{}: {}".format(path, info))]
 
@@ -216,19 +199,28 @@ class TypeMatchCheck(Check):
 
 
 class TypingCheck(Check):
+    """ Check typing gleaned from live data / annotations / comments / docstrings matches """
+
+    def __init__(self, typer):
+        self._typer = typer
+
     def will_check(self, old, new):
         return isinstance(old, API.Var) and isinstance(new, API.Var)
 
     def check(self, path, old, new):
-        if old.type == new.type:
-            return []
-        if is_uncovered(old.type, new.type):
-            level = SemVer.PATCH
-        elif is_subtype(old.type, new.type):
-            level = SemVer.MINOR
-        else:
-            level = SemVer.MAJOR
-        return [Change(level, "Type Changed", _was(path, old.type, new.type))]
+
+        level, reason = self._typer.compare(old.type, new.type)
+        if level:
+            return [(
+                Change(
+                    level,
+                    "Typing {}".format(reason),
+                    _was(
+                        path, old.type, new.type
+                    ),
+                )
+            )]
+        return []
 
 
 class ArgKindCheck(Check):
@@ -267,13 +259,15 @@ class ArgAddRemoveCheck(ArgKindCheck):
                 # Adding a new optional arg (ie: arg=None) or variadic (ie *args / **kwargs)
                 # is not a breaking change. Adding anything else is.
                 level = (
-                    SemVer.MINOR if new_arg.kind & (Kind.VARIADIC | Kind.DEFAULT) else SemVer.MAJOR
+                    SemVer.MINOR
+                    if new_arg.kind & (Kind.VARIADIC | Kind.DEFAULT)
+                    else SemVer.MAJOR
                 )
-                changes.append(Change(level, "Added API.Arg", _arg(path, new_arg.name)))
+                changes.append(Change(level, "Added Arg", _arg(path, new_arg.name)))
             elif not new_arg:
                 # Removing an argument is always a breaking change.
                 changes.append(
-                    Change(SemVer.MAJOR, "Removed API.Arg", _arg(path, old_arg.name))
+                    Change(SemVer.MAJOR, "Removed Arg", _arg(path, old_arg.name))
                 )
             elif old_arg.name != new_arg.name:
                 # It's not breaking to rename variadic or positional-only args, but is for anything else
@@ -288,7 +282,7 @@ class ArgAddRemoveCheck(ArgKindCheck):
                 changes.append(
                     Change(
                         level,
-                        "Renamed API.Arg",
+                        "Renamed Arg",
                         _was(_arg(path, new_arg.name), old_arg.name, new_arg.name),
                     )
                 )
@@ -300,9 +294,9 @@ class ArgAddRemoveCheck(ArgKindCheck):
             if old_kwarg == new_kwarg:
                 continue
             elif old_kwarg is None:
-                return [Change(SemVer.MINOR, "Added API.Arg", _arg(path, name))]
+                return [Change(SemVer.MINOR, "Added Arg", _arg(path, name))]
             elif new_kwarg is None:
-                return [Change(SemVer.MAJOR, "Removed API.Arg", _arg(path, name))]
+                return [Change(SemVer.MAJOR, "Removed Arg", _arg(path, name))]
         return changes
 
     @staticmethod
@@ -338,25 +332,25 @@ class ArgAddRemoveCheck(ArgKindCheck):
         )
 
 
-class ArgTypeCheck(ArgAddRemoveCheck):
-    @classmethod
+class ArgTypingCheck(ArgAddRemoveCheck):
+    """ Check typing matches for arguments and return values """
+
+    def __init__(self, typer):
+        self._typer = typer
+
     def check(self, path, old, new):
         changes = []
 
         for old_arg, new_arg in self.positionals(old.args, new.args):
             if old_arg is None or new_arg is None:
                 continue
-            if old_arg.type != new_arg.type:
-                if is_uncovered(old_arg.type, new_arg.type):
-                    level = SemVer.PATCH
-                elif is_subtype(old_arg.type, new_arg.type):
-                    level = SemVer.MINOR
-                else:
-                    level = SemVer.MAJOR
+
+            level, reason = self._typer.compare(old_arg.type, new_arg.type)
+            if level:
                 changes.append(
                     Change(
                         level,
-                        "Type Changed",
+                        "Arg Typing {}".format(reason),
                         _was(_arg(path, new_arg.name), old_arg.type, new_arg.type),
                     )
                 )
@@ -366,31 +360,28 @@ class ArgTypeCheck(ArgAddRemoveCheck):
             old_kwarg = old_kwargs.get(name)
             if old_kwarg is None:
                 continue
-            if old_kwarg.type != new_kwarg.type:
-                if is_uncovered(old_kwarg.type, new_kwarg.type):
-                    level = SemVer.PATCH
-                elif is_subtype(old_kwarg.type, new_kwarg.type):
-                    level = SemVer.MINOR
-                else:
-                    level = SemVer.MAJOR
+
+            level, reason = self._typer.compare(old_kwarg.type, new_kwarg.type)
+            if level:
                 changes.append(
                     Change(
                         level,
-                        "Type Changed",
+                        "Arg Typing {}".format(reason),
                         _was(
                             _arg(path, new_kwarg.name), old_kwarg.type, new_kwarg.type
                         ),
                     )
                 )
 
-        if old.returns != new.returns:
-            if is_uncovered(old.returns, new.returns):
-                level = SemVer.PATCH
-            else:
-                level = SemVer.MAJOR
+        level, reason = self._typer.compare(
+            old.returns, new.returns, allow_subtype=False
+        )
+        if level:
             changes.append(
                 Change(
-                    level, "Return Type Changed", _was(path, old.returns, new.returns)
+                    level,
+                    "Return Typing {}".format(reason),
+                    _was(path, old.returns, new.returns),
                 )
             )
 
@@ -398,35 +389,81 @@ class ArgTypeCheck(ArgAddRemoveCheck):
 
 
 class TypingChanges(object):
+    """ Detect changes in typing information """
 
-    _type_visitors = (
-        ModuleAst,
-        SubscriptAst,
-        NameAst,
-        TupleAst,
-        UnknownAst,
-        AttributeAst,
-        SliceAst,
-        EllipsisAst,
-    )
+    type_visitors = (ModuleAst, NameAst, TupleAst, SliceAst, UnknownAst, EllipsisAst)
 
-    def compare(self, old, new):
-        pass
+    # Subtype mapping
+    subtype_map = {
+        "typing.Sequence": ("typing.List", "typing.Tuple", "typing.MutableSequence"),
+        "typing.Mapping": ("typing.Dict", "typing.MutableMapping"),
+        "typing.Set": ("typing.MutableSet",),
+        "typing.FrozenSet": ("typing.Set", "typing.MutableSet"),
+        "typing.Sized": (
+            "typing.Dict",
+            "typing.List",
+            "typing.Set",
+            "typing.Sequence",
+            "typing.Mapping",
+            "typing.MutableSequence",
+            "typing.MutableMapping",
+            "typing.MutableSet",
+            "typing.FrozenSet",
+        ),
+    }  # type: Dict[str, Tuple[str, ...]]
+
+    semrank = {SemVer.MAJOR: 3, SemVer.MINOR: 2, SemVer.PATCH: 1}
+
+    def compare(
+        self, old, new, allow_subtype=True
+    ):  # type: (str, str, bool) -> Tuple[str, str]
+        if old == new:
+            return "", ""
+
+        old_mod = ModuleAst.parse(self.type_visitors, old)
+        new_mod = ModuleAst.parse(self.type_visitors, new)
+
+        changes = []
+        stack = [(old_mod, new_mod)]
+        while stack:
+            old_ast, new_ast = stack.pop()
+            old_ast_type = type(old_ast)
+            new_ast_type = type(new_ast)
+
+            if old_ast_type != new_ast_type:
+                changes.append(self._handle_ast_type_change(old_ast, new_ast))
+                continue
+
+            if isinstance(new_ast, NameAst) and old_ast.name != new_ast.name:
+                if allow_subtype and self._is_subtype(old_ast, new_ast):
+                    changes.append((SemVer.MINOR, "Adjusted"))
+                else:
+                    # This is where we need to check for public exposure of the type
+                    changes.append((SemVer.MAJOR, "Changed"))
+
+            for old_child, new_child in zip(old_ast.values(), new_ast.values()):
+                stack.append((old_child, new_child))
+
+        changes.sort(key=lambda x: self.semrank[x[0]])
+        if changes:
+            return changes[-1]
+        return "", ""
+
+    @staticmethod
+    def _handle_ast_type_change(old, new):
+        if isinstance(old, UnknownAst):
+            return (SemVer.PATCH, "Revealed")
+        if isinstance(new, UnknownAst):
+            return (SemVer.MINOR, "Lost")
+        return (SemVer.MAJOR, "Changed")
+
+    def _is_subtype(self, old, new):
+        if not len(old) or not len(new):
+            return False
+        return new.name in self.subtype_map.get(old.name, [])
 
     def _prep_checks(self):
         return []
-
-
-class UncoveredTypingCheck(Check):
-    def will_check(self, old, new):
-        return isinstance(old, UnknownAst) or isinstance(new, UnknownAst)
-
-    def check(self, path, old, new):
-        if isinstance(old, UnknownAst):
-            if isinstance(new, UnknownAst):
-                return []
-            return [Change(SemVer.PATCH, "Uncovered Type", _was(path, old, new))]
-        return [Change(SemVer.MINOR, "Lost Type", _was(path, old, new))]
 
 
 ESC_UNKNOWN = re.escape(UNKNOWN)  # For search replace

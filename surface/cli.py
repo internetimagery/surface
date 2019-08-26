@@ -149,7 +149,9 @@ def run_compare(args):  # type: (Any) -> int
         _sys.stdout.write(_surface.bump_semantic_version(highest_level, args.bump))
     else:
         _sys.stdout.write(highest_level)
-    if args.check and (args.check == highest_level or highest_level == _surface.SemVer.MAJOR):
+    if args.check and (
+        args.check == highest_level or highest_level == _surface.SemVer.MAJOR
+    ):
         return 1
     return 0
 

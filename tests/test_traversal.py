@@ -250,9 +250,7 @@ class TestImporter(unittest.TestCase):
                             API.Unknown(
                                 "MyEnumGroup",
                                 DepthWarn,
-                                clean_repr(
-                                    repr(test_mod_basic.myModule.MyEnumGroup)
-                                ),
+                                clean_repr(repr(test_mod_basic.myModule.MyEnumGroup)),
                             ),
                             API.Unknown(
                                 "myVar",
@@ -308,7 +306,9 @@ class TestImporter(unittest.TestCase):
                     API.Class(
                         "Methods",
                         (
-                            API.Unknown("err_method", "RuntimeError", "more like funtime error"),
+                            API.Unknown(
+                                "err_method", "RuntimeError", "more like funtime error"
+                            ),
                             API.Var("ok_method", "str"),
                         ),
                     ),

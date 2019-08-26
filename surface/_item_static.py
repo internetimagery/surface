@@ -3,6 +3,8 @@
 if False:  # type checking
     from typing import *
 
+    A = TypeVar("A", bound="AstItem")
+
 import ast
 import collections
 
@@ -17,12 +19,12 @@ class AstItem(Item):
     __slots__ = []  # type: ignore
 
     @classmethod
-    def parse(cls, visitors, source):
+    def parse(cls, visitors, source):  # type: (Sequence[Type[A]], str) -> A
         module = ast.parse(source)
         return cls.wrap(visitors, module)
 
     @classmethod
-    def is_this_type(cls, item, parent):
+    def is_this_type(cls, item, parent):  # type: (A, A) -> bool
         return isinstance(item, cls.wraps)
 
 
@@ -35,21 +37,6 @@ class ModuleAst(AstItem):
 
     def get_child(self, index):
         return self.item.body[index].value
-
-
-class SubscriptAst(AstItem):
-    wraps = ast.Subscript
-
-    def get_children_names(self):
-        return ("value", "slice")
-
-    def get_child(self, index):
-        if index == "value":
-            return self.item.value
-        elif index == "slice":
-            return self.item.slice
-        else:
-            raise KeyError("Index {} is not here.".format(index))
 
 
 class SliceAst(AstItem):
@@ -88,13 +75,32 @@ class TupleAst(AstItem):
         return self.item.elts[index]
 
 
-class AttributeAst(AstItem):
+class NameAst(AstItem):
 
-    wraps = ast.Attribute
+    if PY2:
+        wraps = (ast.Name, ast.Attribute, ast.Subscript)
+    else:
+        wraps = (ast.Name, ast.Attribute, ast.Subscript, ast.NameConstant)
 
     @property
     def name(self):
-        return ".".join(reversed(self._walk(self.item)))
+        if isinstance(self.item, ast.Name):
+            return self.item.id
+        if isinstance(self.item, ast.Attribute):
+            return ".".join(reversed(self._walk(self.item)))
+        if isinstance(self.item, ast.Subscript):
+            return ".".join(reversed(self._walk(self.item.value)))
+        return repr(self.item.value)
+
+    def get_children_names(self):
+        if isinstance(self.item, ast.Subscript):
+            return [0]
+        return []
+
+    def get_child(self, index):
+        if index == 0 and isinstance(self.item, ast.Subscript):
+            return self.item.slice
+        raise KeyError("Index {} is not here.".format(index))
 
     def _walk(self, item, chain=None):
         if chain is None:
@@ -107,17 +113,6 @@ class AttributeAst(AstItem):
         else:
             raise TypeError("API.Unknown type {}".format(item))
         return chain
-
-
-class NameAst(AstItem):
-
-    wraps = ast.Name if PY2 else (ast.Name, ast.NameConstant)
-
-    @property
-    def name(self):
-        if isinstance(self.item, ast.Name):
-            return self.item.id
-        return repr(self.item.value)
 
 
 class EllipsisAst(AstItem):
@@ -134,27 +129,3 @@ class UnknownAst(AstItem):
             and isinstance(item.operand, ast.Name)
             and item.operand.id == UNKNOWN[1:]
         )
-
-
-if __name__ == "__main__":
-    typestring = "typing.Dict[str, typing.List[None]]"
-
-    visitors = [
-        ModuleAst,
-        SubscriptAst,
-        NameAst,
-        TupleAst,
-        UnknownAst,
-        AttributeAst,
-        SliceAst,
-        EllipsisAst,
-    ]
-
-    p = AstItem.parse(visitors, typestring)
-
-    def walk(item):
-        print(item, getattr(item, "name", ""))
-        for child in item.values():
-            walk(child)
-
-    walk(p)

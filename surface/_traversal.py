@@ -82,7 +82,9 @@ class Traversal(object):
             EnumItem: lambda n, s, p: API.Var(n, s.get_type()),
             VarItem: lambda n, s, p: API.Var(n, s.get_type()),
             BuiltinItem: lambda n, s, p: API.Var(n, s.get_type()),
-            ErrorItem: lambda n, s, p: API.Unknown(n, s.type, clamp_string(clean_repr(s.item))),
+            ErrorItem: lambda n, s, p: API.Unknown(
+                n, s.type, clamp_string(clean_repr(s.item))
+            ),
             ClassItem: lambda n, s, p: API.Class(
                 n, s.get_type(), tuple(self.walk(s, n, p.copy()))
             ),
@@ -140,9 +142,7 @@ class Traversal(object):
         for name, item in current_item.items():
             if depth_exceeded:
                 yield API.Unknown(
-                    name,
-                    DepthWarn,
-                    clamp_string(clean_repr(repr(item.item))),
+                    name, DepthWarn, clamp_string(clean_repr(repr(item.item)))
                 )
                 continue
 

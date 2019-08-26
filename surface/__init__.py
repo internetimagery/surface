@@ -69,7 +69,9 @@ def format_api(api, colour=False, indent=""):  # type: (Iterable[Any], bool, str
         elif isinstance(item, API.Var):
             result += indent + "{}: {}\n".format(item.name, green(item.type))
         elif isinstance(item, API.Unknown):
-            result += indent + "{}? {}: {}\n".format(item.name, yellow(item.type), yellow(item.info))
+            result += indent + "{}? {}: {}\n".format(
+                item.name, yellow(item.type), yellow(item.info)
+            )
         else:
             result += indent + str(item) + "\n"
     return result
