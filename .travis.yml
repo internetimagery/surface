@@ -6,7 +6,7 @@ install:
 # Install latest release, collect api information from within using release logic
 - pip install surface
 - surface -q dump surface -o before.json
-- RELEASE_VER="$(surface -V)"
+- RELEASE_VER="$(surface -V 2>&1)"
 # Install current working version and testing dependencies
 - pip install -e ./
 - ./py3 pip install mypy
