@@ -6,7 +6,7 @@ install:
 # Install latest release, collect api information from within using release logic
 - pip install surface
 - surface -q dump surface -o before.json
-- surface -V > release.txt
+- RELEASE_VER="$(surface -V)"
 # Install current working version and testing dependencies
 - pip install -e ./
 - ./py3 pip install mypy
@@ -17,8 +17,8 @@ script:
 - ./py3 mypy surface
 - ./py3 black --check surface
 - surface -q dump surface -o after.json
-- surface compare before.json after.json -b "$(cat release.txt)" > latest.txt
-- echo `cat release.txt` `cat latest.txt`
+- LATEST_VER="$(surface compare before.json after.json -b $RELEASE_VER)"
+- echo $RELEASE_VER $LATEST_VER
 deploy:
   provider: pypi
   skip_existing: true
