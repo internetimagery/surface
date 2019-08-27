@@ -49,10 +49,9 @@ class FuncType(IDCache):
 
     def _map_params(self, sig):
         """ Check annotations first, then type comments, then docstrings """
-        context = sig.context
         for name, param in sig.parameters.items():
             if param.annotation is not FuncSig.EMPTY:
-                self.params[name] = str(AnnotationType(param.annotation, context))
+                self.params[name] = str(AnnotationType(param.annotation, param.context))
                 continue
             comment_types = get_comment(param.source)
             if comment_types:

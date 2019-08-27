@@ -77,6 +77,7 @@ Rough todo...
 - [x] Utilize sigtools depth feature, to collect typing from comments on all arguments.
 - [x] Improve typing comparison. Inspecting deeply nested types.
 - [x] Provide features to store api output using git commits
+- [ ] De-alias comment and docstring based types.
 - [ ] Look into xml as alternate storage to json. Especially useful with comments in a header.
 - [x] Move some of the cli utility stuff into its own submodule (public).
 - [x] clean stuff up

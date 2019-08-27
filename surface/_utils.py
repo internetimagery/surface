@@ -57,6 +57,10 @@ def get_tokens(source):  # type: (str) -> List[tokenize.TokenInfo]
 def abs_type(type_string, context):  # type: (str, Dict[str, Any]) -> str
     """ Convert local type into absolute, eg MyType -> my_module.MyType """
     # Validate type. If it's not valid, just call it unknown
+    # try:
+    #     print(eval(type_string, context))
+    # except:
+    #     pass
     try:
         root = ast.parse(type_string).body[0].value  # type: ignore
     except (SyntaxError, AttributeError, IndexError):
@@ -159,7 +163,7 @@ class IDCache(object):
 
 
 FuncSigArg = collections.namedtuple(
-    "FuncSigArg", ("name", "kind", "default", "annotation", "source")
+    "FuncSigArg", ("name", "kind", "default", "annotation", "source", "context")
 )
 
 
@@ -236,21 +240,26 @@ class FuncSig(IDCache):
         if not self._sig:
             return
 
+        source = sorted(self._sig.sources["+depths"].items(), key=lambda x: x[1])[-1][0]
+
         self._returns = FuncSigArg(
             "",
             None,
             self.EMPTY,
             self._sig.return_annotation,
-            sorted(self._sig.sources["+depths"].items(), key=lambda x: x[1])[-1][0],
+            source,
+            getattr(source, "__globals__", {}),
         )
 
         self._parameters = collections.OrderedDict()  # type: Dict[str, FuncSigArg]
         for name, param in self._sig.parameters.items():
+            source = (self._sig.sources.get(name) or [self._returns.source])[0]
             self._parameters[name] = FuncSigArg(
                 name,
                 self._KIND_MAP[str(param.kind)]
                 | (0 if param.default is self.EMPTY else Kind.DEFAULT),
                 param.default,
                 param.annotation,
-                (self._sig.sources.get(name) or [self._returns.source])[0],
+                source,
+                getattr(source, "__globals__", {}),
             )

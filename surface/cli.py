@@ -29,11 +29,13 @@ def time_imports():
     origin = _builtins.__import__
 
     def runner(name, *args, **kwargs):
-        start = _time.time()
-        LOG.debug("Importing: {}".format(name))
-        module = origin(name, *args, **kwargs)
         if name not in import_times:
+            start = _time.time()
+            LOG.debug("Importing: {}".format(name))
+            module = origin(name, *args, **kwargs)
             import_times[name] = _time.time() - start
+        else:
+            module = origin(name, *args, **kwargs)
         return module
 
     _builtins.__import__ = runner
