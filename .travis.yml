@@ -3,7 +3,7 @@ python:
 - '2.7'
 - '3.6'
 install:
-# Install latest release, collect api information from within using release logic
+# Install latest release, collect api and version information using release logic
 - pip install surface
 - surface -q dump surface -o before.json
 - RELEASE_VER="$(surface -V 2>&1)"
@@ -17,9 +17,8 @@ script:
 - ./py3 mypy surface
 - ./py3 black --check surface
 - surface -q dump surface -o after.json
-- echo "RELEASE" $RELEASE_VER
-- PREDICTED_VER="$(surface compare before.json after.json -b ""$RELEASE_VER"")"
-- echo $RELEASE_VER $PREDICTED_VER "$(surface -V)"
+- PREDICTED_VER="$(surface compare before.json after.json -b $RELEASE_VER)"
+- echo $RELEASE_VER $PREDICTED_VER "$(surface -V 2>&1)"
 deploy:
   provider: pypi
   skip_existing: true
