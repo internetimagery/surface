@@ -56,6 +56,7 @@ class TestCompare(unittest.TestCase):
         self.assertEqual(
             changes,
             set([
+                Change('minor', 'Added', 'minorA.OtherType'),
                 Change('minor', 'Added', 'minorA.new_var'),
                 Change('minor', 'Added', 'minorA.new_func'),
                 Change('minor', 'Added', 'minorA.NewClass'),

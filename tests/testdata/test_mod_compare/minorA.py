@@ -1,6 +1,9 @@
 if False:
     from typing import *
 
+from test_mod_compare._privateA import expose_type
+
+
 # new_var = 123
 
 # def new_func(a):

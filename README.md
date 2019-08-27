@@ -80,7 +80,7 @@ Rough todo...
 - [ ] Look into xml as alternate storage to json. Especially useful with comments in a header.
 - [x] Move some of the cli utility stuff into its own submodule (public).
 - [x] clean stuff up
-- [ ] When comparing types, check if they line up with an exposed alias.
-- [ ] use import hook to track import time properly (nice to have)
-- [ ] API.Unknown have a type field for comparisons. Instead of full text comparison.
+- [x] When comparing types, check if they line up with an exposed alias.
+- [x] use import hook to track import time properly (nice to have)
+- [ ] Unknown have a type field for comparisons. Instead of full text comparison.
 - [ ] More and more and more tests.
