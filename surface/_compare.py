@@ -89,7 +89,6 @@ _arg = "{}({})".format
 
 
 class Changes(object):
-
     def compare(
         self, old_api, new_api
     ):  # type: (Sequence[API.Module], Sequence[API.Module]) -> Set[Change]
@@ -449,12 +448,23 @@ class TypingChanges(object):
                     changes.append((SemVer.MINOR, "Adjusted"))
                 elif old_ast.name in self._old_map or new_ast.name in self._new_map:
                     # The type name changed. But it is also exposed publically.
-                    # So we can defer to the other checks to handle changes here.
-
-                    # ie: type is defined privately, but exposed publically.
-                    # the private type can be renamed freely so long as the public
-                    # access to the type remains the same.
-                    pass
+                    # A type can be renamed freely privately. So long as the public
+                    # reference to it does not change.
+                    # We already have checks for the public side of things.
+                    old_exposed = self._old_map.get(old_ast.name)
+                    if old_exposed is None:  # Type has only just been exposed.
+                        new_exposed = self._new_map[new_ast.name]
+                        exposed = (
+                            exp for exps in self._old_map.values() for exp in exps
+                        )
+                        for expose in exposed:
+                            if expose in new_exposed:
+                                # If the type name changed, and was not previously public,
+                                # and the type is now referenced by an existing public reference.
+                                # We can roughly conclude that this is a legit type change, now using
+                                # a type in the public space.
+                                changes.append((SemVer.MAJOR, "Changed"))
+                                break
                 else:
                     # This is where we need to check for public exposure of the type
                     changes.append((SemVer.MAJOR, "Changed"))
@@ -490,5 +500,10 @@ class TypingChanges(object):
                 mapping[item.path].append(path)
             if isinstance(item, (API.Class, API.Module)):
                 for child in item.body:
-                    stack.append(("{}.{}".format(path, child.name) if path else child.name, child))
+                    stack.append(
+                        (
+                            "{}.{}".format(path, child.name) if path else child.name,
+                            child,
+                        )
+                    )
         return mapping
