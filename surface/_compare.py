@@ -34,6 +34,7 @@ if False:  # type checking
 
 
 import re
+import collections
 
 from surface._base import *
 from surface._item_static import (
@@ -416,9 +417,8 @@ class TypingChanges(object):
     semrank = {SemVer.MAJOR: 3, SemVer.MINOR: 2, SemVer.PATCH: 1}
 
     def __init__(self, old, new):
-        # TODO: walk the apis, keep track of exposed classes.
-        # TODO: Then later can compare types with those classes.
-        pass
+        self._old_map = self._map_private_to_public(old)
+        self._new_map = self._map_private_to_public(new)
 
     def compare(
         self, old, new, allow_subtype=True
@@ -447,6 +447,9 @@ class TypingChanges(object):
             ):
                 if allow_subtype and self._is_subtype(old_ast, new_ast):
                     changes.append((SemVer.MINOR, "Adjusted"))
+                elif old_ast.name in self._old_map or new_ast.name in self._new_map:
+                    # TODO: anything more needed here?
+                    pass
                 else:
                     # This is where we need to check for public exposure of the type
                     changes.append((SemVer.MAJOR, "Changed"))
@@ -471,3 +474,16 @@ class TypingChanges(object):
         if not len(old) or not len(new):
             return False
         return old.name in self.subtype_map.get(new.name, [])
+
+    @staticmethod
+    def _map_private_to_public(api):
+        stack = [(mod.path, mod) for mod in api]
+        mapping = collections.defaultdict(list)
+        while stack:
+            path, item = stack.pop()
+            if isinstance(item, API.Class):
+                mapping[item.path].append(path)
+            if isinstance(item, (API.Class, API.Module)):
+                for child in item.body:
+                    stack.append(("{}.{}".format(path, child.name) if path else child.name, child))
+        return mapping
