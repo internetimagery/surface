@@ -3,18 +3,22 @@ python:
 - '2.7'
 - '3.6'
 install:
+# Install latest release, collect api information from within using release logic
 - pip install surface
 - surface -q dump surface -o before.json
-- surface -V > version.txt
+- surface -V > release.txt
+# Install current working version and testing dependencies
 - pip install -e ./
 - ./py3 pip install mypy
 - ./py3 pip install black
 script:
+# Run tests
 - python tests
 - ./py3 mypy surface
 - ./py3 black --check surface
 - surface -q dump surface -o after.json
-- surface compare before.json after.json
+- surface compare before.json after.json > latest.txt
+- echo `cat release.txt` `cat latest.txt`
 deploy:
   provider: pypi
   skip_existing: true
