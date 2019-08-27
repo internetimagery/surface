@@ -448,7 +448,12 @@ class TypingChanges(object):
                 if allow_subtype and self._is_subtype(old_ast, new_ast):
                     changes.append((SemVer.MINOR, "Adjusted"))
                 elif old_ast.name in self._old_map or new_ast.name in self._new_map:
-                    # TODO: anything more needed here?
+                    # The type name changed. But it is also exposed publically.
+                    # So we can defer to the other checks to handle changes here.
+
+                    # ie: type is defined privately, but exposed publically.
+                    # the private type can be renamed freely so long as the public
+                    # access to the type remains the same.
                     pass
                 else:
                     # This is where we need to check for public exposure of the type
