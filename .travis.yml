@@ -17,7 +17,7 @@ script:
 - ./py3 mypy surface
 - ./py3 black --check surface
 - surface -q dump surface -o after.json
-- surface compare before.json after.json > latest.txt
+- surface compare before.json after.json -b "$(cat release.txt)" > latest.txt
 - echo `cat release.txt` `cat latest.txt`
 deploy:
   provider: pypi
