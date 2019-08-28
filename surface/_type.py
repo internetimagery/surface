@@ -220,7 +220,6 @@ class AnnotationType(object):
         # TODO: EVAL the string with the provided context.
         # do the thing with the thing n stuff once we have got a live type
 
-
         return abs_type(obj, context)
 
     @staticmethod

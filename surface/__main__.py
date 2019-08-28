@@ -109,8 +109,12 @@ def main():
             "compare 'develop' against a commit that would be the base of those two branches merging."
         ),
     )
-    compare_parser.add_argument("old", help="Path to original API file. (or tree-ish with 'git' flag)")
-    compare_parser.add_argument("new", help="Path to new API file. (or tree-ish with 'git' flag)")
+    compare_parser.add_argument(
+        "old", help="Path to original API file. (or tree-ish with 'git' flag)"
+    )
+    compare_parser.add_argument(
+        "new", help="Path to new API file. (or tree-ish with 'git' flag)"
+    )
     compare_parser.add_argument(
         "-b", "--bump", help="Instead of semantic level, return the version bumped."
     )

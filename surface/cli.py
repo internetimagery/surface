@@ -158,7 +158,7 @@ def run_compare(args):  # type: (Any) -> int
 
     if args.git:  # We are in git mode!! old / new refer to tree-ish identifiers!
         new_commit = _Git.get_commit(args.new)
-        if args.merge: # Use merge base as commit, instead of provided one
+        if args.merge:  # Use merge base as commit, instead of provided one
             old_commit = _Git.get_merge_base(args.old, args.new)
         else:
             old_commit = _Git.get_commit(args.old)
