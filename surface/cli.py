@@ -9,6 +9,7 @@ import time as _time
 import json as _json
 import os.path as _path
 import logging as _logging
+import datetime as _datetime
 import contextlib as _contextlib
 import surface as _surface
 from surface.git import Git as _Git
@@ -138,8 +139,15 @@ def run_dump(args):  # type: (Any) -> int
             _sys.stdout.write(_surface.format_api(mod.body, not args.no_colour, "    "))
 
     if args.output or args.git:
-        serialize = [to_dict(mod) for mod in module_api]
-        data = _json.dumps(serialize, indent=2)
+        serialize = {
+            "meta": {
+                "created": _datetime.datetime.now(),
+                "version": _surface.__version__,
+                "command": " ".join(_sys.argv[1:]),
+            },
+            "api": [to_dict(mod) for mod in module_api],
+        }
+        data = _json.dumps(serialize, indent=2, sort_keys=True)
 
         if args.output:
             with open(args.output, "w") as handle:
@@ -164,8 +172,8 @@ def run_compare(args):  # type: (Any) -> int
             old_commit = _Git.get_commit(args.old)
         git_path = [path.strip() for path in _re.split(r"[,:;]", args.git)]
 
-        new_data = _Git.load(new_commit, git_path)
-        old_data = _Git.load(old_commit, git_path)
+        new_data = _Git.load(new_commit, git_path)["api"]
+        old_data = _Git.load(old_commit, git_path)["api"]
     else:
         with open(args.old, "r") as handle:
             old_data = handle.read()
