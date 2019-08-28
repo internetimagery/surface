@@ -214,6 +214,13 @@ class AnnotationType(object):
     def _handle_str(obj, context):
         if not isinstance(obj, str):
             return None
+        # TODO: !!
+        # Parse the string, and add typing. wherever needed
+        # import any absolute-looking paths into the context
+        # TODO: EVAL the string with the provided context.
+        # do the thing with the thing n stuff once we have got a live type
+
+
         return abs_type(obj, context)
 
     @staticmethod

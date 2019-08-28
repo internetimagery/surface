@@ -94,14 +94,23 @@ def main():
         "-g",
         "--git",
         help=(
-            "List of directories separated by (,:;)."
-            "Presence of this flag will treat 'old' and 'new' arguments as git branches (tree-ish); "
-            "Using the merge base between the two as the 'old' source, and the current commit as the 'new' source."
+            "List of directories separated by any of (,:;). "
+            "Presence of this flag will treat 'old' and 'new' arguments as git identifiers (tree-ish); "
             "The commits will be searched for in the provided directories."
         ),
     )
-    compare_parser.add_argument("old", help="Path to original API file.")
-    compare_parser.add_argument("new", help="Path to new API file.")
+    compare_parser.add_argument(
+        "--merge",
+        action="store_true",
+        help=(
+            "(For use with the 'git' flag) "
+            "Use a common commit as the source. "
+            "eg: If the sources are 'master' and 'develop', "
+            "compare 'develop' against a commit that would be the base of those two branches merging."
+        ),
+    )
+    compare_parser.add_argument("old", help="Path to original API file. (or tree-ish with 'git' flag)")
+    compare_parser.add_argument("new", help="Path to new API file. (or tree-ish with 'git' flag)")
     compare_parser.add_argument(
         "-b", "--bump", help="Instead of semantic level, return the version bumped."
     )
