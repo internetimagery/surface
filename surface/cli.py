@@ -141,7 +141,7 @@ def run_dump(args):  # type: (Any) -> int
     if args.output or args.git:
         serialize = {
             "meta": {
-                "created": _datetime.datetime.now(),
+                "created": str(_datetime.datetime.now()),
                 "version": _surface.__version__,
                 "command": " ".join(_sys.argv[1:]),
             },
