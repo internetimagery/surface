@@ -242,7 +242,7 @@ class AnnotationType(object):
         )
 
     def _get_type(self, obj):  # type: (Any) -> str
-        if isinstance(obj, basestring) if PY2 else isinstance(obj, str):
+        if isinstance(obj, basestring if PY2 else str):  # type: ignore
             # In unknown exists, then we would have crafted the type ourselves, pass it on.
             if UNKNOWN in obj:
                 return obj

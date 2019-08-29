@@ -172,8 +172,8 @@ def run_compare(args):  # type: (Any) -> int
             old_commit = _Git.get_commit(args.old)
         git_path = [path.strip() for path in _re.split(r"[,:;]", args.git)]
 
-        new_data = _Git.load(new_commit, git_path)["api"]
-        old_data = _Git.load(old_commit, git_path)["api"]
+        new_data = _Git.load(new_commit, git_path)
+        old_data = _Git.load(old_commit, git_path)
     else:
         with open(args.old, "r") as handle:
             old_data = handle.read()
@@ -181,10 +181,10 @@ def run_compare(args):  # type: (Any) -> int
             new_data = handle.read()
 
     old_api = sorted(
-        (from_dict(mod) for mod in _json.loads(old_data)), key=lambda m: m.path
+        (from_dict(mod) for mod in _json.loads(old_data)["api"]), key=lambda m: m.path
     )  # type: List[_surface.API.Module]
     new_api = sorted(
-        (from_dict(mod) for mod in _json.loads(new_data)), key=lambda m: m.path
+        (from_dict(mod) for mod in _json.loads(new_data)["api"]), key=lambda m: m.path
     )  # type: List[_surface.API.Module]
 
     purple = ("{}" if args.no_colour else "\033[35m{}\033[0m").format
