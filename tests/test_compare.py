@@ -7,6 +7,10 @@ from surface._base import *
 from surface._compare import *
 from surface._traversal import Traversal
 
+path = os.path.join(os.path.dirname(__file__), "testdata")
+if path not in sys.path:
+    sys.path.insert(0, path)
+
 root = os.path.join(os.path.dirname(__file__), "testdata", "test_mod_compare")
 
 
