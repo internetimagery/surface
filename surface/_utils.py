@@ -54,67 +54,6 @@ def get_tokens(source):  # type: (str) -> List[tokenize.TokenInfo]
     return tokens
 
 
-def abs_type(type_string, context):  # type: (str, Dict[str, Any]) -> str
-    """ Convert local type into absolute, eg MyType -> my_module.MyType """
-    # Validate type. If it's not valid, just call it unknown
-    # try:
-    #     print(eval(type_string, context))
-    # except:
-    #     pass
-    try:
-        root = ast.parse(type_string).body[0].value  # type: ignore
-    except (SyntaxError, AttributeError, IndexError):
-        return UNKNOWN
-
-    updates = {}
-    stack = [root]
-    while stack:
-        node = stack.pop()
-
-        # eg: myVariable
-        if isinstance(node, ast.Name):
-            name = node.id
-            value = context.get(name)
-            # If variable exists in local scope (it generally should), get its full name.
-            if value:
-                # If variable is a module, and it was aliased, replace with realname.
-                if isinstance(value, types.ModuleType):
-                    module = getattr(value, "__name__", "")
-                    updates[node.col_offset, node.col_offset + len(name) + 1] = module
-
-                else:
-                    # Otherwise it's a type referenced locally.
-                    module = getattr(inspect.getmodule(value), "__name__", "")
-                    if module:
-                        updates[node.col_offset, node.col_offset] = module
-
-            # If variable does not exist in the scope, and it exists in the typing module,
-            # it is probably "statically" imported. ie not present in runtime.
-            elif name in TYPING_ATTRS:  # special case for typing
-                updates[node.col_offset, node.col_offset] = "typing"
-
-        # eg: List[something] or Dict[str, int]
-        elif isinstance(node, ast.Subscript):
-            stack.append(node.value)
-            stack.append(node.slice.value)  # type: ignore
-
-        # eg: val1, val2
-        elif isinstance(node, ast.Tuple):
-            stack.extend(node.elts)
-
-        # eg: val1.val2
-        elif isinstance(node, ast.Attribute):
-            stack.append(node.value)
-
-    if updates:
-        for in_, out in sorted(updates.keys(), reverse=True):
-            replace = updates[in_, out]
-            type_string = "{}{}.{}".format(
-                type_string[:in_], replace, type_string[out:]
-            )
-    return type_string
-
-
 class Cache(collections.MutableMapping):
     def __init__(self, size=500):  # type: (int) -> None
         """ Cache stuff. Up to size (mb) """

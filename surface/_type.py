@@ -8,21 +8,33 @@ import re
 import ast
 import types
 import token
+import typing
 import logging
 import inspect
 import traceback
 import itertools
+import importlib
 import collections
 
-from surface._base import UNKNOWN, PY2, TYPING_ATTRS
+from surface._base import UNKNOWN, PY2, TYPE_CHARS
 from surface._doc import parse_docstring
 from surface._comment import get_comment
-from surface._utils import FuncSig, Cache, IDCache, abs_type
+from surface._utils import FuncSig, Cache, IDCache
+from surface._item_static import (
+    ModuleAst,
+    NameAst,
+    TupleAst,
+    UnknownAst,
+    SliceAst,
+    EllipsisAst,
+)
 
 if PY2:
     import __builtin__ as builtins
 else:
     import builtins
+
+LOG = logging.getLogger(__name__)
 
 BUILTIN_TYPES = tuple(b for b in builtins.__dict__.values() if isinstance(b, type))
 
@@ -50,16 +62,21 @@ class FuncType(IDCache):
     def _map_params(self, sig):
         """ Check annotations first, then type comments, then docstrings """
         for name, param in sig.parameters.items():
+            context = Context(param.context)
             if param.annotation is not FuncSig.EMPTY:
-                self.params[name] = str(AnnotationType(param.annotation, param.context))
+                self.params[name] = AnnotationType(param.annotation, context).type
                 continue
             comment_types = get_comment(param.source)
             if comment_types:
-                self.params[name] = comment_types[0].get(name, UNKNOWN)
+                self.params[name] = AnnotationType(
+                    comment_types[0].get(name, UNKNOWN), context
+                ).type
                 continue
             docstring_types = parse_docstring(param.source)
             if docstring_types:
-                self.params[name] = docstring_types[0].get(name, UNKNOWN)
+                self.params[name] = AnnotationType(
+                    docstring_types[0].get(name, UNKNOWN), context
+                ).type
                 continue
             # If we have nothing else to go on, check for a default value
             if param.default is not FuncSig.EMPTY:
@@ -72,16 +89,17 @@ class FuncType(IDCache):
             self.params[name] = UNKNOWN
 
     def _map_returns(self, sig):
+        context = Context(sig.returns.context)
         if sig.returns.annotation is not FuncSig.EMPTY:
-            self.returns = str(AnnotationType(sig.returns.annotation, sig.context))
+            self.returns = AnnotationType(sig.returns.annotation, context).type
             return
         comment_types = get_comment(sig.returns.source)
         if comment_types:
-            self.returns = comment_types[1]
+            self.returns = AnnotationType(comment_types[1], context).type
             return
         docstring_types = parse_docstring(sig.returns.source)
         if docstring_types:
-            self.returns = docstring_types[1]
+            self.returns = AnnotationType(docstring_types[1], context).type
             return
         self.returns = UNKNOWN
 
@@ -193,54 +211,80 @@ class LiveType(IDCache):
         return None
 
 
+class Context(IDCache):
+    """ Clone and customize a provided context """
+
+    def __init__(self, context):  # type: (Dict[str, Any]) -> None
+        # Injecting typing into the context for convenience
+        self.context = typing.__dict__.copy()
+        self.context["typing"] = typing
+        self.context.update(context)
+
+
 class AnnotationType(object):
-    def __init__(self, obj, context):  # type: (Any, Dict[str, Any]) -> None
-        self._type = self._get_type(obj, context)
 
-    def __str__(self):
-        return self._type
+    type_visitors = (ModuleAst, NameAst, TupleAst, SliceAst, UnknownAst, EllipsisAst)
 
-    def _get_type(self, obj, context):
+    def __init__(self, obj, context):  # type: (Any, Context) -> None
+        self._context = context
+        self.type = self._get_type(obj)
+        # A Little consistency
+        self.type = re.sub(r"\bNoneType\b", "None", self.type)
+        optional = "typing.Optional[{}]".format
+        self.type = re.sub(
+            r"\btyping.Union\[ *({0}) *, *({0}) *\]".format(TYPE_CHARS),
+            lambda x: optional(x.group(1))
+            if x.group(2) == "None"
+            else optional(x.group(2))
+            if x.group(1) == "None"
+            else x.group(0),
+            self.type,
+        )
+
+    def _get_type(self, obj):  # type: (Any) -> str
+        if isinstance(obj, basestring) if PY2 else isinstance(obj, str):
+            # In unknown exists, then we would have crafted the type ourselves, pass it on.
+            if UNKNOWN in obj:
+                return obj
+            try:
+                # If it is a string, treat as forward reference.
+                obj = self._eval_type(obj)
+            except Exception:
+                # If something failed there is something wrong with the type.
+                LOG.debug(traceback.format_exc())
+                return UNKNOWN
         return (
-            self._handle_str(obj, context)
-            or self._handle_type(obj, context)
-            or self._handle_builtin(obj, context)
-            or self._handle_class(obj, context)
-            or self._handle_function(obj, context)
+            self._handle_none(obj)
+            or self._handle_typing(obj)
+            or self._handle_builtin(obj)
+            or self._handle_class(obj)
+            or self._handle_function(obj)
             or UNKNOWN
         )
 
     @staticmethod
-    def _handle_str(obj, context):
-        if not isinstance(obj, str):
-            return None
-        # TODO: !!
-        # Parse the string, and add typing. wherever needed
-        # import any absolute-looking paths into the context
-        # TODO: EVAL the string with the provided context.
-        # do the thing with the thing n stuff once we have got a live type
-
-        return abs_type(obj, context)
+    def _handle_none(obj):
+        if obj is None:
+            return "None"
+        return None
 
     @staticmethod
-    def _handle_type(obj, _):
-        if PY2:
-            return None
-
-        import typing
-
-        if isinstance(obj, typing.TypingMeta):
+    def _handle_typing(obj):
+        if isinstance(obj, typing.TypingMeta) or isinstance(
+            type(obj), typing.TypingMeta
+        ):
             return str(obj)
         return None
 
     @staticmethod
-    def _handle_builtin(obj, _):
-        if obj in BUILTIN_TYPES:
-            return obj.__name__
+    def _handle_builtin(obj):
+        for builtin_type in BUILTIN_TYPES:
+            if obj is builtin_type:
+                return obj.__name__
         return None
 
     @staticmethod
-    def _handle_class(obj, _):
+    def _handle_class(obj):
         if not inspect.isclass(obj):
             return None
         name = getattr(obj, "__name__", UNKNOWN)
@@ -250,8 +294,40 @@ class AnnotationType(object):
         return name
 
     @staticmethod
-    def _handle_function(obj, _):
+    def _handle_function(obj):
         if not inspect.isfunction(obj) and not inspect.ismethod(obj):
             return None
         func = FuncType(obj)
         return func.as_var()
+
+    def _eval_type(self, type_string):
+        try:
+            # Just try running it first. We might be lucky!
+            return eval(type_string, self._context.context)
+        except NameError:
+            # Retry the evaluation with an updated context
+            self._include_imports(type_string)
+            return eval(type_string, self._context.context)
+        except SyntaxError as err:
+            LOG.warning("Invalid syntax in type '{}'".format(type_string))
+            raise
+
+    def _include_imports(self, type_string):
+        # Something failed. First add imports to the context. Docstrings need full paths sometimes.
+        stack = [ModuleAst.parse(self.type_visitors, type_string)]
+        while stack:
+            item = stack.pop()
+            stack.extend(item.values())
+            if not isinstance(item, NameAst):
+                continue
+            parts = item.name.split(".")
+            if len(parts) < 2:
+                continue
+            for i in range(len(parts) - 1):
+                path = ".".join(parts[: i + 1])
+                if path in self._context.context:
+                    continue
+                try:
+                    self._context.context[path] = importlib.import_module(path)
+                except ImportError:
+                    pass

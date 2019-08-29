@@ -3,7 +3,7 @@ import os.path
 import unittest
 
 from surface._base import PY2
-from surface._type import LiveType, FuncType, AnnotationType
+from surface._type import LiveType, FuncType, AnnotationType, Context
 
 path = os.path.join(os.path.dirname(__file__), "testdata")
 if path not in sys.path:
@@ -69,21 +69,17 @@ class TestAnnotations(unittest.TestCase):
         )
 
         self.assertEqual(
-            str(
-                AnnotationType(
-                    test_annotation.Obj1.__annotations__["attr1"],
-                    test_annotation.__dict__,
-                )
-            ),
+            AnnotationType(
+                test_annotation.Obj1.__annotations__["attr1"],
+                Context(test_annotation.__dict__),
+            ).type,
             "typing.List[int]",
         )
         self.assertEqual(
-            str(
-                AnnotationType(
-                    test_annotation.__annotations__["variable1"],
-                    test_annotation.__dict__,
-                )
-            ),
+            AnnotationType(
+                test_annotation.__annotations__["variable1"],
+                Context(test_annotation.__dict__),
+            ).type,
             "typing.List[str]",
         )
 

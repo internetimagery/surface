@@ -11,7 +11,7 @@ import traceback
 
 from surface._base import PY2
 from surface._utils import FuncSig, FuncSigArg, Cache
-from surface._type import LiveType, FuncType, AnnotationType, BUILTIN_TYPES
+from surface._type import LiveType, FuncType, Context, AnnotationType, BUILTIN_TYPES
 
 from surface._item import Item
 
@@ -145,8 +145,8 @@ class VarItem(LiveItem):
         )
         if annotation is self.EMPTY:
             return str(LiveType(self.item))
-        context = getattr(inspect.getmodule(self.item), "__dict__", {})
-        return str(AnnotationType(annotation, context))
+        context = Context(getattr(inspect.getmodule(self.item), "__dict__", {}))
+        return AnnotationType(annotation, context).type
 
 
 class BuiltinItem(LiveItem):

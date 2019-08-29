@@ -14,7 +14,7 @@ import tokenize
 import traceback
 import collections
 
-from surface._utils import abs_type, FuncSig, get_tokens
+from surface._utils import FuncSig, get_tokens
 from surface._base import TYPE_CHARS, UNKNOWN, PY2
 
 if PY2:
@@ -176,20 +176,14 @@ def get_comment(func):  # type: (Any) -> Optional[Tuple[Dict[str, str], str]]
     if not sig_parts:
         return None
     param_comment, return_comment = sig_parts
-
-    # Normalize return_type
-    local_context = getattr(func, "__globals__", {})
-    return_type = abs_type(return_comment, local_context)
+    return_type = return_comment
 
     if not param_comment:  # No parameters, nothing more to do.
         return {}, return_type
 
     if param_comment == "...":  # We have external typing
         # Individual parameters must have typing...
-        params = {
-            name: abs_type(typ, local_context)
-            for name, typ in func_map.get_params().items()
-        }
+        params = {name: typ for name, typ in func_map.get_params().items()}
         return params, return_type
 
     else:
@@ -204,8 +198,5 @@ def get_comment(func):  # type: (Any) -> Optional[Tuple[Dict[str, str], str]]
         param_names = reversed(sig.parameters.keys())
         param_types = reversed(param_map.get_params())
 
-        params = {
-            name: abs_type(typ, local_context)
-            for name, typ in zip(param_names, param_types)
-        }
+        params = {name: typ for name, typ in zip(param_names, param_types)}
         return params, return_type
