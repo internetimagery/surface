@@ -304,7 +304,7 @@ class AnnotationType(object):
         try:
             # Just try running it first. We might be lucky!
             return eval(type_string, self._context.context)
-        except NameError:
+        except (NameError, AttributeError):
             # Retry the evaluation with an updated context
             self._include_imports(type_string)
             return eval(type_string, self._context.context)
