@@ -19,7 +19,7 @@ import collections
 from surface._base import UNKNOWN, PY2, TYPING_ATTRS
 from surface._doc import parse_docstring
 from surface._comment import get_comment
-from surface._utils import FuncSig, Cache, IDCache, abs_type
+from surface._utils import FuncSig, Cache, IDCache
 from surface._item_static import (
     ModuleAst,
     NameAst,
@@ -212,6 +212,7 @@ class Context(IDCache):
     def __init__(self, context):  # type: (Dict[str, Any]) -> None
         # Injecting typing into the context for convenience
         self.context = typing.__dict__.copy()
+        self.context["typing"] = typing
         self.context.update(context)
 
 
@@ -223,9 +224,6 @@ class AnnotationType(object):
         self._context = context
         self.type = self._get_type(obj)
 
-    def __str__(self):
-        return self._type
-
     def _get_type(self, obj):  # type: (Any) -> str
         if isinstance(obj, str):
             # In unknown exists, then we would have crafted the type ourselves, pass it on.
@@ -234,12 +232,19 @@ class AnnotationType(object):
             # If it is a string, treat as forward reference.
             obj = self._eval_type(obj)
         return (
-            self._handle_typing(obj)
+            self._handle_none(obj)
+            or self._handle_typing(obj)
             or self._handle_builtin(obj)
             or self._handle_class(obj)
             or self._handle_function(obj)
             or UNKNOWN
         )
+
+    @staticmethod
+    def _handle_none(obj):
+        if obj is None:
+            return "None"
+        return None
 
     @staticmethod
     def _handle_typing(obj):

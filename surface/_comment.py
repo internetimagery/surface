@@ -14,7 +14,7 @@ import tokenize
 import traceback
 import collections
 
-from surface._utils import abs_type, FuncSig, get_tokens
+from surface._utils import FuncSig, get_tokens
 from surface._base import TYPE_CHARS, UNKNOWN, PY2
 
 if PY2:
