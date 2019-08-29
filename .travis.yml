@@ -17,9 +17,9 @@ script:
 - ./py3 mypy surface
 - ./py3 black --check surface
 - surface -q dump surface -o after.json
-- PREDICTED_VER="$(surface compare before.json after.json -b $RELEASE_VER)"
+# - PREDICTED_VER="$(surface compare before.json after.json -b $RELEASE_VER)"
 - LATEST_VER="$(surface -V 2>&1)"
-- echo $PREDICTED_VER | grep $LATEST_VER || echo Version missmatch. Wanted $PREDICTED_VER but got $LATEST_VER
+# - echo $PREDICTED_VER | grep $LATEST_VER || echo Version missmatch. Wanted $PREDICTED_VER but got $LATEST_VER
 deploy:
   provider: pypi
   skip_existing: true
