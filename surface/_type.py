@@ -16,7 +16,7 @@ import itertools
 import importlib
 import collections
 
-from surface._base import UNKNOWN, PY2, TYPING_ATTRS
+from surface._base import UNKNOWN, PY2, TYPE_CHARS
 from surface._doc import parse_docstring
 from surface._comment import get_comment
 from surface._utils import FuncSig, Cache, IDCache
@@ -29,11 +29,12 @@ from surface._item_static import (
     EllipsisAst,
 )
 
-
 if PY2:
     import __builtin__ as builtins
 else:
     import builtins
+
+LOG = logging.getLogger(__name__)
 
 BUILTIN_TYPES = tuple(b for b in builtins.__dict__.values() if isinstance(b, type))
 
@@ -67,11 +68,15 @@ class FuncType(IDCache):
                 continue
             comment_types = get_comment(param.source)
             if comment_types:
-                self.params[name] = AnnotationType(comment_types[0].get(name, UNKNOWN), context).type
+                self.params[name] = AnnotationType(
+                    comment_types[0].get(name, UNKNOWN), context
+                ).type
                 continue
             docstring_types = parse_docstring(param.source)
             if docstring_types:
-                self.params[name] = AnnotationType(docstring_types[0].get(name, UNKNOWN), context).type
+                self.params[name] = AnnotationType(
+                    docstring_types[0].get(name, UNKNOWN), context
+                ).type
                 continue
             # If we have nothing else to go on, check for a default value
             if param.default is not FuncSig.EMPTY:
@@ -223,14 +228,31 @@ class AnnotationType(object):
     def __init__(self, obj, context):  # type: (Any, Context) -> None
         self._context = context
         self.type = self._get_type(obj)
+        # A Little consistency
+        self.type = re.sub(r"\bNoneType\b", "None", self.type)
+        optional = "typing.Optional[{}]".format
+        self.type = re.sub(
+            r"\btyping.Union\[ *({0}) *, *({0}) *\]".format(TYPE_CHARS),
+            lambda x: optional(x.group(1))
+            if x.group(2) == "None"
+            else optional(x.group(2))
+            if x.group(1) == "None"
+            else x.group(0),
+            self.type,
+        )
 
     def _get_type(self, obj):  # type: (Any) -> str
         if isinstance(obj, str):
             # In unknown exists, then we would have crafted the type ourselves, pass it on.
             if UNKNOWN in obj:
                 return obj
-            # If it is a string, treat as forward reference.
-            obj = self._eval_type(obj)
+            try:
+                # If it is a string, treat as forward reference.
+                obj = self._eval_type(obj)
+            except Exception:
+                # If something failed there is something wrong with the type.
+                LOG.debug(traceback.format_exc())
+                return UNKNOWN
         return (
             self._handle_none(obj)
             or self._handle_typing(obj)
@@ -248,7 +270,9 @@ class AnnotationType(object):
 
     @staticmethod
     def _handle_typing(obj):
-        if isinstance(obj, typing.TypingMeta):
+        if isinstance(obj, typing.TypingMeta) or isinstance(
+            type(obj), typing.TypingMeta
+        ):
             return str(obj)
         return None
 
@@ -284,6 +308,9 @@ class AnnotationType(object):
             # Retry the evaluation with an updated context
             self._include_imports(type_string)
             return eval(type_string, self._context.context)
+        except SyntaxError as err:
+            LOG.warning("Invalid syntax in type '{}'".format(type_string))
+            raise
 
     def _include_imports(self, type_string):
         # Something failed. First add imports to the context. Docstrings need full paths sometimes.
@@ -296,8 +323,8 @@ class AnnotationType(object):
             parts = item.name.split(".")
             if len(parts) < 2:
                 continue
-            for i in range(len(parts)-1):
-                path = ".".join(parts[:i+1])
+            for i in range(len(parts) - 1):
+                path = ".".join(parts[: i + 1])
                 if path in self._context.context:
                     continue
                 try:

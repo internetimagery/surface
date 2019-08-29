@@ -77,11 +77,12 @@ Rough todo...
 - [x] Utilize sigtools depth feature, to collect typing from comments on all arguments.
 - [x] Improve typing comparison. Inspecting deeply nested types.
 - [x] Provide features to store api output using git commits
-- [ ] Evaluate typing to ensure we get a live type, and correct paths etc
-- [ ] Look into xml as alternate storage to json. Especially useful with comments in a header.
+- [x] Evaluate typing to ensure we get a live type, and correct paths etc
 - [x] Move some of the cli utility stuff into its own submodule (public).
 - [x] clean stuff up
 - [x] When comparing types, check if they line up with an exposed alias.
 - [x] use import hook to track import time properly (nice to have)
+- [ ] Compare Union correctly. Order of entires does not matter, and has an alias: Optional[something]
+- [ ] Same thing with NoneType and None. Both are equal.
 - [ ] Unknown have a type field for comparisons. Instead of full text comparison.
 - [ ] More and more and more tests.

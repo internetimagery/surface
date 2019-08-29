@@ -5,6 +5,7 @@ import os.path
 
 from surface._utils import clean_repr
 
+
 class A(object):
     def err(self):
         raise RuntimeError("Error {}".format(self))
