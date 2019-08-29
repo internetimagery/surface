@@ -26,6 +26,7 @@ setup(
     keywords=["development", "typing", "api", "semantic", "versioning"],
     packages=["surface"],
     install_requires=["sigtools"],
+    extras_require={':python_version in "2.7 3.2 3.3 3.4"': ["typing>=0.4"]},
     # install_requires=["funcsigs"] if sys.version_info[0] == 2 else [],
     # python_requires=">=2.7,>=3.6",
     python_requires=">=2.7",
