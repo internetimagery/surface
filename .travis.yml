@@ -7,8 +7,10 @@ install:
 - pip install surface
 - surface -q dump surface -o before.json
 - RELEASE_VER="$(surface -V 2>&1)"
-# Install current working version and testing dependencies
+# Install current working version
 - pip install -e ./
+- DEV_VER="$(surface -V 2>&1)"
+# Install testing dependencies
 - ./py3 pip install mypy
 - ./py3 pip install black
 script:
@@ -18,8 +20,7 @@ script:
 - ./py3 black --check surface
 - surface -q dump surface -o after.json
 - PREDICTED_VER="$(surface compare before.json after.json -b $RELEASE_VER)"
-- LATEST_VER="$(surface -V 2>&1)"
--  echo $PREDICTED_VER | grep $LATEST_VER || (echo Version missmatch. Wanted $PREDICTED_VER but got $LATEST_VER && exit 1)
+-  echo $PREDICTED_VER | grep $DEV_VER || (echo Version missmatch. Wanted $PREDICTED_VER but got $DEV_VER && exit 1)
 deploy:
   provider: pypi
   skip_existing: true
