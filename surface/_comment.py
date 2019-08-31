@@ -92,13 +92,13 @@ class FuncMapper(Mapper):
 
     def get_params(self):  # type: () -> Dict[str, str]
         arg_node = self._ast.args
-        all_args = all_args = (
+        all_args = (
             arg_node.args
-            + (arg_node.vararg or [])
+            + ([arg_node.vararg] or [])
             + getattr(arg_node, "kwonlyargs", [])
-            + (arg_node.kwarg or [])
+            + ([arg_node.kwarg] or [])
         )
-        arg_tokens = [self._token_map[arg.lineno, arg.col_offset] for arg in all_args]
+        arg_tokens = [self._token_map[arg.lineno, arg.col_offset] for arg in all_args if arg]
         params = {}
         i = 0
         for i in range(len(arg_tokens) - 1):

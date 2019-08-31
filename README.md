@@ -39,29 +39,50 @@ To do so, dump a copy of the old and new api to a temporary location and run a d
 # current "live" public API
 >>> surface dump test_module -o /tmp/old_api.json
 # add new WIP module to path and dump that API
->>> surface dump test_module -o /tmp/new_api.json -p /path/to/dev/module -b 1.2.3
+>>> surface dump test_module -o /tmp/new_api.json
 >>> surface compare /tmp/old_api.json /tmp/old_api.json
-Added Function: test_module.someExample
-2.0.0
+[major] Added Function: test_module.someExample
+major
 ```
 
-Another option is to create snapshots on CI for every push, and compare against them. This is useful if it's hard to recreate an environment later on, and so cannot reliably go back and get a base to compare API changes from.
+## Usage:
 
-The --git flag exists in both "dump" and "compare" modes.
+### Dump:
 
-In "dump", it will get the current commit from the working directory, and store the API file within the provided directory, with the commit hash as identifier. eg:
+This subcommand will import and scan the provided api. Then output a representation of what it finds to where you specify.
 
-```sh
->>> surface dump test_module --git /path/to/storage
-```
+* (--recurse) Walk through, and run on submodules.
+* (--depth) Only traverse objects to this depth. (default 5)
+* (--exclude-modules) Don't traverse imported modules. This (and the above) are helpful if the api is messy/large, and takes a long time to scan.
+* (--all-filter) Respect `__all__` attrbiute. Treat the public api as though it were being imported with *.
+* (--pythonpath PATH) Additions to the python path. These paths will be appened and used for lookup when running.
+* (--output PATH) File (.json) in which to save the scanned info. Useful for comparisons later.
+* (--git REPO) Alternative to --output. Will put the command in git mode. Changes will be stored in the git repo at the provided path (one will be created if it does not exist) based on the current commit hash and into the branch surface_API_store.
 
-In "compare" mode, it will treat the old / new arguments as branch names instead of filepaths. It will then (using the repo in the current directory) find the commit with a common base between the two, and use that as the origin.
+### Compare:
 
-The argument takes multiple paths separated by (,:;) characters. The commit will be searched for in all these paths eg:
+This subcommand will take two previously exported (above) files, and compare their changes. Outputting what it sees.
 
-```sh
->>> surface compare master develop --git /path/to/storage:/path/to/more/storage:/path/to/maybe/local/storage
-```
+* (--bump VERSION) Instead of outputting a semantic level. It will instead take a version, and output the version with the level applied. eg --bump 1.2.3 instead of minor would become 1.3.0
+* (--check LEVEL) Disallow this level (or higher). exit 1 if it exceeds the level. Useful for CI jobs to prevent breaking changes.
+* (--git PATHS) Git mode. Treat 'old' and 'new' inputs as git identifiers (eg branches). Look for the corresponding data in repos at the provided paths, previously saved with the above gitmode.
+* (--merge) Git mode. Instead of taking two identifiers and comparing. Take the commit at merge-base between the two. This is helpful to compare what changed since the branch diverged.
+
+### Common options:
+
+Common options that affect all subcommands.
+
+* (--help) Display help message.
+* (--quiet) Silence the reporting output.
+* (--no-colour) Do not include ansii colours in output.
+* (--rules) Print out a list of rules the tool adheres to.
+
+There are some built in dev tools also.
+
+* (--profile SORT) Run a profiler, and sort output by provided column.
+* (--debug) Enable debug logging.
+* (--pdb) Launch PDB on exceptions.
+
 
 _This is very much a Work In Progress. Don't rely on it in production. (That said, feel free to test and report findings)._
 
@@ -84,5 +105,5 @@ Rough todo...
 - [x] use import hook to track import time properly (nice to have)
 - [ ] Compare Union correctly. Order of entires does not matter, and has an alias: Optional[something]
 - [ ] Same thing with NoneType and None. Both are equal.
-- [ ] Unknown have a type field for comparisons. Instead of full text comparison.
+- [x] Unknown have a type field for comparisons. Instead of full text comparison.
 - [ ] More and more and more tests.
