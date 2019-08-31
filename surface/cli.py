@@ -46,9 +46,6 @@ def time_imports():
         _builtins.__import__ = origin
 
 
-# TODO: xml might be a better representation for this data?
-# https://docs.python.org/2/library/xml.etree.elementtree.html#module-xml.etree.ElementTree
-# can include comments as well, which would be helpful for creation dates etc.
 def to_dict(node):  # type: (Any) -> Any
     """ Break a node structure (above types)
         into a dict representation for serialization."""
@@ -171,15 +168,31 @@ def run_dump(args):  # type: (Any) -> int
 def run_compare(args):  # type: (Any) -> int
 
     if args.git:  # We are in git mode!! old / new refer to tree-ish identifiers!
-        new_commit = _Git.get_commit(args.new)
+        local_git = _Git()
+        new_commit = local_git.get_hash(args.new)
         if args.merge:  # Use merge base as commit, instead of provided one
-            old_commit = _Git.get_merge_base(args.old, args.new)
+            old_commit = local_git.run("merge-base", args.old, args.new)
+            if not old_commit:
+                raise RuntimeError("Provided branches have no commit in common.")
         else:
-            old_commit = _Git.get_commit(args.old)
-        git_path = [path.strip() for path in _re.split(r"[,:;]", args.git)]
+            old_commit = local_git.get_hash(args.old)
+        repo_paths = [_path.realpath(path.strip()) for path in _re.split(r"[,:;]", args.git)]
 
-        new_data = _Git.load(new_commit, git_path)
-        old_data = _Git.load(old_commit, git_path)
+        old_data = new_data = None
+        for repo_path in repo_paths:
+            store = _Store(repo_path)
+            try:
+                new_data = store.load(new_commit)
+            except IOError:
+                pass
+            try:
+                old_data = store.load(old_commit)
+            except IOError:
+                pass
+        if old_data is None or new_data is None:
+            raise RuntimeError("Could not find information for {} in the provided paths".format(
+                args.old if old_data is None else args.new
+            ))
     else:
         with open(args.old, "r") as handle:
             old_data = handle.read()

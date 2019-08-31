@@ -14,7 +14,7 @@ class Store(object):
 
     BRANCH = "surface_API_store"
 
-    _hash_break = 3
+    _hash_break = 2
 
     def __init__(self, root):
         self._repo = Repo(root)
