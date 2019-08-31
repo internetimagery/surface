@@ -31,9 +31,10 @@ class TestGit(unittest.TestCase):
             ("a53d285157af493444555ceec0ad341c1b0fc6e0", "EFGH"),
             ("b32a285157af49e1e4555ceec0ad341c1b0fc6e0", "IJKL"),
         ]
-        store = Store(self.temp)
         for d in data:
+            store = Store(self.temp)
             store.save("message", d[0], d[1])
+        store = Store(self.temp)    
         self.assertEqual(d[1], store.load(d[0]))
 
     def test_load_empty(self):

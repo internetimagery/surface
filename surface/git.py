@@ -206,11 +206,11 @@ class Branch(object):
         except self._git.FatalError:
             # No commit made yet. Branch is likely new
             new_commit = self._git.run(
-                "commit-tree", tree.hash, input_=message.encode("utf-8")
+                ("commit-tree", tree.hash), input_=message.encode("utf-8")
             )
         else:
             new_commit = self._git.run(
-                "commit-tree", tree.hash, "-p", parent, input_=message.encode("utf-8")
+                ("commit-tree", tree.hash, "-p", parent), input_=message.encode("utf-8")
             )
         self._git.run(("update-ref", "refs/heads/{}".format(self._name), new_commit))
 
