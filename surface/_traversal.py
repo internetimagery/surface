@@ -78,7 +78,7 @@ class Traversal(object):
         self.all_filter = all_filter  # Mimic "import *"
         self.depth = depth  # How far down the rabbit hole do we go?
         self.item_map = {
-            NoneItem: lambda n, s, p: API.Var(n, "None"),
+            NoneItem: lambda n, s, p: API.Var(n, "NoneType"),
             EnumItem: lambda n, s, p: API.Var(n, s.get_type()),
             VarItem: lambda n, s, p: API.Var(n, s.get_type()),
             BuiltinItem: lambda n, s, p: API.Var(n, s.get_type()),

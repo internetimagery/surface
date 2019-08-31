@@ -17,7 +17,7 @@ class TestLiveType(unittest.TestCase):
         self.assertEqual("complex", str(LiveType(2 + 3j)))
         self.assertEqual("str", str(LiveType("abc")))
         self.assertEqual("bool", str(LiveType(True)))
-        self.assertEqual("None", str(LiveType(None)))
+        self.assertEqual("NoneType", str(LiveType(None)))
         if PY2:
             self.assertEqual("unicode", str(LiveType(unicode("abc"))))
 
@@ -90,14 +90,14 @@ class TestComments(unittest.TestCase):
 
         self.assertEqual(
             FuncType(test_comments.func1).as_var(),
-            "typing.Callable[[int, str, typing.Dict[str, typing.List[str]]], None]",
+            "typing.Callable[[int, str, typing.Dict[str, typing.List[str]]], NoneType]",
         )
         self.assertEqual(
-            FuncType(test_comments.func2).as_var(), "typing.Callable[..., None]"
+            FuncType(test_comments.func2).as_var(), "typing.Callable[..., NoneType]"
         )
         self.assertEqual(
             FuncType(test_comments.func3).as_var(),
-            "typing.Callable[[int, typing.List[str], typing.Dict[str, typing.List[str]]], None]",
+            "typing.Callable[[int, typing.List[str], typing.Dict[str, typing.List[str]]], NoneType]",
         )
         self.assertEqual(
             FuncType(test_comments.func4).as_var(), "typing.Callable[..., ~unknown]"
@@ -110,7 +110,7 @@ class TestDocstring(unittest.TestCase):
 
         self.assertEqual(
             FuncType(test_docstring.func1).as_var(),
-            "typing.Callable[[int, str, typing.Dict[str, bool]], None]",
+            "typing.Callable[[int, str, typing.Dict[str, bool]], NoneType]",
         )
         self.assertEqual(
             FuncType(test_docstring.func2).as_var(),

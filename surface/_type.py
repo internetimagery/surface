@@ -164,7 +164,7 @@ class LiveType(IDCache):
     def _handle_builtin(obj):
         obj_type = type(obj)
         if obj_type == type(None):
-            return "None"
+            return "NoneType"
         for builtin_type in BUILTIN_TYPES:
             if obj is builtin_type:
                 return obj.__name__
@@ -229,14 +229,13 @@ class AnnotationType(object):
         self._context = context
         self.type = self._get_type(obj)
         # A Little consistency
-        self.type = re.sub(r"\bNoneType\b", "None", self.type)
         optional = "typing.Optional[{}]".format
         self.type = re.sub(
             r"\btyping.Union\[ *({0}) *, *({0}) *\]".format(TYPE_CHARS),
             lambda x: optional(x.group(1))
-            if x.group(2) == "None"
+            if x.group(2) == "NoneType"
             else optional(x.group(2))
-            if x.group(1) == "None"
+            if x.group(1) == "NoneType"
             else x.group(0),
             self.type,
         )
@@ -265,7 +264,7 @@ class AnnotationType(object):
     @staticmethod
     def _handle_none(obj):
         if obj is None:
-            return "None"
+            return "NoneType"
         return None
 
     @staticmethod

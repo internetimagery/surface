@@ -47,7 +47,7 @@ class TestCompare(unittest.TestCase):
                 Change('patch', 'Renamed Arg', 'patchA.MethRenameVar.rename_meth_kwargs_var(b), Was: "a", Now: "b"'),
                 Change('patch', 'Arg Typing Revealed', 'patchA.add_new_types(a), Was: "~unknown", Now: "str"'),
                 Change('patch', 'Arg Typing Revealed', 'patchA.add_new_types(b), Was: "typing.Optional[~unknown]", Now: "typing.Optional[str]"'),
-                Change('patch', 'Return Typing Revealed', 'patchA.add_new_types, Was: "~unknown", Now: "None"'),
+                Change('patch', 'Return Typing Revealed', 'patchA.add_new_types, Was: "~unknown", Now: "NoneType"'),
             ]),
         )
         # fmt: on
