@@ -98,7 +98,9 @@ class FuncMapper(Mapper):
             + getattr(arg_node, "kwonlyargs", [])
             + ([arg_node.kwarg] or [])
         )
-        arg_tokens = [self._token_map[arg.lineno, arg.col_offset] for arg in all_args if arg]
+        arg_tokens = [
+            self._token_map[arg.lineno, arg.col_offset] for arg in all_args if arg
+        ]
         params = {}
         i = 0
         for i in range(len(arg_tokens) - 1):

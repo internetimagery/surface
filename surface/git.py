@@ -73,7 +73,9 @@ class Git(object):
     def get_hash(self, identifier):  # type: (str) -> str
         return self.run(("rev-parse", "--verify", identifier))
 
-    def run_raw(self, cmds, input_=None):  # type: (Sequence[str], Optional[bytes]) -> bytes
+    def run_raw(
+        self, cmds, input_=None
+    ):  # type: (Sequence[str], Optional[bytes]) -> bytes
         try:
             cmd = [self.EXEC] + list(cmds)
             proc = _subprocess.Popen(
