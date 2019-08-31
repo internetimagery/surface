@@ -169,7 +169,7 @@ class FuncSig(IDCache):
         except (SyntaxError, ValueError) as err:
             LOG.debug("Error getting signature for {}".format(self._func))
             LOG.debug(traceback.format_exc())
-        except TypeError as err: # Can this be prevented?
+        except TypeError as err:  # Can this be prevented?
             LOG.debug("Error getting signature for {}".format(self._func))
             LOG.debug(traceback.format_exc())
         except RuntimeError as err:  # https://github.com/epsy/sigtools/issues/10
