@@ -155,8 +155,11 @@ def run_dump(args):  # type: (Any) -> int
             commit_hash = _Git().get_hash("HEAD")
             store = _Store(path)
             store.save(" ".join(_sys.argv[1:]), commit_hash, data)
-            LOG.info('Saved API as "{}", in branch "{}", to "{}"'.format(
-                commit_hash, store.BRANCH, path))
+            LOG.info(
+                'Saved API as "{}", in branch "{}", to "{}"'.format(
+                    commit_hash, store.BRANCH, path
+                )
+            )
     if not args.quiet:
         LOG.info("Took ({})".format(round(_time.time() - start, 3)))
     return 0

@@ -34,7 +34,7 @@ class TestGit(unittest.TestCase):
         for d in data:
             store = Store(self.temp)
             store.save("message", d[0], d[1])
-        store = Store(self.temp)    
+        store = Store(self.temp)
         self.assertEqual(d[1], store.load(d[0]))
 
     def test_load_empty(self):
