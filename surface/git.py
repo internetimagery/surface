@@ -5,46 +5,55 @@ if False:  # type checking
 
 import re as _re
 import os as _os
-import gzip as _gzip
-import errno as _errno
 import datetime as _datetime
 import subprocess as _subprocess
 import collections as _collections
-
-__all__ = ("GitError", "Git")
 
 
 class Store(object):
 
     BRANCH = "surface_API_store"
 
-    _base_dir_len = 3
+    _hash_break = 3
 
     def __init__(self, root):
         self._repo = Repo(root)
 
-    def save(self, hash, data):
+    def save(self, message, hash, data):
         """ Save data under corresponding hash """
-        base_dir = hash[: self._base_dir_len]
-
+        root_hash = hash[: self._hash_break]
+        base_hash = hash[self._hash_break:]
         # Get our root
         branch = self._repo.get_branch(self.BRANCH)
         root_tree = branch.get_tree()
         # Store our data
-        base_tree = root_tree.get(base_dir)
+        base_tree = root_tree.get(root_hash)
         if base_tree is None:
             base_tree = self._repo.new_tree()
         blob = self._repo.new_blob(data)
         blob.save()
-        base_tree = base_tree.set(hash, blob)
+        base_tree = base_tree.set(base_hash, blob)
         base_tree.save()
-        root_tree = root_tree.set(base_dir, base_tree)
+        root_tree = root_tree.set(root_hash, base_tree)
         root_tree.save()
-        branch.commit(root_tree, "Added at {}".format(_datetime.datetime.now()))
+        # Lock it in with a commit
+        branch.commit(root_tree, message)
 
     def load(self, hash):
         """ Load data under corresponding hash """
-        pass
+        root_hash = hash[: self._hash_break]
+        base_hash = hash[self._hash_break:]
+        # Get our root
+        branch = self._repo.get_branch(self.BRANCH)
+        root_tree = branch.get_tree()
+        # Load our data
+        base_tree = root_tree.get(root_hash)
+        if base_tree is None:
+            raise IOError("Hash cannot be found {}".format(hash))
+        blob = base_tree.get(base_hash)
+        if blob is None:
+            raise IOError("Hash cannot be found {}".format(hash))
+        return blob.data
 
     def _get_tree(self):
         hash = self._git.get_hash("{}^{{tree}}".format(self.BRANCH))
@@ -65,7 +74,7 @@ class Git(object):
     def get_hash(self, identifier):
         return self.run("rev-parse", "--verify", identifier)
 
-    def run(self, *args, input=None):
+    def run_raw(self, *args, input=None):
         try:
             proc = _subprocess.Popen(
                 (self.EXEC,) + args,
@@ -78,8 +87,11 @@ class Git(object):
         except OSError:
             raise RuntimeError("Could not find git. Is it correctly installed?")
         if proc.returncode:
-            raise self.FatalError(output[1].decode("utf-8"))
+            raise self.FatalError(output[1].decode("utf-8").strip())
         return output[0]
+
+    def run(self, *args, **kwargs):
+        return self.run_raw(*args, **kwargs).decode("utf-8").strip()
 
 
 class Base(object):
@@ -90,36 +102,46 @@ class Base(object):
         object.__setattr__(obj, "_hash", hash)
         return obj
 
-    @classmethod
-    def from_hash(cls, git, hash):
-        cmd = ["git", "cat-file", "-p", hash]
-        data = self._run(cmd)
-        return cls(git, data, hash)
-
     @property
     def hash(self):
         if self._hash is None:
             raise RuntimeError("Object {} not saved.".format(self))
         return self._hash
 
+    @property
+    def data(self):
+        return self._data
+
     def save(self):
         raise RuntimeError("Object cannot be saved.")
 
 
 class Blob(Base):
+    @classmethod
+    def from_hash(cls, git, hash):
+        data = git.run_raw("cat-file", "blob", hash)
+        return cls(git, data, hash)
+
     def save(self):
-        self._hash = (
-            self._git.run("hash-object", "-w", "--stdin", input=self._data)
-            .decode("utf-8")
-            .strip()
-        )
+        self._hash = self._git.run("hash-object", "-w", "--stdin", input=self.data)
 
 
 class Tree(Base):
 
     _entry = _collections.namedtuple("_entry", ("mod", "type", "hash"))
-    _entry_reg = _re.compile(r"^(\d{6}) [a-z]+ ([a-f0-9]{40})\s+(.+)$", _re.M)
+    _entry_reg = _re.compile(r"^(\d{6}) ([a-z]+) ([a-f0-9]{40})\s+(.+)$", _re.M)
     _entry_template = "{mod} {type} {hash}\t{name}"
+
+    @classmethod
+    def from_hash(cls, git, hash):
+        data = git.run("cat-file", "-p", hash)
+        entries = {
+            match.group(4).strip(): cls._entry(
+                mod=match.group(1), type=match.group(2), hash=match.group(3)
+            )
+            for match in cls._entry_reg.finditer(data)
+        }
+        return cls(git, entries, hash)
 
     def set(self, name, item):
         """ Add / Edit an object of name """
@@ -135,25 +157,25 @@ class Tree(Base):
 
     def get(self, name, default=None):
         """ Get item from within. """
-        return self._data.get(name, default)
+        try:
+            entry = self._data[name]
+        except KeyError:
+            return default
+        if entry.type == "tree":
+            return Tree.from_hash(self._git, entry.hash)
+        elif entry.type == "blob":
+            return Blob.from_hash(self._git, entry.hash)
+        else:
+            raise TypeError("Unhandled type {}".format(entry.type))
 
     def save(self):
         data = "\n".join(
             self._entry_template.format(
                 mod=entry.mod, type=entry.type, hash=entry.hash, name=name
             )
-            for name, entry in self._data.items()
+            for name, entry in self.data.items()
         )
-        self._hash = (
-            self._git.run("mktree", input=data.encode("utf-8")).decode("utf-8").strip()
-        )
-
-
-class Commit(Base):
-    def save(self, message=""):
-        # TODO: commit needs a parent, and tree id
-        cmd = ["git", "commit-tree", treeID, "-p", parentID]
-        self._hash = self._run(cmd, input=message)
+        self._hash = self._git.run("mktree", input=data.encode("utf-8"))
 
 
 class Branch(object):
@@ -163,22 +185,27 @@ class Branch(object):
 
     def get_tree(self):
         try:
-            # Get tree attached to latest commit on branch.
-            hash = self._git.run("rev-parse", "{}^{{tree}}".format(self._name))
-            return Tree.from_hash(self._git, hash)
+            latest_tree = self._git.run("rev-parse", "{}^{{tree}}".format(self._name))
         except self._git.FatalError:
             # Branch does not exist. Create empty tree.
             return Tree(self._git, {})
+        else:
+            return Tree.from_hash(self._git, latest_tree)
 
     def commit(self, tree, message):
         try:
             # Get latest commit
-            parent = self._git.run("rev-parse", "{}^{{commit}}".format(self._name)).decode("utf-8").strip()
+            parent = self._git.run("rev-parse", "{}^{{commit}}".format(self._name))
         except self._git.FatalError:
             # No commit made yet. Branch is likely new
-            self._git.run("commit-tree", tree.hash)
+            new_commit = self._git.run(
+                "commit-tree", tree.hash, input=message.encode("utf-8")
+            )
         else:
-            self._git.run("commit-tree", tree.hash, "-p", parent)
+            new_commit = self._git.run(
+                "commit-tree", tree.hash, "-p", parent, input=message.encode("utf-8")
+            )
+        self._git.run("update-ref", "refs/heads/{}".format(self._name), new_commit)
 
 
 class Repo(object):
@@ -206,90 +233,3 @@ class Repo(object):
 
     def new_blob(self, data):
         return Blob(self._git, data)
-
-
-# class GitError(Exception):
-#     pass
-
-
-# class Git(object):
-#     """ Git helper to get commits """
-#
-#     # --------------------------------------
-#     # Get commits out of git
-#     # --------------------------------------
-#
-#     @classmethod
-#     def get_commit(cls, treeish="HEAD"):  # type: (str) -> str
-#         """ Convert provded name into concrete commit hash """
-#         command = ["git", "rev-parse", "--verify", treeish]
-#         commit = cls._run(command).strip()
-#         return commit
-#
-#     @classmethod
-#     def get_merge_base(cls, branch1, branch2="HEAD"):  # type: (str, str) -> str
-#         """ Get commit that will be used as a base if these two branches were merged """
-#         command = ["git", "merge-base", branch1, branch2]
-#         commit = cls._run(command).strip()
-#         return commit
-#
-#     # --------------------------------------
-#     # Store data inside directory
-#     # --------------------------------------
-#
-#     @classmethod
-#     def save(cls, commit, storage_directory, data):  # type: (str, str, str) -> str
-#         """ Save data to location """
-#         storage_directory = _os.path.realpath(storage_directory)
-#         if not _os.path.isdir(storage_directory):
-#             raise GitError("Path is not a directory: {}".format(storage_directory))
-#
-#         sub_dir, leaf = cls._format_commit(commit)
-#         storage_sub_dir = _os.path.join(storage_directory, sub_dir)
-#         storage_path = _os.path.join(storage_sub_dir, leaf)
-#         try:
-#             _os.mkdir(storage_sub_dir)
-#         except OSError as err:
-#             if err.errno != _errno.EEXIST:
-#                 raise
-#         with _gzip.open(storage_path, "w") as handle:
-#             handle.write(data.encode("utf-8"))
-#         return storage_path
-#
-#     @classmethod
-#     def load(cls, commit, storage_directories):  # type: (str, Sequence[str]) -> Any
-#         """ Look for, and load the provided commit, in any of the provided directories """
-#         parts = cls._format_commit(commit)
-#         for storage_dir in storage_directories:
-#             storage_path = _os.path.join(storage_dir, *parts)
-#             try:
-#                 with _gzip.open(storage_path) as handle:
-#                     return handle.read()
-#             except IOError as err:
-#                 if err.errno != _errno.ENOENT:
-#                     raise
-#         raise GitError("Cannot find the commit {}".format(commit))
-#
-#     # --------------------------------------
-#     # Helpers
-#     # --------------------------------------
-#
-#     @staticmethod
-#     def _format_commit(commit):
-#         return commit[:2], "{}.json.gz".format(commit[2:])
-#
-#     @staticmethod
-#     def _run(command):
-#         try:
-#             output = _subprocess.check_output(command, stderr=_subprocess.STDOUT)
-#         except _subprocess.CalledProcessError as err:
-#             raise GitError("Git {}".format(err.output.decode("utf-8")))
-#         except OSError as err:
-#             raise GitError("Could not find git. Is it correctly installed?")
-#         else:
-#             return output.decode("utf-8")
-
-
-if __name__ == "__main__":
-    print(Git.save("abcdefghijklmnopqrstuvwxyz", "./", "hello there"))
-    print(Git.load("abcdefghijklmnopqrstuvwxyzz", "./"))
