@@ -26,10 +26,18 @@ class Store(object):
         """ Save data under corresponding hash """
         base_dir = hash[: self._base_dir_len]
 
+        # Get our root
         branch = self._repo.get_branch(self.BRANCH)
         root_tree = branch.get_tree()
-        base_tree = root_tree.get_tree(base_dir)
-        print(root_tree)
+        # Build our heirarchy
+        base_tree = root_tree.get(base_dir)
+        if base_tree is None:
+            base_tree = self._repo.new_tree()
+        blob = self._repo.new_blob(data)
+        blob.save()
+        base_tree = base_tree.set(base_dir, blob)
+
+        print(base_tree)
         pass
 
     def load(self, hash):
@@ -81,10 +89,10 @@ class Base(object):
         return obj
 
     @classmethod
-    def from_hash(cls, git, hash, parent=None):
+    def from_hash(cls, git, hash):
         cmd = ["git", "cat-file", "-p", hash]
         data = self._run(cmd)
-        return cls(git, data, hash, parent)
+        return cls(git, data, hash)
 
     @property
     def hash(self):
@@ -95,16 +103,10 @@ class Base(object):
     def save(self):
         raise RuntimeError("Object cannot be saved.")
 
-    def _run(self, cmd, input=None):
-        proc = _subprocess.Popen(cmd, stdin=_subprocess.PIPE, stdout=_subprocess.PIPE)
-        output = proc.communicate(input)
-        return output[0]
-
 
 class Blob(Base):
     def save(self):
-        cmd = ["git", "hash-object", "-w", "--stdin"]
-        self._hash = self._run(cmd, input=self._data)
+        self._hash = self._git.run("hash-object", "-w", "--stdin", input=self._data)
 
 
 class Tree(Base):
@@ -121,7 +123,7 @@ class Tree(Base):
             entry = self._entry("100644", "blob", item.hash)
         else:
             raise TypeError("Bad type {}".format(type(item)))
-        entries = self._data.clone()
+        entries = self._data.copy()
         entries[name] = entry
         return self.__class__(self._git, entries, hash=None)
 
@@ -158,7 +160,7 @@ class Branch(object):
             return Tree.from_hash(self._git, hash)
         except self._git.FatalError:
             # Branch does not exist. Create empty tree.
-            return Tree(self._git, "")
+            return Tree(self._git, {})
 
 
 class Repo(object):
@@ -180,6 +182,12 @@ class Repo(object):
 
     def get_branch(self, name):
         return Branch(self._git, name)
+
+    def new_tree(self):
+        return Tree(self._git, {})
+
+    def new_blob(self, data):
+        return Blob(self._git, data)
 
 
 # class GitError(Exception):
