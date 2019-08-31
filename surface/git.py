@@ -7,6 +7,7 @@ import re as _re
 import os as _os
 import gzip as _gzip
 import errno as _errno
+import datetime as _datetime
 import subprocess as _subprocess
 import collections as _collections
 
@@ -29,16 +30,17 @@ class Store(object):
         # Get our root
         branch = self._repo.get_branch(self.BRANCH)
         root_tree = branch.get_tree()
-        # Build our heirarchy
+        # Store our data
         base_tree = root_tree.get(base_dir)
         if base_tree is None:
             base_tree = self._repo.new_tree()
         blob = self._repo.new_blob(data)
         blob.save()
-        base_tree = base_tree.set(base_dir, blob)
-
-        print(base_tree)
-        pass
+        base_tree = base_tree.set(hash, blob)
+        base_tree.save()
+        root_tree = root_tree.set(base_dir, base_tree)
+        root_tree.save()
+        branch.commit(root_tree, "Added at {}".format(_datetime.datetime.now()))
 
     def load(self, hash):
         """ Load data under corresponding hash """
@@ -106,7 +108,11 @@ class Base(object):
 
 class Blob(Base):
     def save(self):
-        self._hash = self._git.run("hash-object", "-w", "--stdin", input=self._data)
+        self._hash = (
+            self._git.run("hash-object", "-w", "--stdin", input=self._data)
+            .decode("utf-8")
+            .strip()
+        )
 
 
 class Tree(Base):
@@ -138,7 +144,9 @@ class Tree(Base):
             )
             for name, entry in self._data.items()
         )
-        self._hash = self._run("mktree", input=data)
+        self._hash = (
+            self._git.run("mktree", input=data.encode("utf-8")).decode("utf-8").strip()
+        )
 
 
 class Commit(Base):
@@ -161,6 +169,16 @@ class Branch(object):
         except self._git.FatalError:
             # Branch does not exist. Create empty tree.
             return Tree(self._git, {})
+
+    def commit(self, tree, message):
+        try:
+            # Get latest commit
+            parent = self._git.run("rev-parse", "{}^{{commit}}".format(self._name)).decode("utf-8").strip()
+        except self._git.FatalError:
+            # No commit made yet. Branch is likely new
+            self._git.run("commit-tree", tree.hash)
+        else:
+            self._git.run("commit-tree", tree.hash, "-p", parent)
 
 
 class Repo(object):
