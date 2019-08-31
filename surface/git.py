@@ -16,21 +16,21 @@ class Store(object):
 
     _hash_break = 2
 
-    def __init__(self, root):
+    def __init__(self, root):  # type: (str) -> None
         self._repo = Repo(root)
 
-    def save(self, message, hash, data):
+    def save(self, message, hash, data):  # type: (str, str, str) -> None
         """ Save data under corresponding hash """
         root_hash = hash[: self._hash_break]
-        base_hash = hash[self._hash_break:]
+        base_hash = hash[self._hash_break :]
         # Get our root
         branch = self._repo.get_branch(self.BRANCH)
         root_tree = branch.get_tree()
         # Store our data
         base_tree = root_tree.get(root_hash)
-        if base_tree is None:
+        if not isinstance(base_tree, Tree):
             base_tree = self._repo.new_tree()
-        blob = self._repo.new_blob(data)
+        blob = self._repo.new_blob(data.encode("utf-8"))
         blob.save()
         base_tree = base_tree.set(base_hash, blob)
         base_tree.save()
@@ -39,25 +39,21 @@ class Store(object):
         # Lock it in with a commit
         branch.commit(root_tree, message)
 
-    def load(self, hash):
+    def load(self, hash):  # type: (str) -> str
         """ Load data under corresponding hash """
         root_hash = hash[: self._hash_break]
-        base_hash = hash[self._hash_break:]
+        base_hash = hash[self._hash_break :]
         # Get our root
         branch = self._repo.get_branch(self.BRANCH)
         root_tree = branch.get_tree()
         # Load our data
         base_tree = root_tree.get(root_hash)
-        if base_tree is None:
+        if not isinstance(base_tree, Tree):
             raise IOError("Hash cannot be found {}".format(hash))
         blob = base_tree.get(base_hash)
-        if blob is None:
+        if not isinstance(blob, Blob):
             raise IOError("Hash cannot be found {}".format(hash))
-        return blob.data
-
-    def _get_tree(self):
-        hash = self._git.get_hash("{}^{{tree}}".format(self.BRANCH))
-        return hash
+        return blob.data.decode("utf-8")
 
 
 class Git(object):
@@ -68,15 +64,16 @@ class Git(object):
 
     EXEC = "git"
 
-    def __init__(self, root=None):
+    def __init__(self, root=None):  # type: (str) -> None
         if root is None:
             self._root = _os.getcwd()
-        self._root = root
+        else:
+            self._root = root
 
-    def get_hash(self, identifier):
+    def get_hash(self, identifier):  # type: (str) -> str
         return self.run("rev-parse", "--verify", identifier)
 
-    def run_raw(self, *args, input=None):
+    def run_raw(self, *args, input=None):  # type: (...) -> bytes
         try:
             proc = _subprocess.Popen(
                 (self.EXEC,) + args,
@@ -92,12 +89,17 @@ class Git(object):
             raise self.FatalError(output[1].decode("utf-8").strip())
         return output[0]
 
-    def run(self, *args, **kwargs):
+    def run(self, *args, **kwargs):  # types: (...) -> str
         return self.run_raw(*args, **kwargs).decode("utf-8").strip()
 
 
 class Base(object):
-    def __new__(cls, git, data, hash=None):
+
+    _git = None  # type: Git
+    _data = None  # type: Any
+    _hash = None  # type: Optional[str]
+
+    def __new__(cls, git, data, hash=None):  # type: (Git, Any, Optional[str]) -> None
         obj = object.__new__(cls)
         object.__setattr__(obj, "_git", git)
         object.__setattr__(obj, "_data", data)
@@ -105,7 +107,7 @@ class Base(object):
         return obj
 
     @property
-    def hash(self):
+    def hash(self):  # type: () -> str
         if self._hash is None:
             raise RuntimeError("Object {} not saved.".format(self))
         return self._hash
@@ -120,7 +122,7 @@ class Base(object):
 
 class Blob(Base):
     @classmethod
-    def from_hash(cls, git, hash):
+    def from_hash(cls, git, hash):  # type: (Git, str) -> Blob
         data = git.run_raw("cat-file", "blob", hash)
         return cls(git, data, hash)
 
@@ -135,7 +137,7 @@ class Tree(Base):
     _entry_template = "{mod} {type} {hash}\t{name}"
 
     @classmethod
-    def from_hash(cls, git, hash):
+    def from_hash(cls, git, hash):  # type: (Git, str) -> Tree
         data = git.run("cat-file", "-p", hash)
         entries = {
             match.group(4).strip(): cls._entry(
@@ -145,7 +147,7 @@ class Tree(Base):
         }
         return cls(git, entries, hash)
 
-    def set(self, name, item):
+    def set(self, name, item):  # type: (str, Union[Tree, Blob]) -> Tree
         """ Add / Edit an object of name """
         if isinstance(item, Tree):
             entry = self._entry("040000", "tree", item.hash)
@@ -157,7 +159,7 @@ class Tree(Base):
         entries[name] = entry
         return self.__class__(self._git, entries, hash=None)
 
-    def get(self, name, default=None):
+    def get(self, name, default=None):  # type: (str, Any) -> Union[Tree, Blob, Any]
         """ Get item from within. """
         try:
             entry = self._data[name]
@@ -181,11 +183,11 @@ class Tree(Base):
 
 
 class Branch(object):
-    def __init__(self, git, name):
+    def __init__(self, git, name):  # type: (Git, str) -> None
         self._git = git
         self._name = name
 
-    def get_tree(self):
+    def get_tree(self):  # type: () -> Tree
         try:
             latest_tree = self._git.get_hash("{}^{{tree}}".format(self._name))
         except self._git.FatalError:
@@ -194,7 +196,7 @@ class Branch(object):
         else:
             return Tree.from_hash(self._git, latest_tree)
 
-    def commit(self, tree, message):
+    def commit(self, tree, message):  # type: (Tree, str) -> None
         try:
             # Get latest commit
             parent = self._git.get_hash("{}^{{commit}}".format(self._name))
@@ -211,7 +213,7 @@ class Branch(object):
 
 
 class Repo(object):
-    def __init__(self, root, bare=True):
+    def __init__(self, root, bare=True):  # type: (str, bool) -> None
         root = _os.path.realpath(root)
         if not _os.path.isdir(root):
             raise IOError("Directory does not exist: {}".format(root))
@@ -227,11 +229,11 @@ class Repo(object):
                 self._git.run("init")
             self._root = root
 
-    def get_branch(self, name):
+    def get_branch(self, name):  # type: (str) -> Branch
         return Branch(self._git, name)
 
-    def new_tree(self):
+    def new_tree(self):  # type: () -> Tree
         return Tree(self._git, {})
 
-    def new_blob(self, data):
+    def new_blob(self, data):  # type: (bytes) -> Blob
         return Blob(self._git, data)

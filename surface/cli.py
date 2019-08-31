@@ -154,11 +154,7 @@ def run_dump(args):  # type: (Any) -> int
             path = _path.realpath(args.git)
             git_hash = _Git().get_hash("HEAD")
             store = _Store(path)
-            store.save(
-                " ".join(_sys.argv[1:]),
-                git_hash,
-                data.encode("utf-8"),
-            )
+            store.save(" ".join(_sys.argv[1:]), git_hash, data)
             LOG.info("Saved API to {}".format(path))
     if not args.quiet:
         LOG.info("Took ({})".format(round(_time.time() - start, 3)))
@@ -176,7 +172,9 @@ def run_compare(args):  # type: (Any) -> int
                 raise RuntimeError("Provided branches have no commit in common.")
         else:
             old_commit = local_git.get_hash(args.old)
-        repo_paths = [_path.realpath(path.strip()) for path in _re.split(r"[,:;]", args.git)]
+        repo_paths = [
+            _path.realpath(path.strip()) for path in _re.split(r"[,:;]", args.git)
+        ]
 
         old_data = new_data = None
         for repo_path in repo_paths:
@@ -190,9 +188,11 @@ def run_compare(args):  # type: (Any) -> int
             except IOError:
                 pass
         if old_data is None or new_data is None:
-            raise RuntimeError("Could not find information for {} in the provided paths".format(
-                args.old if old_data is None else args.new
-            ))
+            raise RuntimeError(
+                "Could not find information for {} in the provided paths".format(
+                    args.old if old_data is None else args.new
+                )
+            )
     else:
         with open(args.old, "r") as handle:
             old_data = handle.read()

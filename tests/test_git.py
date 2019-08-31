@@ -19,7 +19,7 @@ class TestGit(unittest.TestCase):
         os.remove(name)
 
     def test_store_new(self):
-        data = "ABCD".encode("ascii")
+        data = "ABCD"
         hash = "a30a285157af49e1e4555ceec0ad341c1b0fc6e0"
         store = Store(self.temp)
         store.save("mymessage", hash, data)
@@ -27,9 +27,9 @@ class TestGit(unittest.TestCase):
 
     def test_store_multi(self):
         data = [
-            ("a30a285157af49e1e4555ceec0ad341c1b0fc6e0", "ABCD".encode("ascii")),
-            ("a53d285157af493444555ceec0ad341c1b0fc6e0", "EFGH".encode("ascii")),
-            ("b32a285157af49e1e4555ceec0ad341c1b0fc6e0", "IJKL".encode("ascii")),
+            ("a30a285157af49e1e4555ceec0ad341c1b0fc6e0", "ABCD"),
+            ("a53d285157af493444555ceec0ad341c1b0fc6e0", "EFGH"),
+            ("b32a285157af49e1e4555ceec0ad341c1b0fc6e0", "IJKL"),
         ]
         store = Store(self.temp)
         for d in data:
