@@ -57,7 +57,7 @@ def main():
     dump_parser.add_argument(
         "-g",
         "--git",
-        help="Directory to store API into, under current git commit hash.",
+        help="Path to repo in which the API will be stored. If path is not a repo, one will be created there.",
     )
     dump_parser.add_argument(
         "modules", nargs="+", help="Full import path to module eg: mymodule.submodule"
@@ -94,9 +94,9 @@ def main():
         "-g",
         "--git",
         help=(
-            "List of directories separated by any of (,:;). "
+            "List of git repositories (directory paths) separated by any of (,:;). "
             "Presence of this flag will treat 'old' and 'new' arguments as git identifiers (tree-ish); "
-            "The commits will be searched for in the provided directories."
+            "The commits will be searched for in the provided repos."
         ),
     )
     compare_parser.add_argument(

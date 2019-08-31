@@ -12,7 +12,7 @@ import logging as _logging
 import datetime as _datetime
 import contextlib as _contextlib
 import surface as _surface
-from surface.git import Git as _Git
+from surface.git import Store as _Store, Git as _Git
 from surface._base import PY2 as _PY2
 
 if _PY2:
@@ -154,8 +154,14 @@ def run_dump(args):  # type: (Any) -> int
                 handle.write(data)
                 LOG.info("Saved API to {}".format(args.output))
         if args.git:
-            commit = _Git.get_commit()
-            path = _Git.save(commit, args.git, data)
+            path = _path.realpath(args.git)
+            git_hash = _Git().get_hash("HEAD")
+            store = _Store(path)
+            store.save(
+                " ".join(_sys.argv[1:]),
+                git_hash,
+                data.encode("utf-8"),
+            )
             LOG.info("Saved API to {}".format(path))
     if not args.quiet:
         LOG.info("Took ({})".format(round(_time.time() - start, 3)))

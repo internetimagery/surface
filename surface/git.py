@@ -68,7 +68,9 @@ class Git(object):
 
     EXEC = "git"
 
-    def __init__(self, root):
+    def __init__(self, root=None):
+        if root is None:
+            self._root = _os.getcwd()
         self._root = root
 
     def get_hash(self, identifier):
@@ -185,7 +187,7 @@ class Branch(object):
 
     def get_tree(self):
         try:
-            latest_tree = self._git.run("rev-parse", "{}^{{tree}}".format(self._name))
+            latest_tree = self._git.get_hash("{}^{{tree}}".format(self._name))
         except self._git.FatalError:
             # Branch does not exist. Create empty tree.
             return Tree(self._git, {})
@@ -195,7 +197,7 @@ class Branch(object):
     def commit(self, tree, message):
         try:
             # Get latest commit
-            parent = self._git.run("rev-parse", "{}^{{commit}}".format(self._name))
+            parent = self._git.get_hash("{}^{{commit}}".format(self._name))
         except self._git.FatalError:
             # No commit made yet. Branch is likely new
             new_commit = self._git.run(
