@@ -167,7 +167,7 @@ def run_compare(args):  # type: (Any) -> int
         local_git = _Git()
         new_commit = local_git.get_hash(args.new)
         if args.merge:  # Use merge base as commit, instead of provided one
-            old_commit = local_git.run("merge-base", args.old, args.new)
+            old_commit = local_git.run(("merge-base", args.old, args.new))
             if not old_commit:
                 raise RuntimeError("Provided branches have no commit in common.")
         else:

@@ -71,18 +71,19 @@ class Git(object):
             self._root = root
 
     def get_hash(self, identifier):  # type: (str) -> str
-        return self.run("rev-parse", "--verify", identifier)
+        return self.run(("rev-parse", "--verify", identifier))
 
-    def run_raw(self, *args, input=None):  # type: (...) -> bytes
+    def run_raw(self, cmds, input_=None):  # type: (Sequence[str], Optional[bytes]) -> bytes
         try:
+            cmd = [self.EXEC] + list(cmds)
             proc = _subprocess.Popen(
-                (self.EXEC,) + args,
+                cmd,
                 stdin=_subprocess.PIPE,
                 stdout=_subprocess.PIPE,
                 stderr=_subprocess.PIPE,
                 cwd=self._root,
             )
-            output = proc.communicate(input)
+            output = proc.communicate(input_)
         except OSError:
             raise RuntimeError("Could not find git. Is it correctly installed?")
         if proc.returncode:
@@ -123,11 +124,11 @@ class Base(object):
 class Blob(Base):
     @classmethod
     def from_hash(cls, git, hash):  # type: (Git, str) -> Blob
-        data = git.run_raw("cat-file", "blob", hash)
+        data = git.run_raw(("cat-file", "blob", hash))
         return cls(git, data, hash)
 
     def save(self):
-        self._hash = self._git.run("hash-object", "-w", "--stdin", input=self.data)
+        self._hash = self._git.run(("hash-object", "-w", "--stdin"), input=self.data)
 
 
 class Tree(Base):
@@ -138,7 +139,7 @@ class Tree(Base):
 
     @classmethod
     def from_hash(cls, git, hash):  # type: (Git, str) -> Tree
-        data = git.run("cat-file", "-p", hash)
+        data = git.run(("cat-file", "-p", hash))
         entries = {
             match.group(4).strip(): cls._entry(
                 mod=match.group(1), type=match.group(2), hash=match.group(3)
@@ -179,7 +180,7 @@ class Tree(Base):
             )
             for name, entry in self.data.items()
         )
-        self._hash = self._git.run("mktree", input=data.encode("utf-8"))
+        self._hash = self._git.run(("mktree",), input=data.encode("utf-8"))
 
 
 class Branch(object):
@@ -209,7 +210,7 @@ class Branch(object):
             new_commit = self._git.run(
                 "commit-tree", tree.hash, "-p", parent, input=message.encode("utf-8")
             )
-        self._git.run("update-ref", "refs/heads/{}".format(self._name), new_commit)
+        self._git.run(("update-ref", "refs/heads/{}".format(self._name), new_commit))
 
 
 class Repo(object):
@@ -220,13 +221,13 @@ class Repo(object):
         self._git = Git(root)
         try:
             # Get actual repo root
-            self._root = self._git.run("rev-parse", "--show-toplevel")
+            self._root = self._git.run(("rev-parse", "--show-toplevel"))
         except self._git.FatalError:
             # Make repo
             if bare:
-                self._git.run("init", "--bare")
+                self._git.run(("init", "--bare"))
             else:
-                self._git.run("init")
+                self._git.run(("init",))
             self._root = root
 
     def get_branch(self, name):  # type: (str) -> Branch
