@@ -130,7 +130,7 @@ class Blob(Base):
         return cls(git, data, hash)
 
     def save(self):
-        self._hash = self._git.run(("hash-object", "-w", "--stdin"), input=self.data)
+        self._hash = self._git.run(("hash-object", "-w", "--stdin"), input_=self.data)
 
 
 class Tree(Base):
@@ -182,7 +182,7 @@ class Tree(Base):
             )
             for name, entry in self.data.items()
         )
-        self._hash = self._git.run(("mktree",), input=data.encode("utf-8"))
+        self._hash = self._git.run(("mktree",), input_=data.encode("utf-8"))
 
 
 class Branch(object):
@@ -206,11 +206,11 @@ class Branch(object):
         except self._git.FatalError:
             # No commit made yet. Branch is likely new
             new_commit = self._git.run(
-                "commit-tree", tree.hash, input=message.encode("utf-8")
+                "commit-tree", tree.hash, input_=message.encode("utf-8")
             )
         else:
             new_commit = self._git.run(
-                "commit-tree", tree.hash, "-p", parent, input=message.encode("utf-8")
+                "commit-tree", tree.hash, "-p", parent, input_=message.encode("utf-8")
             )
         self._git.run(("update-ref", "refs/heads/{}".format(self._name), new_commit))
 
