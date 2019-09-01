@@ -154,7 +154,7 @@ def run_dump(args):  # type: (Any) -> int
             path = _path.realpath(args.git)
             commit_hash = _Git().get_hash("HEAD")
             store = _Store(path)
-            store.save(" ".join(_sys.argv[1:]), commit_hash, data)
+            store.save(" ".join(["surface"] + _sys.argv[1:]), commit_hash, data)
             LOG.info(
                 'Saved API as "{}", in branch "{}", to "{}"'.format(
                     commit_hash, store.BRANCH, path
