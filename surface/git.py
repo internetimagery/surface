@@ -51,7 +51,7 @@ class Store(object):
         except Git.FatalError:
             raise IOError("Hash cannot be found {}".format(hash))
         else:
-            return blob.data.decode("utf-8")
+            return blob.decode("utf-8")
 
 
 class Git(object):
@@ -191,14 +191,14 @@ class Branch(object):
     def read_blob(self, path, try_remote=False):
         try:
             return self._git.run_raw(
-                ("cat-file", "blob", "{}:{}".format(self.name, path))
+                ("cat-file", "blob", "{}:{}".format(self._name, path))
             )
         except self._git.FatalError:
             if not try_remote:
                 raise
         LOG.info("Could not find path locally, trying remote: {}".format(path))
         return self._git.run_raw(
-            ("cat-file", "blob", "origin/{}:{}".format(self.name, path))
+            ("cat-file", "blob", "origin/{}:{}".format(self._name, path))
         )
 
     def get_tree(self):  # type: () -> Tree
