@@ -5,9 +5,12 @@ if False:  # type checking
 
 import re as _re
 import os as _os
+import logging as _logging
 import datetime as _datetime
 import subprocess as _subprocess
 import collections as _collections
+
+LOG = _logging.getLogger(__name__)
 
 
 class Store(object):
@@ -41,11 +44,10 @@ class Store(object):
 
     def load(self, hash):  # type: (str) -> str
         """ Load data under corresponding hash """
-        root_hash = hash[: self._hash_break]
-        base_hash = hash[self._hash_break :]
+        path = "{}/{}".format(hash[: self._hash_break], hash[self._hash_break :])
         branch = self._repo.get_branch(self.BRANCH)
         try:
-            blob = branch.read_blob("{}/{}".format(root_hash, base_hash))
+            blob = branch.read_blob(path, try_remote=True)
         except Git.FatalError:
             raise IOError("Hash cannot be found {}".format(hash))
         else:
@@ -186,8 +188,18 @@ class Branch(object):
         self._git = git
         self._name = name
 
-    def read_blob(self, path):
-        return self._git.run_raw(("cat-file", "blob", "{}:{}".format(self.name, path)))
+    def read_blob(self, path, try_remote=False):
+        try:
+            return self._git.run_raw(
+                ("cat-file", "blob", "{}:{}".format(self.name, path))
+            )
+        except self._git.FatalError:
+            if not try_remote:
+                raise
+        LOG.info("Could not find path locally, trying remote: {}".format(path))
+        return self._git.run_raw(
+            ("cat-file", "blob", "origin/{}:{}".format(self.name, path))
+        )
 
     def get_tree(self):  # type: () -> Tree
         try:
