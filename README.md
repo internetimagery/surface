@@ -103,7 +103,7 @@ Rough todo...
 - [x] clean stuff up
 - [x] When comparing types, check if they line up with an exposed alias.
 - [x] use import hook to track import time properly (nice to have)
-- [ ] Compare Union correctly. Order of entires does not matter, and has an alias: Optional[something]
-- [ ] Same thing with NoneType and None. Both are equal.
+- [x] Compare Union correctly. Order of entires does not matter, and has an alias: Optional[something]
+- [x] Same thing with NoneType and None. Both are equal.
 - [x] Unknown have a type field for comparisons. Instead of full text comparison.
 - [ ] More and more and more tests.
