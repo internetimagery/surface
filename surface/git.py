@@ -43,17 +43,13 @@ class Store(object):
         """ Load data under corresponding hash """
         root_hash = hash[: self._hash_break]
         base_hash = hash[self._hash_break :]
-        # Get our root
         branch = self._repo.get_branch(self.BRANCH)
-        root_tree = branch.get_tree()
-        # Load our data
-        base_tree = root_tree.get(root_hash)
-        if not isinstance(base_tree, Tree):
+        try:
+            blob = branch.read_blob("{}/{}".format(root_hash, base_hash))
+        except Git.FatalError:
             raise IOError("Hash cannot be found {}".format(hash))
-        blob = base_tree.get(base_hash)
-        if not isinstance(blob, Blob):
-            raise IOError("Hash cannot be found {}".format(hash))
-        return blob.data.decode("utf-8")
+        else:
+            return blob.data.decode("utf-8")
 
 
 class Git(object):
@@ -189,6 +185,9 @@ class Branch(object):
     def __init__(self, git, name):  # type: (Git, str) -> None
         self._git = git
         self._name = name
+
+    def read_blob(self, path):
+        return self._git.run_raw(("cat-file", "blob", "{}:{}".format(self.name, path)))
 
     def get_tree(self):  # type: () -> Tree
         try:
