@@ -41,7 +41,7 @@ class TestLiveType(unittest.TestCase):
             pass
 
         self.assertEqual(
-            "typing.Callable[[~unknown, typing.Optional[~unknown]], ~unknown]",
+            "typing.Callable[[~unknown, typing.Union[NoneType, ~unknown]], ~unknown]",
             str(LiveType(test)),
         )
 

@@ -19,7 +19,7 @@ import collections
 from surface._base import UNKNOWN, PY2, TYPE_CHARS
 from surface._doc import parse_docstring
 from surface._comment import get_comment
-from surface._utils import FuncSig, Cache, IDCache
+from surface._utils import FuncSig, Cache, IDCache, get_tokens
 from surface._item_static import (
     ModuleAst,
     NameAst,
@@ -82,7 +82,7 @@ class FuncType(IDCache):
             if param.default is not FuncSig.EMPTY:
                 if param.default is None:
                     # Value is optional
-                    self.params[name] = "typing.Optional[{}]".format(UNKNOWN)
+                    self.params[name] = "typing.Union[NoneType, {}]".format(UNKNOWN)
                 else:
                     self.params[name] = str(LiveType(param.default))
                 continue
@@ -228,17 +228,7 @@ class AnnotationType(object):
     def __init__(self, obj, context):  # type: (Any, Context) -> None
         self._context = context
         self.type = self._get_type(obj)
-        # A Little consistency
-        optional = "typing.Optional[{}]".format
-        self.type = re.sub(
-            r"\btyping.Union\[ *({0}) *, *({0}) *\]".format(TYPE_CHARS),
-            lambda x: optional(x.group(1))
-            if x.group(2) == "NoneType"
-            else optional(x.group(2))
-            if x.group(1) == "NoneType"
-            else x.group(0),
-            self.type,
-        )
+        self.type = self._sort_union(self.type)
 
     def _get_type(self, obj):  # type: (Any) -> str
         if isinstance(obj, basestring if PY2 else str):  # type: ignore
@@ -298,6 +288,55 @@ class AnnotationType(object):
             return None
         func = FuncType(obj)
         return func.as_var()
+
+    def _sort_union(self, type_string):
+        if "typing.Union" not in type_string:
+            return type_string
+        tokens = get_tokens(type_string)
+        num_tokens = len(tokens) - 1
+        replace = []
+        i = 1
+        while i < num_tokens:
+            i += 1
+            if not (
+                tokens[i][0] == token.NAME
+                and tokens[i][1] == "Union"
+                and tokens[i - 2][1] == "typing"
+            ):
+                continue
+            start = tokens[i + 2][2][1]  # First token inside braces
+            entries = []
+            marker = 0
+            brace = 0
+            while i < num_tokens:
+                i += 1
+                sub_tok = tokens[i]
+                if sub_tok[0] != token.OP:
+                    continue
+
+                if sub_tok[1] == "[":
+                    brace += 1
+                elif sub_tok[1] == "]":
+                    brace -= 1
+
+                if brace > 1:
+                    continue
+
+                if sub_tok[1] in "],":
+                    sub_type_string = type_string[marker : tokens[i - 1][3][1]]
+                    entries.append(self._sort_union(sub_type_string).strip())
+                if sub_tok[1] in "[,":
+                    marker = tokens[i + 1][2][1]
+
+                if not brace:
+                    break
+            end = tokens[i - 1][3][1]  # Last token inside braces
+            entries.sort()  # HERE! Sort those internals
+            replace.append((start, end, ", ".join(entries)))
+
+        for rep in sorted(replace, reverse=True):
+            type_string = type_string[: rep[0]] + rep[2] + type_string[rep[1] :]
+        return type_string
 
     def _eval_type(self, type_string):
         try:

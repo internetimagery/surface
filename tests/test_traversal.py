@@ -124,21 +124,21 @@ class TestImporter(unittest.TestCase):
                                         (
                                             API.Arg(
                                                 "names",
-                                                "typing.Optional[{}]".format(UNKNOWN),
+                                                "typing.Union[NoneType, {}]".format(UNKNOWN),
                                                 Kind.POSITIONAL
                                                 | Kind.KEYWORD
                                                 | Kind.DEFAULT,
                                             ),
                                             API.Arg(
                                                 "module",
-                                                "typing.Optional[{}]".format(UNKNOWN),
+                                                "typing.Union[NoneType, {}]".format(UNKNOWN),
                                                 Kind.POSITIONAL
                                                 | Kind.KEYWORD
                                                 | Kind.DEFAULT,
                                             ),
                                             API.Arg(
                                                 "type",
-                                                "typing.Optional[{}]".format(UNKNOWN),
+                                                "typing.Union[NoneType, {}]".format(UNKNOWN),
                                                 Kind.POSITIONAL
                                                 | Kind.KEYWORD
                                                 | Kind.DEFAULT,
@@ -155,24 +155,24 @@ class TestImporter(unittest.TestCase):
                                         else (
                                             API.Arg(
                                                 "names",
-                                                "typing.Optional[{}]".format(UNKNOWN),
+                                                "typing.Union[NoneType, {}]".format(UNKNOWN),
                                                 Kind.POSITIONAL
                                                 | Kind.KEYWORD
                                                 | Kind.DEFAULT,
                                             ),
                                             API.Arg(
                                                 "module",
-                                                "typing.Optional[{}]".format(UNKNOWN),
+                                                "typing.Union[NoneType, {}]".format(UNKNOWN),
                                                 Kind.KEYWORD | Kind.DEFAULT,
                                             ),
                                             API.Arg(
                                                 "qualname",
-                                                "typing.Optional[{}]".format(UNKNOWN),
+                                                "typing.Union[NoneType, {}]".format(UNKNOWN),
                                                 Kind.KEYWORD | Kind.DEFAULT,
                                             ),
                                             API.Arg(
                                                 "type",
-                                                "typing.Optional[{}]".format(UNKNOWN),
+                                                "typing.Union[NoneType, {}]".format(UNKNOWN),
                                                 Kind.KEYWORD | Kind.DEFAULT,
                                             ),
                                             API.Arg(
