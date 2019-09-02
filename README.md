@@ -13,21 +13,29 @@ Example:
 
 ![script output example](img/dump.jpg "script output example")
 
-The goal of this project is to assist in following semantic versioning. https://semver.org/
+The comparison aspect of this project is to assist in following semantic versioning. https://semver.org/
+To that end, it can pick up on changes to the API and suggest version changes. eg patch, minor, major
+It also features options to lock down an api on CI. eg: exit 1 if major change is detected.
 
-To that end, it can pick up on changes to the API and suggest (or check for on CI) version bumps. eg patch, minor, major
 
-To do so, dump a copy of the old and new api to a temporary location and run a diff. Example:
+A rough usage example can be found on this very projects CI (.travis.yml), checking the script version matches the observed changes.
 
 ```sh
-# current "live" public API
->>> surface dump test_module -o /tmp/old_api.json
-# add new WIP module to path and dump that API
->>> surface dump test_module -o /tmp/new_api.json
->>> surface compare /tmp/old_api.json /tmp/old_api.json
-[major] Added Function: test_module.someExample
-major
+# Install latest public release, scan API and get version
+>>> pip install surface
+>>> surface -q dump surface -o before.json
+>>> RELEASE_VER="$(surface -V 2>&1)"
+# Install local release candidate, scan API and get version
+>>> pip install -e ./
+>>> surface -q dump surface -o after.json
+>>> DEV_VER="$(surface -V 2>&1)"
+# Determine next release version
+>>> PREDICTED_VER="$(surface compare before.json after.json -b $RELEASE_VER)"
+# Check the versions match and fail if they do not
+>>> echo $PREDICTED_VER | grep $DEV_VER || (echo Version missmatch. Wanted $PREDICTED_VER but got $DEV_VER && exit 1)
 ```
+
+There are many more options available to craft something for your use case. Have a peek below.
 
 ## Usage:
 
