@@ -49,7 +49,7 @@ This subcommand will import and scan the provided api. Then output a representat
 * (--all-filter) Respect `__all__` attrbiute. Treat the public api as though it were being imported with *.
 * (--pythonpath PATH) Additions to the python path. These paths will be prepended and used for lookup when running.
 * (--output PATH) File (.json) in which to save the scanned info. Useful for comparisons / manual inspection later.
-* (--git REPO) Alternative to --output. Will put the command in git mode. Changes will be stored in a git repo at the provided path (one will be created if it does not exist) based on the current commit hash and into the branch surface_API_store.
+* (--git REPO) Alternative to --output. Will put the command in git mode. Changes will be stored in a git repo at the provided path (one will be created if it does not exist) into the branch surface_API_store. Linked to the commit-hash for the current commit in the current working directory. If you want to include this in the current repo, just pass `--git ./` as the argument.
 
 ```sh
 surface dump --output /path/to/output.json module_to_scan
