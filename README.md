@@ -11,8 +11,7 @@ Example:
 >>> surface dump surface
 ```
 
-![script output example|img/dump.jpg]
-
+![script output example](img/dump.jpg "script output example")
 
 The goal of this project is to assist in following semantic versioning. https://semver.org/
 
