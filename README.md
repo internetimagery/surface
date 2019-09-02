@@ -44,17 +44,17 @@ There are many more options available to craft something for your use case. Have
 This subcommand will import and scan the provided api. Then output a representation of what it finds to where you specify.
 
 * (--recurse) Walk through, and run on submodules.
-* (--depth) Only traverse objects to this depth. (default 5)
+* (--depth NUM) Only traverse objects to this depth. (default 5)
 * (--exclude-modules) Don't traverse imported modules. This (and the above) are helpful if the api is messy/large, and takes a long time to scan.
 * (--all-filter) Respect `__all__` attrbiute. Treat the public api as though it were being imported with *.
-* (--pythonpath PATH) Additions to the python path. These paths will be appened and used for lookup when running.
-* (--output PATH) File (.json) in which to save the scanned info. Useful for comparisons later.
-* (--git REPO) Alternative to --output. Will put the command in git mode. Changes will be stored in the git repo at the provided path (one will be created if it does not exist) based on the current commit hash and into the branch surface_API_store.
+* (--pythonpath PATH) Additions to the python path. These paths will be prepended and used for lookup when running.
+* (--output PATH) File (.json) in which to save the scanned info. Useful for comparisons / manual inspection later.
+* (--git REPO) Alternative to --output. Will put the command in git mode. Changes will be stored in a git repo at the provided path (one will be created if it does not exist) based on the current commit hash and into the branch surface_API_store.
 
 ```sh
 surface dump --output /path/to/output.json module_to_scan
 
-surface dump --git /path/to/repo/to/store module_to_scan
+surface dump --git /path/to/repo/storage module_to_scan
 ```
 
 ### Compare:
@@ -64,7 +64,7 @@ This subcommand will take two previously exported (above) files, and compare the
 * (--bump VERSION) Instead of outputting a semantic level. It will instead take a version, and output the version with the level applied. eg --bump 1.2.3 instead of minor would become 1.3.0
 * (--check LEVEL) Disallow this level (or higher). exit 1 if it exceeds the level. Useful for CI jobs to prevent breaking changes.
 * (--git PATHS) Git mode. Treat 'old' and 'new' inputs as git identifiers (eg branches). Look for the corresponding data in repos at the provided paths, previously saved with the above gitmode.
-* (--merge) Git mode. Instead of taking two identifiers and comparing. Take the commit at merge-base between the two. This is helpful to compare what changed since the branch diverged.
+* (--merge) Git mode. Instead of taking two identifiers and comparing directly. Take the commit at merge-base between the two. This is helpful to compare what changed since the branch diverged.
 
 ```sh
 surface compare /path/to/old/scan.json /path/to/new/scan.json
@@ -77,9 +77,9 @@ surface compare --git /path/to/repo/store master HEAD
 Common options that affect all subcommands.
 
 * (--help) Display help message.
-* (--quiet) Silence the reporting output.
-* (--no-colour) Do not include ansii colours in output.
 * (--rules) Print out a list of rules the tool adheres to.
+* (--no-colour) Do not include ansii colours in output.
+* (--quiet) Silence the reporting output.
 
 There are some built in dev tools also.
 
@@ -88,7 +88,7 @@ There are some built in dev tools also.
 * (--pdb) Launch PDB on exceptions.
 
 
-_This is very much a Work In Progress. Don't rely on it in production. (That said, feel free to test and report findings)._
+_This is somewhat a Work In Progress. Don't rely on it in production. (That said, feel free to test and report findings)._
 
 
 Rough todo...
