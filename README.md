@@ -13,9 +13,9 @@ Example:
 
 ![script output example](img/dump.jpg "script output example")
 
-The comparison aspect of this project is to assist in following semantic versioning. https://semver.org/
-To that end, it can pick up on changes to the API and suggest version changes. eg patch, minor, major
-It also features options to lock down an api on CI. eg: exit 1 if major change is detected.
+The comparison aspect of this project is to assist in following semantic versioning. https://semver.org/\
+To that end, it can pick up on changes to the API and suggest version changes. eg patch, minor, major\
+It also features options to lock down an api on CI. eg: exit 1 if major change is detected.\
 
 
 A rough usage example can be found on this very projects CI (.travis.yml), checking the script version matches the observed changes.

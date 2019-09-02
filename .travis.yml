@@ -5,7 +5,7 @@ python:
 install:
 # Install latest release, collect api and version information using release logic
 - pip install surface
-- surface -q dump surface -o before.json
+- surface -q dump surface -r -o before.json
 - RELEASE_VER="$(surface -V 2>&1)"
 # Install current working version
 - pip install -e ./
@@ -18,9 +18,9 @@ script:
 - python tests
 - ./py3 mypy surface
 - ./py3 black --check surface
-- surface -q dump surface -o after.json
+- surface -q dump surface -r -o after.json
 - PREDICTED_VER="$(surface compare before.json after.json -b $RELEASE_VER)"
--  echo $PREDICTED_VER | grep $DEV_VER || (echo Version missmatch. Wanted $PREDICTED_VER but got $DEV_VER && exit 1)
+- echo $PREDICTED_VER | grep $DEV_VER || (echo Version missmatch. Wanted $PREDICTED_VER but got $DEV_VER && exit 1)
 deploy:
   provider: pypi
   skip_existing: true
