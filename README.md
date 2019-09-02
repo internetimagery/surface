@@ -59,6 +59,12 @@ This subcommand will import and scan the provided api. Then output a representat
 * (--output PATH) File (.json) in which to save the scanned info. Useful for comparisons later.
 * (--git REPO) Alternative to --output. Will put the command in git mode. Changes will be stored in the git repo at the provided path (one will be created if it does not exist) based on the current commit hash and into the branch surface_API_store.
 
+```sh
+surface dump --output /path/to/output.json module_to_scan
+
+surface dump --git /path/to/repo/to/store module_to_scan
+```
+
 ### Compare:
 
 This subcommand will take two previously exported (above) files, and compare their changes. Outputting what it sees.
@@ -67,6 +73,12 @@ This subcommand will take two previously exported (above) files, and compare the
 * (--check LEVEL) Disallow this level (or higher). exit 1 if it exceeds the level. Useful for CI jobs to prevent breaking changes.
 * (--git PATHS) Git mode. Treat 'old' and 'new' inputs as git identifiers (eg branches). Look for the corresponding data in repos at the provided paths, previously saved with the above gitmode.
 * (--merge) Git mode. Instead of taking two identifiers and comparing. Take the commit at merge-base between the two. This is helpful to compare what changed since the branch diverged.
+
+```sh
+surface compare /path/to/old/scan.json /path/to/new/scan.json
+
+surface compare --git /path/to/repo/store master HEAD
+```
 
 ### Common options:
 
