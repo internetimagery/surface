@@ -94,7 +94,7 @@ Rough todo...
 - [x] Collect annotation typing information.
 - [x] Partial support for typing comments.
 - [x] Partial support for docstring typing (google style only, currently)
-- [ ] Ignore changes from typing.* objects, imported locally. Perhaps ignore from initial scan.
+- [x] Ignore changes from typing.* objects, imported locally. Perhaps ignore from initial scan.
 - [ ] Search modules from bottom up. So "parent" relationships reflect module heirarchy, not traversal chain.
 - [x] Utilize sigtools depth feature, to collect typing from comments on all arguments.
 - [x] Improve typing comparison. Inspecting deeply nested types.
