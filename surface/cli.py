@@ -4,6 +4,7 @@ if False:  # type checking
     from typing import *
 
 import re as _re
+import os as _os
 import sys as _sys
 import time as _time
 import json as _json
@@ -19,6 +20,9 @@ if _PY2:
     import __builtin__ as _builtins  # type: ignore
 else:
     import builtins as _builtins  # type: ignore
+
+_WINDOWS = _os.name == "nt"
+
 
 LOG = _logging.getLogger(__name__)
 
@@ -177,7 +181,8 @@ def run_compare(args):  # type: (Any) -> int
         else:
             old_commit = local_git.get_hash(args.old)
         repo_paths = [
-            _path.realpath(path.strip()) for path in _re.split(r"[,:;]", args.git)
+            _path.realpath(path.strip())
+            for path in _re.split(r"[,;]" if _WINDOWS else r"[,:]", args.git)
         ]
 
         old_data = new_data = None

@@ -7,9 +7,8 @@ import sys as _sys
 from collections import namedtuple as _nt
 
 
-# Python 2 compatability
+# Compatability
 PY2 = _sys.version_info.major == 2
-
 
 # Type used when actual type cannot be determined.
 # While typing.Any could be used here, and would be valid
