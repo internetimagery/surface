@@ -7,27 +7,12 @@ Run it on your project to see at a glance what you are exposing to the world. Ru
 
 Example:
 
-```python
-# module test_module
-public_var =  123
-_private_var "123"
-class PublicClass(object):
-  def public_method(self, abc:int) -> bool:
-    return self._private_method(abc)
-  def _private_method(self, var):
-    return var == 123
-```
 ```sh
->>> surface dump test_module
+>>> surface dump surface
 ```
-```python
-[test_module](0.0s)
-class PublicClass:
-  def public_method(
-    a:int
-  ) -> bool
-public_var:int
-```
+
+![script output example|img/dump.jpg]
+
 
 The goal of this project is to assist in following semantic versioning. https://semver.org/
 
