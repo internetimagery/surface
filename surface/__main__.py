@@ -4,6 +4,7 @@ if False:  # type checking
     from typing import *
 
 
+import os
 import sys
 import argparse
 import logging
@@ -11,6 +12,7 @@ import traceback
 
 import surface
 from surface.cli import profile, run_rules, run_dump, run_compare
+
 
 # Global logger
 LOG = logging.getLogger()
@@ -129,7 +131,13 @@ def main():
     # Set logging level to debug if requested
     args = parser.parse_args()
     LOG.addHandler(logging.StreamHandler(sys.stderr))
-    LOG.setLevel(logging.DEBUG if args.debug else logging.INFO)
+    LOG.setLevel(
+        logging.DEBUG
+        if args.debug
+        else logging.CRITICAL
+        if args.quiet
+        else logging.INFO
+    )
     LOG.debug("Debug on!")
 
     # If rules was requested. Print them out.

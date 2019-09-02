@@ -70,7 +70,6 @@ class TestRun(unittest.TestCase):
             "HEAD",
             "HEAD",
         ]
-        print(self.temp, os.getcwd())
         subprocess.check_call(command)
 
 

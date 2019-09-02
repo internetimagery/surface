@@ -132,12 +132,12 @@ def run_dump(args):  # type: (Any) -> int
     if not args.quiet:
         yellow = ("{}" if args.no_colour else "\033[33m{}\033[0m").format
         for mod in module_api:
-            _sys.stdout.write(
+            LOG.info(
                 "[{}]({:.2f}s)\n".format(
                     yellow(mod.path), round(import_times.get(mod.path, 0.0), 2)
                 )
             )
-            _sys.stdout.write(_surface.format_api(mod.body, not args.no_colour, "    "))
+            LOG.info(_surface.format_api(mod.body, not args.no_colour, "    "))
 
     if args.output or args.git:
         serialize = {
@@ -225,10 +225,9 @@ def run_compare(args):  # type: (Any) -> int
     highest_level = _surface.SemVer.PATCH
     changes = _surface.Changes().compare(old_api, new_api)
     for level, change_type, note in changes:
-        if not args.quiet:
-            LOG.info(
-                "[{}] {}: {}".format(colours[level](level), purple(change_type), note)
-            )
+        LOG.info(
+            "[{}] {}: {}\n".format(colours[level](level), purple(change_type), note)
+        )
         if level == _surface.SemVer.MAJOR:
             highest_level = level
         elif level == _surface.SemVer.MINOR and highest_level != _surface.SemVer.MAJOR:

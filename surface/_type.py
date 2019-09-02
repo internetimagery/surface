@@ -345,7 +345,11 @@ class AnnotationType(object):
         except (NameError, AttributeError):
             # Retry the evaluation with an updated context
             self._include_imports(type_string)
-            return eval(type_string, self._context.context)
+            try:
+                return eval(type_string, self._context.context)
+            except (NameError, AttributeError) as err:
+                LOG.warning("Error in typing: {}".format(err))
+                raise
         except SyntaxError as err:
             LOG.warning("Invalid syntax in type '{}'".format(type_string))
             raise
