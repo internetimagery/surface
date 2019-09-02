@@ -6,6 +6,7 @@ if False:  # type checking
 import sys
 import enum
 import inspect
+import typing
 import logging
 import traceback
 
@@ -70,6 +71,9 @@ class ModuleItem(LiveItem):
 
     ALL_FILTER = False
 
+    _child_filter = set(id(_v) for _v in typing.__dict__.values())
+    _child_filter.add(id(typing))
+
     @classmethod
     def is_this_type(cls, item, parent):
         return inspect.ismodule(item)
@@ -81,7 +85,9 @@ class ModuleItem(LiveItem):
         if self.name in sys.builtin_module_names:
             return []  # Don't bother traversing built in stuff...
         names = (
-            name for name in sorted(dir(self.item)) if name and not name.startswith("_")
+            name
+            for name, item in self.item.__dict__.items()
+            if name and not name.startswith("_") and not id(item) in self._child_filter
         )
         if self.ALL_FILTER:
             try:
@@ -90,7 +96,8 @@ class ModuleItem(LiveItem):
                 pass
             else:
                 names = (name for name in names if name in all_filter)
-        return names
+
+        return sorted(names)
 
     def get_type(self):
         return getattr(self.item, "__name__", "")
