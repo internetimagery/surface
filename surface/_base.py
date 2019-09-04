@@ -35,4 +35,4 @@ class API(object):
 Change = _nt("Change", ("level", "type", "info"))
 
 
-TYPE_CHARS = r"[\w\.]+(?:[\w\.,\[\] ]+)"
+TYPE_CHARS = r"\w[\w\.]*(?:\[[\w\.,\[\] ]*\])?"

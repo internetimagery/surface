@@ -23,9 +23,8 @@ if PY2:
 LOG = logging.getLogger(__name__)
 
 func_header_reg = re.compile(r"^[ \t]*(def \w+)", re.M)
-type_comment_reg = re.compile(r"# +type: ({})".format(TYPE_CHARS))
-type_comment_sig_reg = re.compile(r"# +type: \(({0})?\) +-> +({0})".format(TYPE_CHARS))
-
+type_comment_reg = re.compile(r"# +type: +({})".format(TYPE_CHARS))
+type_comment_sig_reg = re.compile(r"# +type: +\(((?:{0}[, ]*|\.\.\.)*)\) +-> +({0})".format(TYPE_CHARS))
 
 class Mapper(object):
     def __init__(
