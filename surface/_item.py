@@ -48,7 +48,7 @@ class Item(collections.Mapping):
 
     def __new__(
         cls, visitors, item, parent
-    ):  # type: (Sequence[Type[I]], Any, Optional[I]) -> I
+    ):  # type: (Sequence[Type[I]], Any, Optional[I]) -> Item
         scope = super(Item, cls).__new__(cls)
         scope.__visitors = visitors
         scope.__item = item

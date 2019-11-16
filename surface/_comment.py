@@ -57,9 +57,8 @@ class Mapper(object):
 class FuncMapper(Mapper):
     @classmethod
     def parse(
-        cls,  # type: Type[M]
-        source,  # type: str
-    ):  # type: (...) -> Optional[M]
+        cls, source  # type: str
+    ):  # type: (...) -> Optional[FuncMapper]
         header = func_header_reg.search(source)
         if not header:
             return None
@@ -132,7 +131,7 @@ class FuncMapper(Mapper):
 
 class ArgMapper(Mapper):
     @classmethod
-    def parse(cls, source):
+    def parse(cls, source):  # type: (str) -> Optional[ArgMapper]
         if PY2:  # python 2 has a bug untokenizing some strings.
             source += "\n"
         return super(ArgMapper, cls).parse(source)

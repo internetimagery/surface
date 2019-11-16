@@ -100,7 +100,7 @@ class Base(object):
     _data = None  # type: Any
     _hash = None  # type: Optional[str]
 
-    def __new__(cls, git, data, hash=None):  # type: (Git, Any, Optional[str]) -> None
+    def __new__(cls, git, data, hash=None):  # type: (Git, Any, Optional[str]) -> Base
         obj = object.__new__(cls)
         object.__setattr__(obj, "_git", git)
         object.__setattr__(obj, "_data", data)
