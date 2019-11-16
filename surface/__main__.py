@@ -130,14 +130,13 @@ def main():
 
     # Set logging level to debug if requested
     args = parser.parse_args()
-    LOG.addHandler(logging.StreamHandler(sys.stderr))
-    LOG.setLevel(
-        logging.DEBUG
-        if args.debug
-        else logging.CRITICAL
-        if args.quiet
-        else logging.INFO
-    )
+    if args.debug:
+        log_level = logging.DEBUG
+    elif args.quiet:
+        log_level = logging.CRITICAL
+    else:
+        log_level = logging.INFO
+    logging.basicConfig(level=log_level, format="%(message)s", stream=sys.stderr)
     LOG.debug("Debug on!")
 
     # If rules was requested. Print them out.
