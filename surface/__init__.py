@@ -3,7 +3,7 @@
 if False:  # type checking
     from typing import *
 
-__version__ = "0.7.2"
+__version__ = "0.8.0"
 
 import re as _re
 import importlib as _importlib
