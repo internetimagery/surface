@@ -132,11 +132,15 @@ def main():
     args = parser.parse_args()
     if args.debug:
         log_level = logging.DEBUG
+        log_format = "%(asctime)s/%(module)s.%(funcName)s[%(levelname)s]: %(message)s"
     elif args.quiet:
         log_level = logging.CRITICAL
+        log_format = "%(asctime)s/%(module)s.%(funcName)s[%(levelname)s]: %(message)s"
     else:
         log_level = logging.INFO
-    logging.basicConfig(level=log_level, format="%(message)s", stream=sys.stderr)
+        log_format = "%(message)s"
+
+    logging.basicConfig(level=log_level, format=log_format, stream=sys.stderr)
     LOG.debug("Debug on!")
 
     # If rules was requested. Print them out.
