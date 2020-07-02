@@ -1,4 +1,5 @@
 """ Traverse some code. Build a representation from it """
+import collections
 
 from pyhike import Chart
 
@@ -13,14 +14,17 @@ class RepresentationBuilder(Chart):
     _ALLOWED_NAMES = ("__init__", "__new__")
 
     def __init__(self):
-        self._seen = set() # type: Set[int]
-        self._nameMap = {} # type: Dict[str, BaseNode]
-        self._idMap = {} # type: Dict[int, BaseNode]
+        self._nameMap = {} # type: Dict[str, BaseWrapper]
+        self._idMap = {} # type: Dict[int, BaseWrapper]
     
     def get_representation(self):
-        # type: () -> Dict[str, BaseNode]
+        # type: () -> Dict[str, Dict[str, BaseWrapper]]
         """ Return our lovely generated representation """
-        return self._nameMap
+        structure = collections.defaultdict(dict)
+        for name, node in self._nameMap.items():
+            path, qualname = name.split(":", 1)
+            structure[path][qualname] = node
+        return structure
     
     def visit_directory(self, name, path, _):
         # type: (str, str, TrailBlazer) -> Optioanl[bool]
@@ -49,44 +53,39 @@ class RepresentationBuilder(Chart):
         return True
 
     def visit_function(self, name, func, _, __):
-        # type: (str, Callable, type, TrailBlazer) -> Optional[bool]
+        # type: (str, Callable, type, TrailBlazer) -> None
         if not self._filter_name(name):
-            return True
+            return
         func_wrap = self._get_wrapped(func, Function)
         self._nameMap[name] = func_wrap
-        return True
 
     def visit_method(self, name, func, _, __):
-        # type: (str, Callable, type, TrailBlazer) -> Optional[bool]
+        # type: (str, Callable, type, TrailBlazer) -> None
         if not self._filter_name(name):
-            return True
+            return
         func_wrap = self._get_wrapped(func, Method)
         self._nameMap[name] = func_wrap
-        return True
 
     def visit_classmethod(self, name, func, _, __):
-        # type: (str, Callable, type, TrailBlazer) -> Optional[bool]
+        # type: (str, Callable, type, TrailBlazer) -> None
         if not self._filter_name(name):
-            return True
+            return 
         func_wrap = self._get_wrapped(func, ClassMethod)
         self._nameMap[name] = func_wrap
-        return True
 
     def visit_staticmethod(self, name, func, _, __):
-        # type: (str, Callable, type, TrailBlazer) -> Optional[bool]
+        # type: (str, Callable, type, TrailBlazer) -> None
         if not self._filter_name(name):
-            return True
+            return 
         func_wrap = self._get_wrapped(func, StaticMethod)
         self._nameMap[name] = func_wrap
-        return True
 
     def visit_attribute(self, name, value, _, __):
-        # type: (str, Any, type, TrailBlazer) -> Optional[bool]
+        # type: (str, Any, type, TrailBlazer) -> None
         if not self._filter_name(name):
-            return True
+            return 
         attr_wrap = self._get_wrapped(value, Attribute)
         self._nameMap[name] = attr_wrap
-        return True
 
     def _filter_name(self, name):
         # type: (str) -> bool
@@ -97,7 +96,7 @@ class RepresentationBuilder(Chart):
         return False
     
     def _get_wrapped(self, object_, wrapper):
-        # type: (type, BaseNode) -> BaseNode
+        # type: (type, BaseWrapper) -> BaseWrapper
         """ We can keep one representation per live object """
         id_ = id(object_)
         wrapped = self._idMap.get(id_)

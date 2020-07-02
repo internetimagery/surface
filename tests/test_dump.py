@@ -1,4 +1,3 @@
-import sys
 import os.path
 import unittest
 import shutil

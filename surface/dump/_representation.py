@@ -2,10 +2,12 @@
 
 class BaseWrapper(object):
 
-    def __init__(self, object_):
-        self.wrapped = object_
+    def __init__(self, wrapped):
+        # type: (Any) -> None
+        pass
     
-    def export(self):
+    def export(self, name):
+        # type: (str) -> str
         return ""
 
 class Module(BaseWrapper):
@@ -17,14 +19,16 @@ class Class(BaseWrapper):
 class Function(BaseWrapper):
     pass
 
-class Method(BaseWrapper):
+class Method(Function):
     pass
 
-class ClassMethod(BaseWrapper):
+class ClassMethod(Function):
     pass
 
-class StaticMethod(BaseWrapper):
+class StaticMethod(Function):
     pass
 
 class Attribute(BaseWrapper):
-    pass
+
+    def export(self, name):
+        return "{}: Any = ...".format(name)
