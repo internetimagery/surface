@@ -26,11 +26,7 @@ def build_content(contents):
     # type: (Dict[str, BaseWrapper]) -> str
     """ Generate the content within the stub file """
 
-    indent = "    "
-
-    # TODO: get dependency information (eg import requirements for types, location imports for classes)
-    # TODO: let each representation build its string, but in order.
-    # TODO: handle indentation
+    import_block = []
     body_block = []
     indent_stack = []
     # Walk from shortest to longest
@@ -40,14 +36,59 @@ def build_content(contents):
             indent_stack.pop()
         
         node = contents[name]
-        body_block.append(node.export(indent * len(indent_stack), name))
+        import_block.extend(node.get_imports(name))
+        body_block.append(node.get_body(len(indent_stack), name))
 
         # If we are a class, enter an indented block
         if isinstance(node, Class):
             indent_stack.append(name + ".") 
     
-    return "\n\n".join(body_block)
+    return "{}\n\n{}".format(
+        build_import_block(import_block),
+        build_body_block(body_block),
+    )
 
+
+def build_body_block(body_block):
+    # type: (List[str]) -> str
+    return "\n\n".join(
+        body
+        for body in body_block
+        if body
+    )
+
+def build_import_block(import_block):
+    # type: (List[Import]) -> str
+    if not import_block:
+        return ""
+
+    imports = set()
+    from_imports = collections.defaultdict(set)
+
+    # Sort import types
+    for import_ in import_block:
+        if import_.name:
+            # from package import module as _module
+            from_imports[import_.path].add(import_)
+        else:
+            # import package.module
+            imports.add(import_)
+    
+    # Build out our block
+    import_lines = []
+    alias = "{} as {}".format
+    for import_ in sorted(imports):
+        import_lines.append("import {}".format(alias(import_.path, import_.alias) if import_.alias else import_.path))
+    for path in sorted(from_imports):
+        import_line = (
+            "{} as {}".format(import_.name, import_.alias) if import_.alias else import_.name
+            for import_ in from_imports[path]
+        )
+        import_lines.append("from {} import {}".format(
+            path, ", ".join(sorted(import_line))
+        ))
+    return "\n".join(import_lines)
+    ``
 
 def build_skeleton_files(paths, directory):
     # type: (Collection[str], str) -> Dict[str, str]
@@ -95,7 +136,6 @@ def filter_representation(representation):
             # We need to read this from longest to shortest (most specific to least)
             for prefix in sorted(module_map, reverse=True):
                 if qualname.startswith(prefix):
-                    print(">", qualname)
                     new_path = module_map[prefix]
                     new_qualname = qualname[len(prefix)+1:]
                     break
