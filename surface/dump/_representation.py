@@ -77,8 +77,8 @@ class Class(BaseWrapper):
 
     def get_body(self, indent, name):
         # TODO: get mro for subclasses
-        # TODO: represent as an attribute if name does not originate
-        return "{}class {}(object): ...".format(get_indent(indent), name_split(name)[-1])
+        # TODO: represent as an attribute if name does not originate (ie not definition)
+        return '{}class {}(object):\n{}""" CLASSY """'.format(get_indent(indent), name_split(name)[-1], get_indent(indent+1))
 
 class Function(BaseWrapper):
 

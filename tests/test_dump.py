@@ -5,7 +5,7 @@ import tempfile
 
 from pyhike import TrailBlazer
 
-from surface.dump import RepresentationBuilder, export_stubs
+from surface.dump import Exporter
 
 TESTDATA = os.path.join(os.path.dirname(__file__), "testdata")
 
@@ -17,9 +17,7 @@ class TestExportStubs(unittest.TestCase):
             "TEST", dir=os.path.join(os.path.dirname(__file__), "EXPORT")
         )
         # cls.tempdir = tempfile.mkdtemp("TEST")
-        visitor = RepresentationBuilder()
-        TrailBlazer(visitor).roam_directory(TESTDATA).hike()
-        export_stubs(visitor.get_representation(), cls.tempdir)
+        Exporter(directories=[TESTDATA]).export(cls.tempdir)
 
     # @classmethod
     # def tearDownClass(cls):
