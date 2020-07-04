@@ -56,6 +56,8 @@ class Exporter(object):
     
     def export(self, directory):
         # type: (str) -> Representation
+        if not os.path.isdir(directory):
+            raise ValueError("This is not a directory: {}".format(directory))
         representation = self.get_representation()
         export_stubs(representation, directory)
         return representation
@@ -69,7 +71,7 @@ def export_stubs(representation, directory):
 
     # Fill in the content of a file
     for path, contents in representation.items():
-        with open(files[path], "a") as fh:
+        with open(files[path], "w") as fh:
             fh.write(build_content(path, contents))
     return representation
 
@@ -95,10 +97,16 @@ def build_content(path, contents):
         if isinstance(node, Class):
             indent_stack.append(name + ".") 
     
-    return "{}\n\n{}".format(
+    return "{}\n\n{}\n\n{}".format(
+        build_header(path),
         build_import_block(import_block),
         build_body_block(body_block),
     )
+
+
+def build_header(path):
+    # type: (str) -> str
+    return STUB_HEADER.format(path)
 
 
 def build_body_block(body_block):
@@ -163,12 +171,12 @@ def build_skeleton_files(paths, directory):
             if not os.path.isfile(init):
                 os.mkdir(package)
                 with open(init, "w") as fh:
-                    fh.write(STUB_HEADER.format(key))
+                    fh.write(build_header(key))
             structures[key] = init
         module = os.path.join(directory, *sections) + ".pyi"
         if not os.path.isfile(module):
             with open(module, "w") as fh:
-                fh.write(STUB_HEADER.format(path))
+                fh.write(build_header(path))
         structures[path] = module
     return structures
 
