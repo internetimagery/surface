@@ -30,6 +30,7 @@ class BaseWrapper(object):
         # type: (Any) -> None
         """ Pull information from a live object to create a representation later """
         self._id = id(wrapped)
+        self._repr = str(repr(wrapped)).replace("\n", " ")
 
     def get_id(self):
         # type: () -> int
@@ -125,10 +126,11 @@ class Class(BaseWrapper):
         if self._definition != path:
             # We are looking at a reference to the class
             # not the definition itself. The import method handles this.
-            return "{}{}: {} = ...".format(
+            return "{}{}: {} = ... # {}".format(
                 get_indent(indent),
                 name_split(name)[-1],
                 "__{}".format(name_split(name)[-1]) if "." in name else name,
+                self._repr,
             )
         # TODO: get mro for subclasses
         return '{}class {}(object):\n{}""" {} """'.format(
@@ -185,7 +187,7 @@ class StaticMethod(Function):
 
 class Attribute(BaseWrapper):
     def get_body(self, indent, path, name):
-        return "{}{}: Any = ...".format(get_indent(indent), name_split(name)[-1])
+        return "{}{}: Any = ... # {}".format(get_indent(indent), name_split(name)[-1], self._repr)
 
     def get_imports(self, path, name):
         return [Import("typing", "Any", "")]
