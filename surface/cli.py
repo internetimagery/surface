@@ -15,6 +15,7 @@ import contextlib as _contextlib
 import surface as _surface
 from surface.git import Store as _Store, Git as _Git
 from surface._base import PY2 as _PY2
+from surface.dump import Exporter as _Exporter
 
 if _PY2:
     import __builtin__ as _builtins  # type: ignore
@@ -96,38 +97,50 @@ def from_dict(node):  # type: (Dict[str, Any]) -> Any
 
 
 def run_dump(args):  # type: (Any) -> int
+    clean_path = lambda p: _path.realpath(_path.expanduser(_path.expandvars(p.strip())))
+
     start = _time.time()
-    pythonpath = (
-        _path.realpath(_path.expanduser(p.strip()))
-        for p in _re.split(r"[:;]", args.pythonpath or "")
-    )
+    pythonpath = (clean_path(p) for p in _re.split(r"[:;]", args.pythonpath or ""))
     for path in pythonpath:
         _sys.path.insert(0, path)
 
     with time_imports():
-        modules = (
-            set(r for m in args.modules for r in _surface.recurse(m))
-            if args.recurse
-            else args.modules
-        )
+        files = set()
+        directories = set()
+        for path in args.file:
+            path = clean_path(path)
+            if _os.path.isfile(path):
+                files.add(path)
+            elif _os.path.isdir(path):
+                directories.add(path)
 
-        module_api = []
-        for module in modules:
-            try:
-                api = _surface.get_api(
-                    module, args.exclude_modules, args.all_filter, args.depth
+        exporter = _Exporter(files=files, directories=directories,)
+        if args.output:
+            representation = exporter.export(args.output)
+        else:
+            representation = exporter.get_representation()
+
+    if not args.quiet:
+        yellow = ("{}" if args.no_colour else "\033[33m{}\033[0m").format
+        for path in sorted(representation):
+            LOG.info("[{}]".format(yellow(path)))
+            indent_stack = []
+            for qualname in sorted(representation[path]):
+                if indent_stack and not qualname.startswith(indent_stack[-1]):
+                    indent_stack.pop()
+
+                node = representation[path][qualname]
+                from surface.dump._representation import Class
+
+                line = node.get_cli(
+                    1 + len(indent_stack), path, qualname, not args.no_colour
                 )
-            except ImportError as err:
-                LOG.info(
-                    (
-                        "Failed to import '{}'.\n"
-                        "{}\n"
-                        "Is the module and all its dependencies in your PYTHONPATH?"
-                    ).format(module, err)
-                )
-                return 1
-            else:
-                module_api.append(api)
+                if line:
+                    LOG.info(line)
+                if isinstance(node, Class):
+                    indent_stack.append(qualname + ".")
+
+    return 0
 
     if not args.quiet:
         yellow = ("{}" if args.no_colour else "\033[33m{}\033[0m").format

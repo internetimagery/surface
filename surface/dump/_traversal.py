@@ -1,9 +1,23 @@
 """ Traverse some code. Build a representation from it """
+from typing import Dict
+
 import collections
 
 from pyhike import Chart
 
-from surface.dump._representation import name_split, BaseWrapper, Module, Class, Function, Method, ClassMethod, StaticMethod, Attribute
+from surface.dump._representation import (
+    name_split,
+    BaseWrapper,
+    Module,
+    Class,
+    Function,
+    Method,
+    ClassMethod,
+    StaticMethod,
+    Attribute,
+)
+
+Representation = Dict[str, Dict[str, BaseWrapper]]
 
 
 class RepresentationBuilder(Chart):
@@ -14,27 +28,27 @@ class RepresentationBuilder(Chart):
     _ALLOWED_NAMES = ("__init__", "__new__")
 
     def __init__(self):
-        self._nameMap = {} # type: Dict[str, BaseWrapper]
-        self._idMap = {} # type: Dict[int, BaseWrapper]
-    
+        self._nameMap = {}  # type: Dict[str, BaseWrapper]
+        self._idMap = {}  # type: Dict[int, BaseWrapper]
+
     def get_representation(self):
-        # type: () -> Dict[str, Dict[str, BaseWrapper]]
+        # type: () -> Representation
         """ Return our lovely generated representation """
         structure = collections.defaultdict(dict)
         for name, node in self._nameMap.items():
             path, qualname = name.split(":", 1)
             structure[path][qualname] = node
         return structure
-    
+
     def visit_directory(self, name, path, _):
         # type: (str, str, TrailBlazer) -> Optioanl[bool]
         if not self._filter_name(name):
-            return True # Prevent looking further into this module
+            return True  # Prevent looking further into this module
 
     def visit_file(self, name, path, __):
         # type: (str, str, TrailBlazer) -> Optional[bool]
         if not self._filter_name(name):
-            return True # Prevent looking further into this module
+            return True  # Prevent looking further into this module
 
     def visit_module(self, name, module, __):
         # type: (str, types.ModuleType, TrailBlazer) -> Optional[bool]
@@ -77,21 +91,21 @@ class RepresentationBuilder(Chart):
     def visit_classmethod(self, name, func, _, __):
         # type: (str, Callable, type, TrailBlazer) -> None
         if not self._filter_name(name):
-            return 
+            return
         func_wrap = self._get_wrapped(func) or self._set_wrapped(ClassMethod(func))
         self._nameMap[name] = func_wrap
 
     def visit_staticmethod(self, name, func, _, __):
         # type: (str, Callable, type, TrailBlazer) -> None
         if not self._filter_name(name):
-            return 
+            return
         func_wrap = self._get_wrapped(func) or self._set_wrapped(StaticMethod(func))
         self._nameMap[name] = func_wrap
 
     def visit_attribute(self, name, value, _, __):
         # type: (str, Any, type, TrailBlazer) -> None
         if not self._filter_name(name):
-            return 
+            return
         attr_wrap = self._get_wrapped(value) or self._set_wrapped(Attribute(value))
         self._nameMap[name] = attr_wrap
 
@@ -102,17 +116,15 @@ class RepresentationBuilder(Chart):
         if basename in self._ALLOWED_NAMES or not basename.startswith("_"):
             return True
         return False
-    
+
     def _get_wrapped(self, object_):
         # type: (type) -> BaseWrapper
         """ We can keep one representation per live object """
         id_ = id(object_)
         return self._idMap.get(id_)
-    
+
     def _set_wrapped(self, wrapper):
         # type: (BaseWrapper) -> BaseWrapper
         """ Assign wrapper """
         self._idMap[wrapper.get_id()] = wrapper
         return wrapper
-
-        

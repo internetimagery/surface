@@ -3,44 +3,55 @@
 from typing import NamedTuple
 
 import re
+import inspect
 
 INDENT = "    "
 
 # Name format package.module:Class.method
 name_split = re.compile(r"[\.:]").split
 
+# Cli colours
+magenta = "\033[35m{}\033[0m".format
+cyan = "\033[36m{}\033[0m".format
+green = "\033[32m{}\033[0m".format
+
+
 def get_indent(num):
     # type: (int) -> str
     return INDENT * num
+
 
 Import = NamedTuple("Import", [("path", str), ("name", str), ("alias", str)])
 
 
 class BaseWrapper(object):
-
     def __init__(self, wrapped):
         # type: (Any) -> None
         """ Pull information from a live object to create a representation later """
         self._id = id(wrapped)
-    
+
     def get_id(self):
         # type: () -> int
         """ Ye olde ID """
         return self._id
-    
-    def get_imports(self, name):
-        # type: (str) -> List[Import]
+
+    def get_imports(self, path, name):
+        # type: (str, str) -> List[Import]
         """ Any imports required to be added for this. """
         return []
-    
-    def get_body(self, indent, name):
-        # type: (int, str) -> str
+
+    def get_body(self, indent, path, name):
+        # type: (int, str, str) -> str
         """ Export the representaton as a string suitable for insertion into a stubfile """
+        return ""
+
+    def get_cli(self, indent, path, name, colour):
+        # type: (int, str, str, bool) -> str
+        """ Export a representation as a string suitable for presentation in the command line """
         return ""
 
 
 class Module(BaseWrapper):
-
     def __init__(self, module):
         # type: (types.ModuleType) -> None
         super(Module, self).__init__(module)
@@ -49,9 +60,9 @@ class Module(BaseWrapper):
     def get_name(self):
         # type: () -> str
         return self._name
-    
-    def get_imports(self, name):
-        # type: (str) -> List[Import]
+
+    def get_imports(self, path, name):
+        # type: (str, str) -> List[Import]
 
         if name == self._name:
             # We are imported by our full name.
@@ -73,29 +84,89 @@ class Module(BaseWrapper):
             return [Import(module_parts[0], "", name)]
         return [Import(module_parts[0], module_parts[-1], name)]
 
-class Class(BaseWrapper):
 
-    def get_body(self, indent, name):
+class Class(BaseWrapper):
+    def __init__(self, wrapped):
+        # type: (type) -> None
+        super(Class, self).__init__(wrapped)
+        self._docstring = inspect.getdoc(wrapped) or ""
+        self._definition = wrapped.__module__
+        self._name = wrapped.__name__
+
+    def get_name(self):
+        # type: () -> str
+        return self._name
+
+    def get_definition(self):
+        # type: () -> str
+        return self._definition
+
+    def get_imports(self, path, name):
+        if self._definition == path:
+            # We have the definition in this file
+            return []
+        if self._name == name:
+            # - from package.module import class
+            return [Import(self._definition, name, "")]
+        # - from package.module import class as _alias
+        return [Import(self._definition, self._name, name)]
+
+    def get_body(self, indent, path, name):
+        if self._definition != path:
+            # We are looking at a reference to the class
+            # not the definition itself. The import method handles this.
+            return ""
         # TODO: get mro for subclasses
-        # TODO: represent as an attribute if name does not originate (ie not definition)
-        return '{}class {}(object):\n{}""" CLASSY """'.format(get_indent(indent), name_split(name)[-1], get_indent(indent+1))
+        return '{}class {}(object):\n{}""" {} """'.format(
+            get_indent(indent),
+            name_split(name)[-1],
+            get_indent(indent + 1),
+            "\n{}".format(get_indent(indent + 2)).join(self._docstring.splitlines()),
+        )
+
+    def get_cli(self, indent, path, name, colour):
+        return "{}{} {}:".format(
+            get_indent(indent),
+            magenta("class") if colour else "class",
+            cyan(name) if colour else name,
+        )
+
 
 class Function(BaseWrapper):
-
-    def get_body(self, indent, name):
+    def get_body(self, indent, path, name):
         # TODO: get signature information
         return "{}def {}(): ...".format(get_indent(indent), name_split(name)[-1])
+
+    def get_cli(self, indent, path, name, colour):
+        return "{}{} {}({}) -> {}".format(
+            get_indent(indent),
+            magenta("def") if colour else "def",
+            cyan(name) if colour else name,
+            green("*Any, **Any") if colour else "*Any, **Any",
+            green("Any") if colour else "Any",
+        )
+
 
 class Method(Function):
     pass
 
+
 class ClassMethod(Function):
     pass
+
 
 class StaticMethod(Function):
     pass
 
-class Attribute(BaseWrapper):
 
-    def get_body(self, indent, name):
+class Attribute(BaseWrapper):
+    def get_body(self, indent, path, name):
         return "{}{}: Any = ...".format(get_indent(indent), name_split(name)[-1])
+
+    def get_cli(self, indent, path, name, colour):
+        return "{}{} {}: {}".format(
+            get_indent(indent),
+            magenta("var") if colour else "var",
+            name,
+            green("Any") if colour else "Any",
+        )
