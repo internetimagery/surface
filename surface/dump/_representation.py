@@ -117,13 +117,19 @@ class Class(BaseWrapper):
             # - from package.module import class
             return [Import(self._definition, name, "")]
         # - from package.module import class as _alias
+        if "." in name:
+            name = "__{}".format(name_split(name)[-1])
         return [Import(self._definition, self._name, name)]
 
     def get_body(self, indent, path, name):
         if self._definition != path:
             # We are looking at a reference to the class
             # not the definition itself. The import method handles this.
-            return ""
+            return "{}{}: {} = ...".format(
+                get_indent(indent),
+                name_split(name)[-1],
+                "__{}".format(name_split(name)[-1]) if "." in name else name,
+            )
         # TODO: get mro for subclasses
         return '{}class {}(object):\n{}""" {} """'.format(
             get_indent(indent),
