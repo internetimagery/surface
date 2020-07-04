@@ -14,6 +14,7 @@ name_split = re.compile(r"[\.:]").split
 magenta = "\033[35m{}\033[0m".format
 cyan = "\033[36m{}\033[0m".format
 green = "\033[32m{}\033[0m".format
+yellow = "\033[33m{}\033[0m".format
 
 
 def get_indent(num):
@@ -83,6 +84,13 @@ class Module(BaseWrapper):
         if len(module_parts) == 1:
             return [Import(module_parts[0], "", name)]
         return [Import(module_parts[0], module_parts[-1], name)]
+    
+    def get_cli(self, indent, path, name, colour):
+        return "{}{}: {}".format(
+            get_indent(indent),
+            name_split(name)[-1],
+            green(self._name) if colour else self._name,
+        )
 
 
 class Class(BaseWrapper):
@@ -125,6 +133,7 @@ class Class(BaseWrapper):
         )
 
     def get_cli(self, indent, path, name, colour):
+        name = name_split(name)[-1]
         return "{}{} {}:".format(
             get_indent(indent),
             magenta("class") if colour else "class",
@@ -138,6 +147,7 @@ class Function(BaseWrapper):
         return "{}def {}(): ...".format(get_indent(indent), name_split(name)[-1])
 
     def get_cli(self, indent, path, name, colour):
+        name = name_split(name)[-1]
         return "{}{} {}({}) -> {}".format(
             get_indent(indent),
             magenta("def") if colour else "def",
@@ -164,9 +174,8 @@ class Attribute(BaseWrapper):
         return "{}{}: Any = ...".format(get_indent(indent), name_split(name)[-1])
 
     def get_cli(self, indent, path, name, colour):
-        return "{}{} {}: {}".format(
+        return "{}{}: {}".format(
             get_indent(indent),
-            magenta("var") if colour else "var",
-            name,
+            name_split(name)[-1],
             green("Any") if colour else "Any",
         )

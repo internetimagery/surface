@@ -62,12 +62,11 @@ def main():
         help="Path to repo in which the API will be stored. If path is not a repo, one will be created there.",
     )
     dump_parser.add_argument(
-        "-f", "--file", nargs="+", help="Files to export. eg: /path/to/module.py"
+        "-f", "--file", nargs="+", help="Files/Folders to export. eg: /path/to/module.py"
     )
     dump_parser.add_argument(
         "-m",
         "--module",
-        type=str,
         nargs="+",
         help="Full import path to module eg: mymodule.submodule",
     )

@@ -97,37 +97,42 @@ def from_dict(node):  # type: (Dict[str, Any]) -> Any
 
 
 def run_dump(args):  # type: (Any) -> int
+    # Keep cli paths real! Allow env var usage etc
     clean_path = lambda p: _path.realpath(_path.expanduser(_path.expandvars(p.strip())))
 
-    start = _time.time()
+    # Allow programatic alteration to the pythonpath
     pythonpath = (clean_path(p) for p in _re.split(r"[:;]", args.pythonpath or ""))
     for path in pythonpath:
         _sys.path.insert(0, path)
 
-    with time_imports():
-        files = set()
-        directories = set()
-        for path in args.file:
-            path = clean_path(path)
-            if _os.path.isfile(path):
-                files.add(path)
-            elif _os.path.isdir(path):
-                directories.add(path)
+    # Prepare our inputs
+    files = set()
+    directories = set()
+    for path in args.file or []:
+        path = clean_path(path)
+        if _os.path.isfile(path):
+            files.add(path)
+        elif _os.path.isdir(path):
+            directories.add(path)
+        
+    # Export the public facing api
+    exporter = _Exporter(modules=args.module, files=files, directories=directories,)
+    if args.output:
+        representation = exporter.export(args.output)
+    else:
+        representation = exporter.get_representation()
 
-        exporter = _Exporter(files=files, directories=directories,)
-        if args.output:
-            representation = exporter.export(args.output)
-        else:
-            representation = exporter.get_representation()
-
+    # Print off some nice output
     if not args.quiet:
         yellow = ("{}" if args.no_colour else "\033[33m{}\033[0m").format
         for path in sorted(representation):
+            LOG.info("") # New line
             LOG.info("[{}]".format(yellow(path)))
             indent_stack = []
             for qualname in sorted(representation[path]):
                 if indent_stack and not qualname.startswith(indent_stack[-1]):
                     indent_stack.pop()
+                    LOG.info("") # Blank line
 
                 node = representation[path][qualname]
                 from surface.dump._representation import Class
@@ -141,16 +146,6 @@ def run_dump(args):  # type: (Any) -> int
                     indent_stack.append(qualname + ".")
 
     return 0
-
-    if not args.quiet:
-        yellow = ("{}" if args.no_colour else "\033[33m{}\033[0m").format
-        for mod in module_api:
-            LOG.info(
-                "[{}]({:.2f}s)\n".format(
-                    yellow(mod.path), round(import_times.get(mod.path, 0.0), 2)
-                )
-            )
-            LOG.info(_surface.format_api(mod.body, not args.no_colour, "    "))
 
     if args.output or args.git:
         serialize = {

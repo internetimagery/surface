@@ -10,6 +10,7 @@ from pyhike import TrailBlazer
 from surface.dump._representation import Class, Module
 from surface.dump._traversal import Representation, RepresentationBuilder
 
+PATH_BLACKLIST = set(("builtins", "__builtin__"))
 
 STUB_HEADER = (
     "# Automatically generated stub file; "
@@ -36,17 +37,21 @@ class Exporter(object):
     def get_representation(self):
         # type: () -> Representation
         if self._representation is None:
-            builder = RepresentationBuilder()
+            whitelist = set()
+            builder = RepresentationBuilder(whitelist)
             traveler = TrailBlazer(builder)
             for module in self._modules:
+                whitelist.add(module)
                 live_module = importlib.import_module(module)
-                traveler.roam_module(live_module)
+                traveler.roam_module(live_module, module)
             for file_ in self._files:
+                whitelist.add(os.path.basename(file_).split(".",1)[0])
                 traveler.roam_file(file_)
             for directory_ in self._directories:
                 traveler.roam_directory(directory_)
             traveler.hike()
-            self._representation = builder.get_representation()
+            representation = builder.get_representation()
+            self._representation = filter_representation(representation)
         return self._representation
     
     def export(self, directory):
@@ -59,9 +64,6 @@ class Exporter(object):
 def export_stubs(representation, directory):
     # type: (Representation) -> Representation 
     """ Build a stubfile structure from the provided information """
-    # Filter out imported modules into their own structured files
-    representation = filter_representation(representation)
-
     # Build skeleton files, to later fill with content
     files = build_skeleton_files(representation, directory)
 
@@ -117,6 +119,8 @@ def build_import_block(import_block):
 
     # Sort import types
     for import_ in import_block:
+        if import_.path in PATH_BLACKLIST:
+            continue
         if import_.name:
             # from package import module as _module
             from_imports[import_.path].add(import_)
@@ -187,20 +191,22 @@ def filter_representation(representation):
             for prefix in sorted(module_map, reverse=True):
                 if qualname.startswith(prefix):
                     new_path, new_prefix = module_map[prefix]
-                    new_qualname = new_prefix + qualname[len(prefix)+1:]
+                    new_qualname = new_prefix + qualname[len(prefix):]
                     break
 
             # If an imported module is found. Mark it, and we'll create a new stub for it
             if isinstance(node, Module):
-                module_map[qualname] = (node.get_name(), "")
+                module_map[qualname + "."] = (node.get_name(), "")
             
             # If an imported class is found. Mark it too, and we'll create the definition stub.
             if isinstance(node, Class) and path != node.get_definition():
-                module_map[qualname] = (node.get_definition(), node.get_name() + ".")
+                module_map[qualname + "."] = (node.get_definition(), node.get_name() + ".")
                 # Duplicate so we have a reference in the used module, and one in the defined module
-                new_representation[node.get_definition()][node.get_name()] = node
+                if not node.get_definition() in PATH_BLACKLIST:
+                    new_representation[node.get_definition()][node.get_name()] = node
 
-            new_representation[new_path][new_qualname] = node
+            if new_path not in PATH_BLACKLIST:
+                new_representation[new_path][new_qualname] = node
         
     
     return new_representation

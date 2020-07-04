@@ -25,9 +25,11 @@ class RepresentationBuilder(Chart):
     Walk through provided objects. Build a mapping of the live objects to our representation.
     """
 
-    _ALLOWED_NAMES = ("__init__", "__new__")
-
-    def __init__(self):
+    def __init__(self, allowed_paths=None):
+        # type: (Container[str]) -> None
+        self._allowed_paths = set() if allowed_paths is None else allowed_paths
+        self._disallowed_paths = set(("builtins", "__builtin__"))
+        self._allowed_names = set(("__init__", "__new__"))
         self._nameMap = {}  # type: Dict[str, BaseWrapper]
         self._idMap = {}  # type: Dict[int, BaseWrapper]
 
@@ -112,10 +114,24 @@ class RepresentationBuilder(Chart):
     def _filter_name(self, name):
         # type: (str) -> bool
         """ Disallow looking into private variables / classes / modules """
-        basename = name_split(name)[-1]
-        if basename in self._ALLOWED_NAMES or not basename.startswith("_"):
-            return True
-        return False
+        # Compare module with whitelist, this can bypass the "only private" rule
+        name_parts = name.split(":")
+        path_basename = name_split(name_parts[0])[-1]
+        if name_parts[0] in self._disallowed_paths:
+            path_allowed = False
+        elif name_parts[0] in self._allowed_paths or not path_basename.startswith("_"):
+            path_allowed = True
+        else:
+            path_allowed = False
+        
+        if len(name_parts) == 1:
+            # We only have a path, so we can accept names
+            name_allowed = True
+        else:
+            name_basename = name_split(name_parts[1])[-1]
+            name_allowed = True if name_basename in self._allowed_names or not name_basename.startswith("_") else False
+
+        return path_allowed and name_allowed
 
     def _get_wrapped(self, object_):
         # type: (type) -> BaseWrapper
