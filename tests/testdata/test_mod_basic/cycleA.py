@@ -7,3 +7,6 @@ class _descriptor(object):
 
 class CycleA(object):
     cycle = _descriptor()
+
+
+import surface.dump._export

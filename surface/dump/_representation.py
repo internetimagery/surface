@@ -151,6 +151,9 @@ class Function(BaseWrapper):
     def get_body(self, indent, path, name):
         # TODO: get signature information
         return "{}def {}(): ...".format(get_indent(indent), name_split(name)[-1])
+    
+    def get_imports(self, path, name):
+        return [Import("typing", "Any", "")]
 
     def get_cli(self, indent, path, name, colour):
         name = name_split(name)[-1]
@@ -158,7 +161,7 @@ class Function(BaseWrapper):
             get_indent(indent),
             magenta("def") if colour else "def",
             cyan(name) if colour else name,
-            green("*Any, **Any") if colour else "*Any, **Any",
+            green("*args: Any, **kwargs: Any") if colour else "*args: Any, **kwargs: Any",
             green("Any") if colour else "Any",
         )
 
@@ -178,6 +181,9 @@ class StaticMethod(Function):
 class Attribute(BaseWrapper):
     def get_body(self, indent, path, name):
         return "{}{}: Any = ...".format(get_indent(indent), name_split(name)[-1])
+
+    def get_imports(self, path, name):
+        return [Import("typing", "Any", "")]
 
     def get_cli(self, indent, path, name, colour):
         return "{}{}: {}".format(

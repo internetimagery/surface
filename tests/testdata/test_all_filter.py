@@ -11,3 +11,6 @@ def B():
 
 def C():
     pass
+
+
+import os.path
