@@ -1,6 +1,7 @@
 from typing import _type_repr, Any
 
 import logging
+import inspect
 import contextlib
 
 import sigtools
@@ -27,12 +28,12 @@ class Param(object):
 class BasePlugin(object):
     """ Abstraction to collect typing information from live objects """
 
-    def types_from_function(self, function):
-        # type: (Callable) -> Optional[Tuple[List[Param], str]]
+    def types_from_function(self, function, parent):
+        # type: (Callable, Optional[Any]) -> Optional[Tuple[List[Param], str]]
         pass
 
-    def type_from_value(self, value):
-        # type: (Any) -> Optional[str]
+    def type_from_value(self, value, parent):
+        # type: (Any, Optional[Any]) -> Optional[str]
         pass
 
 
@@ -41,26 +42,40 @@ class PluginManager(object):
         # type: (List[BasePlugin]) -> None
         self._plugins = plugins
 
-    def types_from_function(self, function):
-        # type: (Callable) -> Tuple[List[Param], str]
+    def types_from_function(self, function, parent):
+        # type: (Callable, Optional[Any]) -> Tuple[List[Param], str]
         for plugin in self._plugins:
-            params = plugin.types_from_function(function)
+            params = plugin.types_from_function(function, parent)
             if params:
                 return params
         return [Param("_args", AnyStr, "*"), Param("_kwargs", AnyStr, "**")], AnyStr
 
-    def type_from_value(self, value):
-        # type: (Any) -> str
+    def type_from_value(self, value, parent):
+        # type: (Any Optional[Any]) -> str
         for plugin in self._plugins:
-            type_ = plugin.type_from_value(value)
+            type_ = plugin.type_from_value(value, parent)
             if type_:
                 return type_
         return AnyStr
 
 
 class AnnotationTypingPlugin(BasePlugin):
-    def types_from_function(self, function):
-        # type: (Callable) -> Optional[Tuple[List[Param], str]]
+
+    def type_from_value(self, value, parent):
+        # type: (Any, Optional[Any]) -> Optional[str]
+        for name, item in inspect.getmembers(parent):
+            if item is value:
+                try:
+                    annotation = parent.__annotations__[name]
+                except (AttributeError, KeyError, TypeError):
+                    pass
+                else:
+                    return _type_repr(annotation)
+                break
+        return None
+
+    def types_from_function(self, function, parent):
+        # type: (Callable, Optional[Any]) -> Optional[Tuple[List[Param], str]]
         sig = self._get_signature(function)
         if not sig:
             return None

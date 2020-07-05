@@ -67,7 +67,7 @@ class RepresentationBuilder(Chart):
                 self._nameMap[name] = module_wrap
                 # We have visited this module. Don't need to do it again.
                 return True
-            self._nameMap[name] = self._set_wrapped(Module(module, self._plugin))
+            self._nameMap[name] = self._set_wrapped(Module(module, None, self._plugin))
 
     def visit_class(self, name, class_, __):
         # type: (str, type, TrailBlazer) -> Optional[bool]
@@ -78,50 +78,50 @@ class RepresentationBuilder(Chart):
             self._nameMap[name] = class_wrap
             # We have already visited this class. Don't need to do it again.
             return True
-        self._nameMap[name] = self._set_wrapped(Class(class_, self._plugin))
+        self._nameMap[name] = self._set_wrapped(Class(class_, None, self._plugin))
 
-    def visit_function(self, name, func, _, __):
+    def visit_function(self, name, func, parent, __):
         # type: (str, Callable, type, TrailBlazer) -> None
         if not self._filter_name(name):
             return
         func_wrap = self._get_wrapped(func) or self._set_wrapped(
-            Function(func, self._plugin)
+            Function(func, parent, self._plugin)
         )
         self._nameMap[name] = func_wrap
 
-    def visit_method(self, name, func, _, __):
+    def visit_method(self, name, func, parent, __):
         # type: (str, Callable, type, TrailBlazer) -> None
         if not self._filter_name(name):
             return
         func_wrap = self._get_wrapped(func) or self._set_wrapped(
-            Method(func, self._plugin)
+            Method(func, parent, self._plugin)
         )
         self._nameMap[name] = func_wrap
 
-    def visit_classmethod(self, name, func, _, __):
+    def visit_classmethod(self, name, func, parent, __):
         # type: (str, Callable, type, TrailBlazer) -> None
         if not self._filter_name(name):
             return
         func_wrap = self._get_wrapped(func) or self._set_wrapped(
-            ClassMethod(func, self._plugin)
+            ClassMethod(func, parent, self._plugin)
         )
         self._nameMap[name] = func_wrap
 
-    def visit_staticmethod(self, name, func, _, __):
+    def visit_staticmethod(self, name, func, parent, __):
         # type: (str, Callable, type, TrailBlazer) -> None
         if not self._filter_name(name):
             return
         func_wrap = self._get_wrapped(func) or self._set_wrapped(
-            StaticMethod(func, self._plugin)
+            StaticMethod(func, parent, self._plugin)
         )
         self._nameMap[name] = func_wrap
 
-    def visit_attribute(self, name, value, _, __):
+    def visit_attribute(self, name, value, parent, __):
         # type: (str, Any, type, TrailBlazer) -> None
         if not self._filter_name(name):
             return
         attr_wrap = self._get_wrapped(value) or self._set_wrapped(
-            Attribute(value, self._plugin)
+            Attribute(value, parent, self._plugin)
         )
         self._nameMap[name] = attr_wrap
 

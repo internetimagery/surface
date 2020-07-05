@@ -32,8 +32,8 @@ Import = NamedTuple("Import", [("path", str), ("name", str), ("alias", str)])
 
 
 class BaseWrapper(object):
-    def __init__(self, wrapped, plugin):
-        # type: (Any, PluginManager) -> None
+    def __init__(self, wrapped, parent, plugin):
+        # type: (Any, Optional[Any], PluginManager) -> None
         """ Pull information from a live object to create a representation later """
         self._id = id(wrapped)
         self._repr = str(repr(wrapped)).replace("\n", " ")
@@ -60,9 +60,9 @@ class BaseWrapper(object):
 
 
 class Module(BaseWrapper):
-    def __init__(self, module, plugin):
-        # type: (types.ModuleType, PluginManager) -> None
-        super(Module, self).__init__(module, plugin)
+    def __init__(self, module, parent, plugin):
+        # type: (types.ModuleType, Optional[Any], PluginManager) -> None
+        super(Module, self).__init__(module, parent, plugin)
         self._name = module.__name__
 
     def get_name(self):
@@ -101,9 +101,9 @@ class Module(BaseWrapper):
 
 
 class Class(BaseWrapper):
-    def __init__(self, wrapped, plugin):
-        # type: (type, PluginManager) -> None
-        super(Class, self).__init__(wrapped, plugin)
+    def __init__(self, wrapped, parent, plugin):
+        # type: (type, OPtional[Any], PluginManager) -> None
+        super(Class, self).__init__(wrapped, parent, plugin)
         self._docstring = inspect.getdoc(wrapped) or ""
         self._definition = wrapped.__module__
         self._name = wrapped.__name__
@@ -162,9 +162,9 @@ Param = NamedTuple("Sig", [("name", str), ("type", str), ("prefix", str)])
 
 
 class Function(BaseWrapper):
-    def __init__(self, wrapped, plugin):
-        super(Function, self).__init__(wrapped, plugin)
-        self._parameters, self._returns = plugin.types_from_function(wrapped)
+    def __init__(self, wrapped, parent, plugin):
+        super(Function, self).__init__(wrapped, parent, plugin)
+        self._parameters, self._returns = plugin.types_from_function(wrapped, parent)
 
     def get_body(self, indent, path, name):
         # TODO: get signature information
@@ -203,8 +203,8 @@ class Method(Function):
 
 
 class ClassMethod(Function):
-    def __init__(self, wrapped, plugin):
-        super(ClassMethod, self).__init__(wrapped.__func__, plugin)
+    def __init__(self, wrapped, parent, plugin):
+        super(ClassMethod, self).__init__(wrapped.__func__, parent, plugin)
 
     def get_body(self, indent, path, name):
         return "{}@classmethod\n{}".format(
@@ -220,8 +220,8 @@ class ClassMethod(Function):
 
 
 class StaticMethod(Function):
-    def __init__(self, wrapped, plugin):
-        super(StaticMethod, self).__init__(wrapped.__func__, plugin)
+    def __init__(self, wrapped, parent, plugin):
+        super(StaticMethod, self).__init__(wrapped.__func__, parent, plugin)
 
     def get_body(self, indent, path, name):
         return "{}@staticmethod\n{}".format(
@@ -237,9 +237,9 @@ class StaticMethod(Function):
 
 
 class Attribute(BaseWrapper):
-    def __init__(self, wrapped, plugin):
-        super(Attribute, self).__init__(wrapped, plugin)
-        self._type = plugin.type_from_value(wrapped)
+    def __init__(self, wrapped, parent, plugin):
+        super(Attribute, self).__init__(wrapped, parent, plugin)
+        self._type = plugin.type_from_value(wrapped, parent)
 
     def get_body(self, indent, path, name):
         return "{}{}: {} = ... # {}".format(
