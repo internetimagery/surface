@@ -114,7 +114,7 @@ def run_dump(args):  # type: (Any) -> int
             files.add(path)
         elif _os.path.isdir(path):
             directories.add(path)
-        
+
     # Export the public facing api
     exporter = _Exporter(modules=args.module, files=files, directories=directories,)
     if args.output:
@@ -126,13 +126,13 @@ def run_dump(args):  # type: (Any) -> int
     if not args.quiet:
         yellow = ("{}" if args.no_colour else "\033[33m{}\033[0m").format
         for path in sorted(representation):
-            LOG.info("") # New line
+            LOG.info("")  # New line
             LOG.info("[{}]".format(yellow(path)))
             indent_stack = []
             for qualname in sorted(representation[path]):
                 if indent_stack and not qualname.startswith(indent_stack[-1]):
                     indent_stack.pop()
-                    LOG.info("") # Blank line
+                    LOG.info("")  # Blank line
 
                 node = representation[path][qualname]
                 from surface.dump._representation import Class

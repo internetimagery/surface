@@ -4,6 +4,12 @@ from typing import NamedTuple
 
 import re
 import inspect
+import logging
+import contextlib
+
+import sigtools
+
+LOG = logging.getLogger(__name__)
 
 INDENT = "    "
 
@@ -85,7 +91,7 @@ class Module(BaseWrapper):
         if len(module_parts) == 1:
             return [Import(module_parts[0], "", name)]
         return [Import(module_parts[0], module_parts[-1], name)]
-    
+
     def get_cli(self, indent, path, name, colour):
         return "{}{}: {}".format(
             get_indent(indent),
@@ -126,6 +132,9 @@ class Class(BaseWrapper):
         if self._definition != path:
             # We are looking at a reference to the class
             # not the definition itself. The import method handles this.
+            if name == self._name:
+                return ""
+
             return "{}{}: {} = ... # {}".format(
                 get_indent(indent),
                 name_split(name)[-1],
@@ -149,28 +158,94 @@ class Class(BaseWrapper):
         )
 
 
+Param = NamedTuple("Sig", [("name", str), ("type", str), ("prefix", str)])
+
+
 class Function(BaseWrapper):
+    def __init__(self, wrapped):
+        super(Function, self).__init__(wrapped)
+        self._parameters, self._returns = self._get_parameters(wrapped)
+
     def get_body(self, indent, path, name):
         # TODO: get signature information
         name = name_split(name)[-1]
-        return "{}def {}(*args: Any, **kwargs: Any) -> {}: ...".format(
+        params = ", ".join(
+            "{}{}: {}".format(p.prefix, p.name, p.type) for p in self._parameters
+        )
+        return "{}def {}({}) -> {}: ...".format(
             get_indent(indent),
             name,
-            "None" if name == "__init__" else "Any",
+            params,
+            "None" if name == "__init__" else self._returns,
         )
-    
+
     def get_imports(self, path, name):
         return [Import("typing", "Any", "")]
 
     def get_cli(self, indent, path, name, colour):
         name = name_split(name)[-1]
+        params = ", ".join(p.prefix + p.type for p in self._parameters)
         return "{}{} {}({}) -> {}".format(
             get_indent(indent),
             magenta("def") if colour else "def",
             cyan(name) if colour else name,
-            green("*Any, **Any") if colour else "*Any, **Any",
+            green(params) if colour else params,
             green("Any") if colour else "Any",
         )
+
+    def _get_parameters(self, function):
+        # type: (Callable) -> Tuple[Tuple[Param, ...], str]
+        sig = self._get_signature(function)
+        if not sig:
+            return (Param("args", "Any", "*"), Param("kwargs", "Any", "**")), "Any"
+        params = tuple(
+            Param(
+                param.name,
+                "Any",
+                "*"
+                if param.kind == param.VAR_POSITIONAL
+                else "**"
+                if param.kind == param.VAR_KEYWORD
+                else "",
+            )
+            for param in sig.parameters.values()
+        )
+        returns = "Any"
+        return params, returns
+
+    def _get_signature(self, function):
+        # type: (Callable) -> Optional[sigtools.Signature]
+        with self._fix_annotation(function):
+            try:
+                sig = sigtools.signature(function)
+            except (SyntaxError, ValueError, RuntimeError):
+                # TypeError?
+                # RuntimeError: https://github.com/epsy/sigtools/issues/10
+                LOG.exception("Failed to get signature for {}".format(function))
+                return None
+            except TypeError:
+                LOG.exception("Wrong type? {}".format(function))
+                return None
+            return sig
+
+    @staticmethod
+    @contextlib.contextmanager
+    def _fix_annotation(func):
+        # type: (Callable) -> None
+        """ Sanitize annotations to prevent errors """
+        try:
+            annotations = func.__annotations__
+        except AttributeError:
+            fixup = False
+        else:
+            fixup = not isinstance(annotations, dict)
+            if fixup:
+                func.__annotations__ = {}
+        try:
+            yield
+        finally:
+            if fixup:
+                func.__annotations__ = annotations
 
 
 class Method(Function):
@@ -187,14 +262,14 @@ class StaticMethod(Function):
 
 class Attribute(BaseWrapper):
     def get_body(self, indent, path, name):
-        return "{}{}: Any = ... # {}".format(get_indent(indent), name_split(name)[-1], self._repr)
+        return "{}{}: Any = ... # {}".format(
+            get_indent(indent), name_split(name)[-1], self._repr
+        )
 
     def get_imports(self, path, name):
         return [Import("typing", "Any", "")]
 
     def get_cli(self, indent, path, name, colour):
         return "{}{}: {}".format(
-            get_indent(indent),
-            name_split(name)[-1],
-            green("Any") if colour else "Any",
+            get_indent(indent), name_split(name)[-1], green("Any") if colour else "Any",
         )

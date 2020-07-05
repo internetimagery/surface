@@ -123,13 +123,18 @@ class RepresentationBuilder(Chart):
             path_allowed = True
         else:
             path_allowed = False
-        
+
         if len(name_parts) == 1:
             # We only have a path, so we can accept names
             name_allowed = True
         else:
             name_basename = name_split(name_parts[1])[-1]
-            name_allowed = True if name_basename in self._allowed_names or not name_basename.startswith("_") else False
+            name_allowed = (
+                True
+                if name_basename in self._allowed_names
+                or not name_basename.startswith("_")
+                else False
+            )
 
         return path_allowed and name_allowed
 
