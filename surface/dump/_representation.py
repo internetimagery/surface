@@ -188,7 +188,7 @@ class Function(BaseWrapper):
 
     def get_cli(self, indent, path, name, colour):
         name = name_split(name)[-1]
-        params = ", ".join(p.prefix + p.type for p in self._parameters)
+        params = ", ".join(p.as_cli() for p in self._parameters)
         return "{}{} {}({}) -> {}".format(
             get_indent(indent),
             magenta("def") if colour else "def",

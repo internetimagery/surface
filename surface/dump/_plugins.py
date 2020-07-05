@@ -20,17 +20,26 @@ AnyStr = _type_repr(Any)
 
 
 class Param(object):
-    __slots__ = ("name", "type", "prefix")
+    __slots__ = ("name", "type", "kind")
 
-    def __init__(self, name, type_="", prefix=""):
-        # type: (str, str, str) -> None
+    VAR_POSITIONAL = 1
+    VAR_KEYWORD = 2
+
+    def __init__(self, name, type_, kind):
+        # type: (str, str, int) -> None
         self.name = name
         self.type = type_
-        self.prefix = prefix
+        self.kind = kind
 
     def as_arg(self):
         # type: () -> str
-        return "{}{}: {}".format(self.prefix, self.name, self.type)
+        prefix = "*" if self.kind == self.VAR_POSITIONAL else "**" if self.kind == self.VAR_KEYWORD else ""
+        return "{}{}: {}".format(prefix, self.name, self.type)
+    
+    def as_cli(self):
+        # type: () -> str
+        prefix = "*" if self.kind == self.VAR_POSITIONAL else "**" if self.kind == self.VAR_KEYWORD else ""
+        return prefix + self.type
 
 
 class BasePlugin(object):
@@ -57,7 +66,7 @@ class PluginManager(object):
             params = plugin.types_from_function(function, parent, sig)
             if params:
                 return params
-        return [Param("_args", AnyStr, "*"), Param("_kwargs", AnyStr, "**")], AnyStr
+        return [Param("_args", AnyStr, Param.VAR_POSITIONAL), Param("_kwargs", AnyStr, Param.VAR_KEYWORD)], AnyStr
 
     def type_from_value(self, value, parent):
         # type: (Any Optional[Any]) -> str
@@ -137,11 +146,11 @@ class AnnotationTypingPlugin(BasePlugin):
                 AnyStr
                 if param.annotation is sig.empty
                 else _type_repr(param.annotation),
-                "*"
+                Param.VAR_POSITIONAL
                 if param.kind == param.VAR_POSITIONAL
-                else "**"
+                else Param.VAR_KEYWORD
                 if param.kind == param.VAR_KEYWORD
-                else "",
+                else 0,
             )
             for param in sig.parameters.values()
         )
@@ -208,11 +217,11 @@ class CommentTypingPlugin(BasePlugin):
             Param(
                 name,
                 arg.strip(),
-                "*"
+                Param.VAR_POSITIONAL
                 if p.kind == p.VAR_POSITIONAL
-                else "**"
+                else Param.VAR_KEYWORD
                 if p.kind == p.VAR_KEYWORD
-                else "",
+                else 0,
             )
             for (name, p), arg in zip_longest(
                 reversed(sig.parameters.items()), reversed(args), fillvalue=AnyStr
