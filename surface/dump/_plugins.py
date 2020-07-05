@@ -1,10 +1,18 @@
 from typing import _type_repr, Any
 
+import re
 import logging
 import inspect
+import token
+import tokenize
 import contextlib
 
 import sigtools
+
+try:
+    from itertools import zip_longest
+except ImportError:
+    from itertools import izip_longest as zip_longest
 
 LOG = logging.getLogger(__name__)
 
@@ -28,8 +36,8 @@ class Param(object):
 class BasePlugin(object):
     """ Abstraction to collect typing information from live objects """
 
-    def types_from_function(self, function, parent):
-        # type: (Callable, Optional[Any]) -> Optional[Tuple[List[Param], str]]
+    def types_from_function(self, function, parent, sig):
+        # type: (Callable, Optional[Any], Optional[sigtools.Signature]]) -> Optional[Tuple[List[Param], str]
         pass
 
     def type_from_value(self, value, parent):
@@ -44,8 +52,9 @@ class PluginManager(object):
 
     def types_from_function(self, function, parent):
         # type: (Callable, Optional[Any]) -> Tuple[List[Param], str]
+        sig = self._get_signature(function)
         for plugin in self._plugins:
-            params = plugin.types_from_function(function, parent)
+            params = plugin.types_from_function(function, parent, sig)
             if params:
                 return params
         return [Param("_args", AnyStr, "*"), Param("_kwargs", AnyStr, "**")], AnyStr
@@ -57,48 +66,6 @@ class PluginManager(object):
             if type_:
                 return type_
         return AnyStr
-
-
-class AnnotationTypingPlugin(BasePlugin):
-
-    def type_from_value(self, value, parent):
-        # type: (Any, Optional[Any]) -> Optional[str]
-        for name, item in inspect.getmembers(parent):
-            if item is value:
-                try:
-                    annotation = parent.__annotations__[name]
-                except (AttributeError, KeyError, TypeError):
-                    pass
-                else:
-                    return _type_repr(annotation)
-                break
-        return None
-
-    def types_from_function(self, function, parent):
-        # type: (Callable, Optional[Any]) -> Optional[Tuple[List[Param], str]]
-        sig = self._get_signature(function)
-        if not sig:
-            return None
-        params = tuple(
-            Param(
-                param.name,
-                AnyStr
-                if param.annotation is sig.empty
-                else _type_repr(param.annotation),
-                "*"
-                if param.kind == param.VAR_POSITIONAL
-                else "**"
-                if param.kind == param.VAR_KEYWORD
-                else "",
-            )
-            for param in sig.parameters.values()
-        )
-        returns = (
-            AnyStr
-            if sig.return_annotation is sig.empty
-            else _type_repr(sig.return_annotation)
-        )
-        return params, returns
 
     def _get_signature(self, function):
         # type: (Callable) -> Optional[sigtools.Signature]
@@ -138,3 +105,117 @@ class AnnotationTypingPlugin(BasePlugin):
         finally:
             if fixup:
                 func.__annotations__ = annotations
+
+
+class AnnotationTypingPlugin(BasePlugin):
+    def type_from_value(self, value, parent):
+        # type: (Any, Optional[Any]) -> Optional[str]
+        for name, item in inspect.getmembers(parent):
+            if item is value:
+                try:
+                    annotation = parent.__annotations__[name]
+                except (AttributeError, KeyError, TypeError):
+                    pass
+                else:
+                    return _type_repr(annotation)
+                break
+        return None
+
+    def types_from_function(self, function, parent, sig):
+        # type: (Callable, Optional[Any], Optional[sigtools.Signature]]) -> Optional[Tuple[List[Param], str]]
+        if not sig:
+            return None
+        if (
+            all(p.annotation is sig.empty for p in sig.parameters.values())
+            and sig.return_annotation is sig.empty
+        ):
+            return None
+
+        params = tuple(
+            Param(
+                param.name,
+                AnyStr
+                if param.annotation is sig.empty
+                else _type_repr(param.annotation),
+                "*"
+                if param.kind == param.VAR_POSITIONAL
+                else "**"
+                if param.kind == param.VAR_KEYWORD
+                else "",
+            )
+            for param in sig.parameters.values()
+        )
+        returns = (
+            AnyStr
+            if sig.return_annotation is sig.empty
+            else _type_repr(sig.return_annotation)
+        )
+        return params, returns
+
+
+class CommentTypingPlugin(BasePlugin):
+    """ Abstraction to collect typing information from typing comments """
+
+    TYPE_REG = r"[\w\.\[\]\,\s]+"
+    SINGLE_REG = re.compile(r"\w+(\[{}\])?".format(TYPE_REG))
+    PREFIX_REG = r"#\s*type:\s+"
+    ATTR_REG = re.compile("{}({})".format(PREFIX_REG, TYPE_REG))
+    FUNC_REG = re.compile(
+        r"{prefix}\(({type_})?\)\s+->\s+({type_})".format(
+            prefix=PREFIX_REG, type_=TYPE_REG
+        )
+    )
+
+    def types_from_function(self, function, parent, sig):
+        # type: (Callable, Optional[Any], Optional[sigtools.Signature]) -> Optional[Tuple[List[Param], str]]
+        if not sig:
+            return None
+        try:
+            code = inspect.getsource(function)
+        except TypeError:
+            return None
+        lines = code.splitlines(True)
+        tokens = list(tokenize.generate_tokens(iter(lines).__next__))
+        args = []
+        returns = AnyStr
+        for i, tok in enumerate(tokens):
+            if tok[0] == tokenize.NL:
+                if tokens[i - 1][0] != tokenize.COMMENT:
+                    continue
+                match = self.ATTR_REG.match(tokens[i - 1][1])
+                if not match:
+                    continue
+                args.append(match.group(1))
+            elif tok[0] == token.NEWLINE:
+                if tokens[i - 1][0] == tokenize.COMMENT:
+                    comment = tokens[i - 1][1]
+                elif tokens[i + 1][0] == tokenize.COMMENT:
+                    comment = tokens[i + 1][1]
+                else:
+                    continue
+                match = self.FUNC_REG.match(comment)
+                if not match:
+                    continue
+                if match.group(1) and match.group(1).strip() != "...":
+                    args = [
+                        arg.group(0).strip()
+                        for arg in self.SINGLE_REG.finditer(match.group(1))
+                    ]
+                returns = match.group(2).strip()
+                break
+
+        params = [
+            Param(
+                name,
+                arg.strip(),
+                "*"
+                if p.kind == p.VAR_POSITIONAL
+                else "**"
+                if p.kind == p.VAR_KEYWORD
+                else "",
+            )
+            for (name, p), arg in zip_longest(
+                reversed(sig.parameters.items()), reversed(args), fillvalue=AnyStr
+            )
+        ]
+        return list(reversed(params)), returns

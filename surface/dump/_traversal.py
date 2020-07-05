@@ -16,7 +16,11 @@ from surface.dump._representation import (
     StaticMethod,
     Attribute,
 )
-from surface.dump._plugins import PluginManager, AnnotationTypingPlugin
+from surface.dump._plugins import (
+    PluginManager,
+    AnnotationTypingPlugin,
+    CommentTypingPlugin,
+)
 
 Representation = Dict[str, Dict[str, BaseWrapper]]
 
@@ -34,7 +38,7 @@ class RepresentationBuilder(Chart):
         self._nameMap = {}  # type: Dict[str, BaseWrapper]
         self._idMap = {}  # type: Dict[int, BaseWrapper]
         self._plugin = PluginManager(
-            [AnnotationTypingPlugin()]
+            [AnnotationTypingPlugin(), CommentTypingPlugin()]
         )  # type: List[BasePlugin]
 
     def get_representation(self):
