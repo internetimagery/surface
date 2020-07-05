@@ -16,6 +16,7 @@ from surface.dump._representation import (
     StaticMethod,
     Attribute,
 )
+from surface.dump._plugins import PluginManager, AnnotationTypingPlugin
 
 Representation = Dict[str, Dict[str, BaseWrapper]]
 
@@ -32,6 +33,9 @@ class RepresentationBuilder(Chart):
         self._allowed_names = set(("__init__", "__new__"))
         self._nameMap = {}  # type: Dict[str, BaseWrapper]
         self._idMap = {}  # type: Dict[int, BaseWrapper]
+        self._plugin = PluginManager(
+            [AnnotationTypingPlugin()]
+        )  # type: List[BasePlugin]
 
     def get_representation(self):
         # type: () -> Representation
@@ -63,7 +67,7 @@ class RepresentationBuilder(Chart):
                 self._nameMap[name] = module_wrap
                 # We have visited this module. Don't need to do it again.
                 return True
-            self._nameMap[name] = self._set_wrapped(Module(module))
+            self._nameMap[name] = self._set_wrapped(Module(module, self._plugin))
 
     def visit_class(self, name, class_, __):
         # type: (str, type, TrailBlazer) -> Optional[bool]
@@ -74,41 +78,51 @@ class RepresentationBuilder(Chart):
             self._nameMap[name] = class_wrap
             # We have already visited this class. Don't need to do it again.
             return True
-        self._nameMap[name] = self._set_wrapped(Class(class_))
+        self._nameMap[name] = self._set_wrapped(Class(class_, self._plugin))
 
     def visit_function(self, name, func, _, __):
         # type: (str, Callable, type, TrailBlazer) -> None
         if not self._filter_name(name):
             return
-        func_wrap = self._get_wrapped(func) or self._set_wrapped(Function(func))
+        func_wrap = self._get_wrapped(func) or self._set_wrapped(
+            Function(func, self._plugin)
+        )
         self._nameMap[name] = func_wrap
 
     def visit_method(self, name, func, _, __):
         # type: (str, Callable, type, TrailBlazer) -> None
         if not self._filter_name(name):
             return
-        func_wrap = self._get_wrapped(func) or self._set_wrapped(Method(func))
+        func_wrap = self._get_wrapped(func) or self._set_wrapped(
+            Method(func, self._plugin)
+        )
         self._nameMap[name] = func_wrap
 
     def visit_classmethod(self, name, func, _, __):
         # type: (str, Callable, type, TrailBlazer) -> None
         if not self._filter_name(name):
             return
-        func_wrap = self._get_wrapped(func) or self._set_wrapped(ClassMethod(func))
+        func_wrap = self._get_wrapped(func) or self._set_wrapped(
+            ClassMethod(func, self._plugin)
+        )
         self._nameMap[name] = func_wrap
 
     def visit_staticmethod(self, name, func, _, __):
         # type: (str, Callable, type, TrailBlazer) -> None
         if not self._filter_name(name):
             return
-        func_wrap = self._get_wrapped(func) or self._set_wrapped(StaticMethod(func))
+        func_wrap = self._get_wrapped(func) or self._set_wrapped(
+            StaticMethod(func, self._plugin)
+        )
         self._nameMap[name] = func_wrap
 
     def visit_attribute(self, name, value, _, __):
         # type: (str, Any, type, TrailBlazer) -> None
         if not self._filter_name(name):
             return
-        attr_wrap = self._get_wrapped(value) or self._set_wrapped(Attribute(value))
+        attr_wrap = self._get_wrapped(value) or self._set_wrapped(
+            Attribute(value, self._plugin)
+        )
         self._nameMap[name] = attr_wrap
 
     def _filter_name(self, name):
