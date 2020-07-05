@@ -12,6 +12,7 @@ import sigtools
 LOG = logging.getLogger(__name__)
 
 INDENT = "    "
+AnyStr = "typing.Any"
 
 # Name format package.module:Class.method
 name_split = re.compile(r"[\.:]").split
@@ -180,7 +181,9 @@ class Function(BaseWrapper):
         )
 
     def get_imports(self, path, name):
-        return [Import("typing", "Any", "")]
+        types = [Import(p.type.rsplit(".", 1)[0], "", "") for p in self._parameters]
+        types.append(Import(self._returns.rsplit(".", 1)[0], "", ""))
+        return types
 
     def get_cli(self, indent, path, name, colour):
         name = name_split(name)[-1]
@@ -190,18 +193,18 @@ class Function(BaseWrapper):
             magenta("def") if colour else "def",
             cyan(name) if colour else name,
             green(params) if colour else params,
-            green("Any") if colour else "Any",
+            green(AnyStr) if colour else AnyStr,
         )
 
     def _get_parameters(self, function):
         # type: (Callable) -> Tuple[Tuple[Param, ...], str]
         sig = self._get_signature(function)
         if not sig:
-            return (Param("args", "Any", "*"), Param("kwargs", "Any", "**")), "Any"
+            return (Param("_args", AnyStr, "*"), Param("_kwargs", AnyStr, "**")), AnyStr
         params = tuple(
             Param(
                 param.name,
-                "Any",
+                AnyStr,
                 "*"
                 if param.kind == param.VAR_POSITIONAL
                 else "**"
@@ -210,7 +213,7 @@ class Function(BaseWrapper):
             )
             for param in sig.parameters.values()
         )
-        returns = "Any"
+        returns = AnyStr
         return params, returns
 
     def _get_signature(self, function):
@@ -218,15 +221,20 @@ class Function(BaseWrapper):
         with self._fix_annotation(function):
             try:
                 sig = sigtools.signature(function)
-            except (SyntaxError, ValueError, RuntimeError):
+            except ValueError:
+                # Can't find a signature for a function. Acceptable failure.
+                LOG.debug("Could not find signature for %s", function)
+            except SyntaxError:
+                # Could not parse the source code. This can happen for any number of reasons.
+                # Quality of the source code is not our concern here. Let it slide.
+                LOG.debug("Failed to read function source %s", function)
+            except RuntimeError:
                 # TypeError?
                 # RuntimeError: https://github.com/epsy/sigtools/issues/10
                 LOG.exception("Failed to get signature for {}".format(function))
-                return None
-            except TypeError:
-                LOG.exception("Wrong type? {}".format(function))
-                return None
-            return sig
+            else:
+                return sig
+            return None
 
     @staticmethod
     @contextlib.contextmanager
@@ -253,23 +261,51 @@ class Method(Function):
 
 
 class ClassMethod(Function):
-    pass
+    def __init__(self, wrapped):
+        super(ClassMethod, self).__init__(wrapped.__func__)
+
+    def get_body(self, indent, path, name):
+        return "{}@classmethod\n{}".format(
+            get_indent(indent), super(ClassMethod, self).get_body(indent, path, name),
+        )
+
+    def get_cli(self, indent, path, name, colour):
+        return "{}@{}\n{}".format(
+            get_indent(indent),
+            cyan("classmethod") if colour else "classmethod",
+            super(ClassMethod, self).get_cli(indent, path, name, colour),
+        )
 
 
 class StaticMethod(Function):
-    pass
+    def __init__(self, wrapped):
+        super(StaticMethod, self).__init__(wrapped.__func__)
+
+    def get_body(self, indent, path, name):
+        return "{}@staticmethod\n{}".format(
+            get_indent(indent), super(StaticMethod, self).get_body(indent, path, name),
+        )
+
+    def get_cli(self, indent, path, name, colour):
+        return "{}@{}\n{}".format(
+            get_indent(indent),
+            cyan("staticmethod") if colour else "staticmethod",
+            super(StaticMethod, self).get_cli(indent, path, name, colour),
+        )
 
 
 class Attribute(BaseWrapper):
     def get_body(self, indent, path, name):
-        return "{}{}: Any = ... # {}".format(
-            get_indent(indent), name_split(name)[-1], self._repr
+        return "{}{}: {} = ... # {}".format(
+            get_indent(indent), name_split(name)[-1], AnyStr, self._repr
         )
 
     def get_imports(self, path, name):
-        return [Import("typing", "Any", "")]
+        return [Import("typing", "", "")]
 
     def get_cli(self, indent, path, name, colour):
         return "{}{}: {}".format(
-            get_indent(indent), name_split(name)[-1], green("Any") if colour else "Any",
+            get_indent(indent),
+            name_split(name)[-1],
+            green(AnyStr) if colour else AnyStr,
         )
