@@ -22,8 +22,12 @@ AnyStr = _type_repr(Any)
 class Param(object):
     __slots__ = ("name", "type", "kind")
 
-    VAR_POSITIONAL = 1
-    VAR_KEYWORD = 2
+    POSITIONAL_OR_KEYWORD = 0
+    POSITIONAL_OR_KEYWORD_WITH_DEFAULT = 1
+    POSITIONAL_ONLY = 2
+    KEYWORD_ONLY = 3
+    VAR_POSITIONAL = 4
+    VAR_KEYWORD = 5
 
     def __init__(self, name, type_, kind):
         # type: (str, str, int) -> None
@@ -34,7 +38,8 @@ class Param(object):
     def as_arg(self):
         # type: () -> str
         prefix = "*" if self.kind == self.VAR_POSITIONAL else "**" if self.kind == self.VAR_KEYWORD else ""
-        return "{}{}: {}".format(prefix, self.name, self.type)
+        suffix = ": {} = ..." if self.kind in (self.POSITIONAL_OR_KEYWORD_WITH_DEFAULT, self.KEYWORD_ONLY) else ": {}"
+        return prefix + self.name + suffix.format(self.type)
     
     def as_cli(self):
         # type: () -> str
@@ -52,6 +57,24 @@ class BasePlugin(object):
     def type_from_value(self, value, parent):
         # type: (Any, Optional[Any]) -> Optional[str]
         pass
+    
+    @staticmethod
+    def _sig_param_kind_map(param):
+        # type: (sigtools.Param) -> int
+        """ Utility to map sigtools.Param kind to Param kind """
+        if param.kind == param.POSITIONAL_OR_KEYWORD:
+            if param.kind is param.empty:
+                return Param.POSITIONAL_OR_KEYWORD
+            return Param.POSITIONAL_OR_KEYWORD_WITH_DEFAULT
+        if param.kind == param.POSITIONAL_ONLY:
+            return Param.POSITIONAL_ONLY
+        if param.kind == param.KEYWORD_ONLY:
+            return Param.KEYWORD_ONLY
+        if param.kind == param.VAR_POSITIONAL:
+            return Param.VAR_POSITIONAL
+        if param.kind == param.VAR_KEYWORD:
+            return Param.VAR_KEYWORD
+        raise ValueError("Unknown parameter {}".format(param.kind))
 
 
 class PluginManager(object):
@@ -81,7 +104,7 @@ class PluginManager(object):
         with self._fix_annotation(function):
             try:
                 sig = sigtools.signature(function)
-            except ValueError:
+            except (ValueError, OSError):
                 # Can't find a signature for a function. Acceptable failure.
                 LOG.debug("Could not find signature for %s", function)
             except SyntaxError:
@@ -146,11 +169,7 @@ class AnnotationTypingPlugin(BasePlugin):
                 AnyStr
                 if param.annotation is sig.empty
                 else _type_repr(param.annotation),
-                Param.VAR_POSITIONAL
-                if param.kind == param.VAR_POSITIONAL
-                else Param.VAR_KEYWORD
-                if param.kind == param.VAR_KEYWORD
-                else 0,
+                self._sig_param_kind_map(param)
             )
             for param in sig.parameters.values()
         )
@@ -181,7 +200,7 @@ class CommentTypingPlugin(BasePlugin):
             return None
         try:
             code = inspect.getsource(function)
-        except TypeError:
+        except (OSError, TypeError):
             return None
         lines = code.splitlines(True)
         tokens = list(tokenize.generate_tokens(iter(lines).__next__))
@@ -206,10 +225,7 @@ class CommentTypingPlugin(BasePlugin):
                 if not match:
                     continue
                 if match.group(1) and match.group(1).strip() != "...":
-                    args = [
-                        arg.group(0).strip()
-                        for arg in self.SINGLE_REG.finditer(match.group(1))
-                    ]
+                    args = self._split_args(match.group(1))
                 returns = match.group(2).strip()
                 break
 
@@ -217,14 +233,30 @@ class CommentTypingPlugin(BasePlugin):
             Param(
                 name,
                 arg.strip(),
-                Param.VAR_POSITIONAL
-                if p.kind == p.VAR_POSITIONAL
-                else Param.VAR_KEYWORD
-                if p.kind == p.VAR_KEYWORD
-                else 0,
+                self._sig_param_kind_map(p)
             )
             for (name, p), arg in zip_longest(
                 reversed(sig.parameters.items()), reversed(args), fillvalue=AnyStr
             )
         ]
         return list(reversed(params)), returns
+
+    @staticmethod
+    def _split_args(string):
+        # type: (str) -> List[str]
+        level = 0
+        section = ""
+        sections = []
+        for char in string:
+            if char == "[":
+                level += 1
+            if char == "]":
+                level -= 1
+            if char == "," and not level:
+                sections.append(section.strip())
+                section = ""
+                continue
+            section += char
+        sections.append(section.strip())
+        return sections
+                

@@ -12,6 +12,7 @@ import sigtools
 LOG = logging.getLogger(__name__)
 
 INDENT = "    "
+NAME_REG = re.compile(r"([\w\.]+)\.\w+")
 
 # Name format package.module:Class.method
 name_split = re.compile(r"[\.:]").split
@@ -177,13 +178,13 @@ class Function(BaseWrapper):
         )
 
     def get_imports(self, path, name):
-        types = [
-            Import(p.type.rsplit(".", 1)[0], "", "")
-            for p in self._parameters
-            if "." in p.type
-        ]
-        if "." in self._returns:
-            types.append(Import(self._returns.rsplit(".", 1)[0], "", ""))
+        types = []
+        for p in self._parameters:
+            for match in NAME_REG.finditer(p.type):
+                types.append(Import(match.group(1), "", ""))
+
+        for match in NAME_REG.finditer(self._returns):
+            types.append(Import(match.group(1), "", ""))
         return types
 
     def get_cli(self, indent, path, name, colour):
@@ -247,9 +248,11 @@ class Attribute(BaseWrapper):
         )
 
     def get_imports(self, path, name):
-        parts = self._type.rsplit(".", 1)
-        if len(parts) == 2:
-            return [Import(parts[0], "", "")]
+        types = [
+            Import(match.group(1), "", "")
+            for match in NAME_REG.finditer(self._type)
+        ]
+        return types
 
     def get_cli(self, indent, path, name, colour):
         return "{}{}: {}".format(
