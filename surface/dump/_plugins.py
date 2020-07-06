@@ -37,13 +37,29 @@ class Param(object):
 
     def as_arg(self):
         # type: () -> str
-        prefix = "*" if self.kind == self.VAR_POSITIONAL else "**" if self.kind == self.VAR_KEYWORD else ""
-        suffix = ": {} = ..." if self.kind in (self.POSITIONAL_OR_KEYWORD_WITH_DEFAULT, self.KEYWORD_ONLY) else ": {}"
+        prefix = (
+            "*"
+            if self.kind == self.VAR_POSITIONAL
+            else "**"
+            if self.kind == self.VAR_KEYWORD
+            else ""
+        )
+        suffix = (
+            ": {} = ..."
+            if self.kind in (self.POSITIONAL_OR_KEYWORD_WITH_DEFAULT, self.KEYWORD_ONLY)
+            else ": {}"
+        )
         return prefix + self.name + suffix.format(self.type)
-    
+
     def as_cli(self):
         # type: () -> str
-        prefix = "*" if self.kind == self.VAR_POSITIONAL else "**" if self.kind == self.VAR_KEYWORD else ""
+        prefix = (
+            "*"
+            if self.kind == self.VAR_POSITIONAL
+            else "**"
+            if self.kind == self.VAR_KEYWORD
+            else ""
+        )
         return prefix + self.type
 
 
@@ -57,7 +73,7 @@ class BasePlugin(object):
     def type_from_value(self, value, parent):
         # type: (Any, Optional[Any]) -> Optional[str]
         pass
-    
+
     @staticmethod
     def _sig_param_kind_map(param):
         # type: (sigtools.Param) -> int
@@ -89,7 +105,13 @@ class PluginManager(object):
             params = plugin.types_from_function(function, parent, sig)
             if params:
                 return params
-        return [Param("_args", AnyStr, Param.VAR_POSITIONAL), Param("_kwargs", AnyStr, Param.VAR_KEYWORD)], AnyStr
+        return (
+            [
+                Param("_args", AnyStr, Param.VAR_POSITIONAL),
+                Param("_kwargs", AnyStr, Param.VAR_KEYWORD),
+            ],
+            AnyStr,
+        )
 
     def type_from_value(self, value, parent):
         # type: (Any Optional[Any]) -> str
@@ -169,7 +191,7 @@ class AnnotationTypingPlugin(BasePlugin):
                 AnyStr
                 if param.annotation is sig.empty
                 else _type_repr(param.annotation),
-                self._sig_param_kind_map(param)
+                self._sig_param_kind_map(param),
             )
             for param in sig.parameters.values()
         )
@@ -205,7 +227,7 @@ class CommentTypingPlugin(BasePlugin):
         lines = code.splitlines(True)
         tokens = list(tokenize.generate_tokens(iter(lines).__next__))
         args = []
-        returns = AnyStr
+        returns = None
         for i, tok in enumerate(tokens):
             if tok[0] == tokenize.NL:
                 if tokens[i - 1][0] != tokenize.COMMENT:
@@ -229,12 +251,11 @@ class CommentTypingPlugin(BasePlugin):
                 returns = match.group(2).strip()
                 break
 
+        if returns is None:
+            return None
+
         params = [
-            Param(
-                name,
-                arg.strip(),
-                self._sig_param_kind_map(p)
-            )
+            Param(name, arg.strip(), self._sig_param_kind_map(p))
             for (name, p), arg in zip_longest(
                 reversed(sig.parameters.items()), reversed(args), fillvalue=AnyStr
             )
@@ -259,4 +280,3 @@ class CommentTypingPlugin(BasePlugin):
             section += char
         sections.append(section.strip())
         return sections
-                

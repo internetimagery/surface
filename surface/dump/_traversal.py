@@ -14,6 +14,7 @@ from surface.dump._representation import (
     Method,
     ClassMethod,
     StaticMethod,
+    Property,
     Attribute,
 )
 from surface.dump._plugins import (
@@ -119,6 +120,14 @@ class RepresentationBuilder(Chart):
             StaticMethod(func, parent, self._plugin)
         )
         self._nameMap[name] = func_wrap
+
+    def visit_property(self, name, descriptor, parent, _):
+        if not self._filter_name(name):
+            return
+        desc_wrap = self._get_wrapped(descriptor) or self._set_wrapped(
+            Property(descriptor, parent, self._plugin)
+        )
+        self._nameMap[name] = desc_wrap
 
     def visit_attribute(self, name, value, parent, __):
         # type: (str, Any, type, TrailBlazer) -> None

@@ -237,6 +237,29 @@ class StaticMethod(Function):
         )
 
 
+class Property(Function):
+    def __init__(self, wrapped, parent, plugin):
+        super(Property, self).__init__(wrapped.fget, parent, plugin)
+
+    def get_body(self, indent, path, name):
+        return "{}{}: {} = ... # {}".format(
+            get_indent(indent), name_split(name)[-1], self._returns, self._repr
+        )
+
+    def get_imports(self, path, name):
+        types = [
+            Import(match.group(1), "", "") for match in NAME_REG.finditer(self._returns)
+        ]
+        return types
+
+    def get_cli(self, indent, path, name, colour):
+        return "{}{}: {}".format(
+            get_indent(indent),
+            name_split(name)[-1],
+            green(self._returns) if colour else self._returns,
+        )
+
+
 class Attribute(BaseWrapper):
     def __init__(self, wrapped, parent, plugin):
         super(Attribute, self).__init__(wrapped, parent, plugin)
@@ -249,8 +272,7 @@ class Attribute(BaseWrapper):
 
     def get_imports(self, path, name):
         types = [
-            Import(match.group(1), "", "")
-            for match in NAME_REG.finditer(self._type)
+            Import(match.group(1), "", "") for match in NAME_REG.finditer(self._type)
         ]
         return types
 
