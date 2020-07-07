@@ -15,7 +15,7 @@ LOG = logging.getLogger(__name__)
 INDENT = "    "
 NAME_REG = re.compile(r"([\w\.]+)\.\w+")
 
-BAD_NAME = re.compile("\b(\d\w*|None|\d+|{})\b".format("|".join(keyword.kwlist)))
+BAD_NAME = re.compile("\b(None|\d+|{})\b".format("|".join(keyword.kwlist)))
 
 # Name format package.module:Class.method
 name_split = re.compile(r"[\.:]").split
@@ -34,7 +34,7 @@ def get_indent(num):
 
 def safe_name(name):
     # type: (str) -> str
-    if BAD_NAME.match(name):
+    if not BAD_NAME.match(name):
         return name
     return name + "_"
 
