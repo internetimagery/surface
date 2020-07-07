@@ -16,7 +16,7 @@ from surface.dump._representation import (
     StaticMethod,
     Property,
     Attribute,
-    BLACK_LIST_NAMES,
+    BAD_NAME,
 )
 from surface.dump._plugins import (
     PluginManager,
@@ -160,7 +160,7 @@ class RepresentationBuilder(Chart):
             name_basename = name_split(name_parts[1])[-1]
             name_allowed = (
                 True
-                if name_basename not in BLACK_LIST_NAMES
+                if not BAD_NAME.match(name_basename)
                 and (
                     name_basename in self._allowed_names
                     or not name_basename.startswith("_")
