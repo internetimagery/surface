@@ -31,7 +31,7 @@ HEADER_REG = re.compile(
 def handle_google(docstring):  # type: (str) -> Optional[Tuple[Dict[str, str], str]]
     # Find the first header, to establish indent
     headers = list(HEADER_REG.finditer(docstring))
-    if not headers:
+    if not headers or len(headers) > 2:
         return None
 
     params = {}
