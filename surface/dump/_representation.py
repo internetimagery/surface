@@ -5,6 +5,7 @@ from typing import NamedTuple
 import re
 import inspect
 import logging
+import keyword
 import contextlib
 
 import sigtools
@@ -27,6 +28,12 @@ yellow = "\033[33m{}\033[0m".format
 def get_indent(num):
     # type: (int) -> str
     return INDENT * num
+
+def safe_name(name):
+    # type: (str) -> str
+    if name not in keyword.kwlist:
+        return name
+    return name + "_"
 
 
 Import = NamedTuple("Import", [("path", str), ("name", str), ("alias", str)])
@@ -107,7 +114,7 @@ class Class(BaseWrapper):
         super(Class, self).__init__(wrapped, parent, plugin)
         self._docstring = inspect.getdoc(wrapped) or ""
         self._definition = wrapped.__module__
-        self._name = wrapped.__name__
+        self._name = safe_name(wrapped.__name__)
 
     def get_name(self):
         # type: () -> str
