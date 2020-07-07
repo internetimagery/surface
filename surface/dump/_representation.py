@@ -15,6 +15,9 @@ LOG = logging.getLogger(__name__)
 INDENT = "    "
 NAME_REG = re.compile(r"([\w\.]+)\.\w+")
 
+BLACK_LIST_NAMES = set(keyword.kwlist)
+BLACK_LIST_NAMES.add("None")  # Not in python2
+
 # Name format package.module:Class.method
 name_split = re.compile(r"[\.:]").split
 
@@ -32,7 +35,7 @@ def get_indent(num):
 
 def safe_name(name):
     # type: (str) -> str
-    if name not in keyword.kwlist:
+    if name not in BLACK_LIST_NAMES:
         return name
     return name + "_"
 
