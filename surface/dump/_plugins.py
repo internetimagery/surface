@@ -81,7 +81,7 @@ class BasePlugin(object):
         # type: (sigtools.Param) -> int
         """ Utility to map sigtools.Param kind to Param kind """
         if param.kind == param.POSITIONAL_OR_KEYWORD:
-            if param.kind is param.empty:
+            if param.default is param.empty:
                 return Param.POSITIONAL_OR_KEYWORD
             return Param.POSITIONAL_OR_KEYWORD_WITH_DEFAULT
         if param.kind == param.POSITIONAL_ONLY:
