@@ -29,6 +29,7 @@ def get_indent(num):
     # type: (int) -> str
     return INDENT * num
 
+
 def safe_name(name):
     # type: (str) -> str
     if name not in keyword.kwlist:
@@ -229,9 +230,10 @@ class ClassMethod(Function):
         super(ClassMethod, self).__init__(wrapped.__func__, parent, plugin)
 
     def get_body(self, indent, path, name):
-        return "{}@classmethod\n{}".format(
-            get_indent(indent), super(ClassMethod, self).get_body(indent, path, name),
-        )
+        body = super(ClassMethod, self).get_body(indent, path, name)
+        if self._module and path != self._module:
+            return body
+        return "{}@classmethod\n{}".format(get_indent(indent), body,)
 
     def get_cli(self, indent, path, name, colour):
         return "{}@{}\n{}".format(
@@ -246,9 +248,10 @@ class StaticMethod(Function):
         super(StaticMethod, self).__init__(wrapped.__func__, parent, plugin)
 
     def get_body(self, indent, path, name):
-        return "{}@staticmethod\n{}".format(
-            get_indent(indent), super(StaticMethod, self).get_body(indent, path, name),
-        )
+        body = super(StaticMethod, self).get_body(indent, path, name)
+        if self._module and path != self._module:
+            return body
+        return "{}@staticmethod\n{}".format(get_indent(indent), body,)
 
     def get_cli(self, indent, path, name, colour):
         return "{}@{}\n{}".format(
@@ -264,7 +267,10 @@ class Property(Function):
 
     def get_body(self, indent, path, name):
         return "{}{}: {} = ... # {}".format(
-            get_indent(indent), safe_name(name_split(name)[-1]), self._returns, self._repr
+            get_indent(indent),
+            safe_name(name_split(name)[-1]),
+            self._returns,
+            self._repr,
         )
 
     def get_imports(self, path, name):
