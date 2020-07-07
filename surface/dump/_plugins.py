@@ -324,10 +324,12 @@ class DocstringTypingPlugin(BasePlugin):
             for name, type_ in parsed[0].items()
         ]
         if inspect.isclass(parent):
-            if isinstance(function, staticmethod):
-                pass
-            elif isinstance(function, classmethod):
-                params.insert(0, Param("cls", _type_repr(Type[parent]), Param.POSITIONAL_ONLY))
-            else:
-                params.insert(0, Param("self", _type_repr(parent), Param.POSITIONAL_ONLY))
+            for attr in inspect.classify_class_attrs(parent):
+                if attr.object is not function:
+                    continue
+                if attr.kind == "method":
+                    params.insert(0, Param("self", _type_repr(parent), Param.POSITIONAL_ONLY))
+                if attr.kind == "class method":
+                    params.insert(0, Param("cls", _type_repr(Type[parent]), Param.POSITIONAL_ONLY))
+                break
         return params, parsed[1]
