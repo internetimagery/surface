@@ -15,7 +15,7 @@ LOG = logging.getLogger(__name__)
 INDENT = "    "
 NAME_REG = re.compile(r"([\w\.]+)\.\w+")
 
-BAD_NAME = re.compile("^(\d\w*|None|\d+|{})$".format("|".join(keyword.kwlist)))
+BAD_NAME = re.compile("\b(\d\w*|None|\d+|{})\b".format("|".join(keyword.kwlist)))
 
 # Name format package.module:Class.method
 name_split = re.compile(r"[\.:]").split
@@ -155,11 +155,13 @@ class Class(BaseWrapper):
             )
         # TODO: get mro for subclasses
         quotes = "'''" if '"""' in self._docstring else '"""'
-        return '{indent}class {name}(object):\n{indent2}{quotes} {doc} {quotes}'.format(
+        return "{indent}class {name}(object):\n{indent2}{quotes} {doc} {quotes}".format(
             indent=get_indent(indent),
             name=safe_name(name_split(name)[-1]),
             indent2=get_indent(indent + 1),
-            doc="\n{}".format(get_indent(indent + 2)).join(self._docstring.splitlines()),
+            doc="\n{}".format(get_indent(indent + 2)).join(
+                self._docstring.splitlines()
+            ),
             quotes=quotes,
         )
 
@@ -179,6 +181,7 @@ class Function(BaseWrapper):
     def __init__(self, wrapped, parent, plugin):
         super(Function, self).__init__(wrapped, parent, plugin)
         self._parameters, self._returns = plugin.types_from_function(wrapped, parent)
+        self._docstring = inspect.getdoc(wrapped) or ""
         try:
             self._module = wrapped.__module__
         except AttributeError:
@@ -196,11 +199,17 @@ class Function(BaseWrapper):
                 name,
             )
         name = safe_name(name_split(name)[-1])
-        return "{}def {}({}) -> {}: ...".format(
-            get_indent(indent),
-            name,
-            ", ".join(p.as_arg() for p in self._parameters),
-            "None" if name == "__init__" else self._returns,
+        quotes = "'''" if '"""' in self._docstring else '"""'
+        return "{indent}def {name}({params}) -> {returns}: ...\n{indent2}{quote} {doc} {quote}".format(
+            indent=get_indent(indent),
+            name=name,
+            params=", ".join(p.as_arg() for p in self._parameters),
+            returns="None" if name == "__init__" else self._returns,
+            indent2=get_indent(indent + 1),
+            quote=quotes,
+            doc="\n{}".format(get_indent(indent + 2)).join(
+                self._docstring.splitlines()
+            ),
         )
 
     def get_imports(self, path, name):
