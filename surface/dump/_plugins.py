@@ -1,4 +1,4 @@
-from typing import _type_repr, Any
+from typing import _type_repr, Any, Type
 
 import re
 import logging
@@ -323,4 +323,11 @@ class DocstringTypingPlugin(BasePlugin):
             )
             for name, type_ in parsed[0].items()
         ]
+        if inspect.isclass(parent):
+            if isinstance(function, staticmethod):
+                pass
+            elif isinstance(function, classmethod):
+                params.insert(0, Param("cls", _type_repr(Type[parent]), Param.POSITIONAL_ONLY))
+            else:
+                params.insert(0, Param("self", _type_repr(parent), Param.POSITIONAL_ONLY))
         return params, parsed[1]
