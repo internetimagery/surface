@@ -209,7 +209,7 @@ class CommentTypingPlugin(BasePlugin):
     """ Abstraction to collect typing information from typing comments """
 
     TYPE_REG = r"[\w\.\[\]\,\s]+"
-    SINGLE_REG = re.compile(r"\w+(\[{}\])?".format(TYPE_REG))
+    SINGLE_REG = re.compile(r"\**\w+(\[{}\])?".format(TYPE_REG))
     PREFIX_REG = r"#\s*type:\s+"
     ATTR_REG = re.compile("{}({})".format(PREFIX_REG, TYPE_REG))
     FUNC_REG = re.compile(
