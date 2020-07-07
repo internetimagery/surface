@@ -175,7 +175,11 @@ class Class(BaseWrapper):
         )
 
     def _isRef(self, path):
-        if self._definition and self._definition != path and self._definition in sys.modules:
+        if (
+            self._definition
+            and self._definition != path
+            and self._definition in sys.modules
+        ):
             return True
         return False
 
@@ -192,7 +196,7 @@ class Function(BaseWrapper):
             self._module = wrapped.__module__
         except AttributeError:
             self._module = None
-    
+
     def _isRef(self, path):
         if self._module and path != self._module and self._module in sys.modules:
             return True

@@ -107,10 +107,18 @@ class PluginManager(object):
             params = plugin.types_from_function(function, parent, sig)
             if params:
                 return params
+        if not sig:
+            return (
+                [
+                    Param("_args", AnyStr, Param.VAR_POSITIONAL),
+                    Param("_kwargs", AnyStr, Param.VAR_KEYWORD),
+                ],
+                AnyStr,
+            )
         return (
             [
-                Param("_args", AnyStr, Param.VAR_POSITIONAL),
-                Param("_kwargs", AnyStr, Param.VAR_KEYWORD),
+                Param(param.name, AnyStr, BasePlugin._sig_param_kind_map(param))
+                for param in sig.parameters.values()
             ],
             AnyStr,
         )
