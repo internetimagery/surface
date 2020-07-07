@@ -129,8 +129,8 @@ class Class(BaseWrapper):
 
     def get_imports(self, path, name):
         name = safe_name(name)
-        if self._definition == path:
-            # We have the definition in this file
+        if not self._isRef(path):
+            # Not a reference. We defined it here.
             return []
         if self._name == name:
             # - from package.module import class
@@ -141,7 +141,7 @@ class Class(BaseWrapper):
         return [Import(self._definition, self._name, name)]
 
     def get_body(self, indent, path, name):
-        if self._definition != path:
+        if self._isRef(path):
             # We are looking at a reference to the class
             # not the definition itself. The import method handles this.
             if name == self._name:
@@ -173,6 +173,11 @@ class Class(BaseWrapper):
             cyan(name) if colour else name,
         )
 
+    def _isRef(self, path):
+        if self._definition and self._definition != path and self._definition in sys.modules:
+            return True
+        return False
+
 
 Param = NamedTuple("Sig", [("name", str), ("type", str), ("prefix", str)])
 
@@ -186,9 +191,14 @@ class Function(BaseWrapper):
             self._module = wrapped.__module__
         except AttributeError:
             self._module = None
+    
+    def _isRef(self, path):
+        if self._module and path != self._module and self._module in sys.modules:
+            return True
+        return False
 
     def get_body(self, indent, path, name):
-        if self._module and path != self._module:
+        if self._isRef(path):
             return "{}{}: {} = {}.{}".format(
                 get_indent(indent),
                 name_split(name)[-1],
@@ -244,7 +254,7 @@ class ClassMethod(Function):
 
     def get_body(self, indent, path, name):
         body = super(ClassMethod, self).get_body(indent, path, name)
-        if self._module and path != self._module:
+        if self._isRef(path):
             return body
         return "{}@classmethod\n{}".format(get_indent(indent), body,)
 
@@ -262,7 +272,7 @@ class StaticMethod(Function):
 
     def get_body(self, indent, path, name):
         body = super(StaticMethod, self).get_body(indent, path, name)
-        if self._module and path != self._module:
+        if self._isRef(path):
             return body
         return "{}@staticmethod\n{}".format(get_indent(indent), body,)
 
