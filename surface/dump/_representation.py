@@ -3,6 +3,7 @@
 from typing import NamedTuple
 
 import re
+import sys
 import inspect
 import logging
 import keyword
