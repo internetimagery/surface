@@ -15,7 +15,7 @@ LOG = logging.getLogger(__name__)
 INDENT = "    "
 NAME_REG = re.compile(r"([\w\.]+)\.\w+")
 
-BAD_NAME = re.compile("^(None|\d+|{})$".format("|".join(keyword.kwlist)))
+BAD_NAME = re.compile("^(\d\w*|None|\d+|{})$".format("|".join(keyword.kwlist)))
 
 # Name format package.module:Class.method
 name_split = re.compile(r"[\.:]").split
@@ -115,7 +115,7 @@ class Class(BaseWrapper):
     def __init__(self, wrapped, parent, plugin):
         # type: (type, OPtional[Any], PluginManager) -> None
         super(Class, self).__init__(wrapped, parent, plugin)
-        self._docstring = (inspect.getdoc(wrapped) or "").replace('"""', "'''")
+        self._docstring = inspect.getdoc(wrapped) or ""
         self._definition = wrapped.__module__
         self._name = safe_name(wrapped.__name__)
 
@@ -154,11 +154,13 @@ class Class(BaseWrapper):
                 self._repr,
             )
         # TODO: get mro for subclasses
-        return '{}class {}(object):\n{}""" {} """'.format(
-            get_indent(indent),
-            name_split(name)[-1],
-            get_indent(indent + 1),
-            "\n{}".format(get_indent(indent + 2)).join(self._docstring.splitlines()),
+        quotes = "'''" if '"""' in self._docstring else '"""'
+        return '{indent}class {name}(object):\n{indent2}{quotes} {doc} {quotes}'.format(
+            indent=get_indent(indent),
+            name=safe_name(name_split(name)[-1]),
+            indent2=get_indent(indent + 1),
+            doc="\n{}".format(get_indent(indent + 2)).join(self._docstring.splitlines()),
+            quotes=quotes,
         )
 
     def get_cli(self, indent, path, name, colour):
