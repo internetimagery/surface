@@ -224,7 +224,7 @@ class CommentTypingPlugin(BasePlugin):
             return None
         try:
             code = inspect.getsource(function)
-        except (OSError, TypeError):
+        except (OSError, TypeError, IOError):
             return None
         lines = code.splitlines(True)
         lines_iter = iter(lines)
