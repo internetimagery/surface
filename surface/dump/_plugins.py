@@ -227,7 +227,8 @@ class CommentTypingPlugin(BasePlugin):
         except (OSError, TypeError):
             return None
         lines = code.splitlines(True)
-        tokens = list(tokenize.generate_tokens(iter(lines).__next__))
+        lines_iter = iter(lines)
+        tokens = list(tokenize.generate_tokens(lambda: next(lines_iter)))
         args = []
         returns = None
         for i, tok in enumerate(tokens):
