@@ -9,6 +9,8 @@ import contextlib
 
 import sigtools
 
+from surface.dump._docstring import parse_docstring
+
 try:
     from itertools import zip_longest
 except ImportError:
@@ -114,7 +116,7 @@ class PluginManager(object):
         )
 
     def type_from_value(self, value, parent):
-        # type: (Any Optional[Any]) -> str
+        # type: (Any, Optional[Any]) -> str
         for plugin in self._plugins:
             type_ = plugin.type_from_value(value, parent)
             if type_:
@@ -280,3 +282,25 @@ class CommentTypingPlugin(BasePlugin):
             section += char
         sections.append(section.strip())
         return sections
+
+
+class DocstringTypingPlugin(BasePlugin):
+    def types_from_function(self, function, parent, sig):
+        # type: (Callable, Optional[Any], Optional[sigtools.Signature]) -> Optional[Tuple[List[Param], str]]
+        if not sig:
+            return None
+        docstring = inspect.getdoc(function)
+        if not docstring:
+            return None
+        parsed = parse_docstring(docstring)
+        if not parsed:
+            return None
+        params = [
+            Param(
+                param.name,
+                parsed[0].get(param.name, AnyStr),
+                self._sig_param_kind_map(param),
+            )
+            for param in sig.parameters.values()
+        ]
+        return params, parsed[1] or AnyStr

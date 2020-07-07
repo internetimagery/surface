@@ -166,9 +166,22 @@ class Function(BaseWrapper):
     def __init__(self, wrapped, parent, plugin):
         super(Function, self).__init__(wrapped, parent, plugin)
         self._parameters, self._returns = plugin.types_from_function(wrapped, parent)
+        try:
+            self._module = wrapped.__module__
+        except AttributeError:
+            self._module = None
 
     def get_body(self, indent, path, name):
-        # TODO: get signature information
+        if self._module and path != self._module:
+            return "{}{}: {} = {}.{}".format(
+                get_indent(indent),
+                name_split(name)[-1],
+                "typing.Callable[[{}], {}]".format(
+                    ", ".join(p.type for p in self._parameters), self._returns,
+                ),
+                self._module,
+                name,
+            )
         name = name_split(name)[-1]
         return "{}def {}({}) -> {}: ...".format(
             get_indent(indent),

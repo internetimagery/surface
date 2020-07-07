@@ -33,7 +33,7 @@ class Exporter(object):
         self._files = files or []
         self._directories = directories or []
         self._representation = None
-    
+
     def get_representation(self):
         # type: () -> Representation
         if self._representation is None:
@@ -45,7 +45,7 @@ class Exporter(object):
                 live_module = importlib.import_module(module)
                 traveler.roam_module(live_module, module)
             for file_ in self._files:
-                whitelist.add(os.path.basename(file_).split(".",1)[0])
+                whitelist.add(os.path.basename(file_).split(".", 1)[0])
                 traveler.roam_file(file_)
             for directory_ in self._directories:
                 traveler.roam_directory(directory_)
@@ -53,7 +53,7 @@ class Exporter(object):
             representation = builder.get_representation()
             self._representation = filter_representation(representation)
         return self._representation
-    
+
     def export(self, directory):
         # type: (str) -> Representation
         if not os.path.isdir(directory):
@@ -64,7 +64,7 @@ class Exporter(object):
 
 
 def export_stubs(representation, directory):
-    # type: (Representation) -> Representation 
+    # type: (Representation) -> Representation
     """ Build a stubfile structure from the provided information """
     # Build skeleton files, to later fill with content
     files = build_skeleton_files(representation, directory)
@@ -88,15 +88,15 @@ def build_content(path, contents):
         # If we leave an indented block, drop down
         if indent_stack and not name.startswith(indent_stack[-1]):
             indent_stack.pop()
-        
+
         node = contents[name]
         import_block.extend(node.get_imports(path, name))
         body_block.append(node.get_body(len(indent_stack), path, name))
 
         # If we are a class, enter an indented block
         if isinstance(node, Class):
-            indent_stack.append(name + ".") 
-    
+            indent_stack.append(name + ".")
+
     return "{}\n\n{}\n\n{}".format(
         build_header(path),
         build_import_block(import_block),
@@ -111,11 +111,8 @@ def build_header(path):
 
 def build_body_block(body_block):
     # type: (List[str]) -> str
-    return "\n\n".join(
-        body
-        for body in body_block
-        if body
-    )
+    return "\n\n".join(body for body in body_block if body)
+
 
 def build_import_block(import_block):
     # type: (List[Import]) -> str
@@ -135,20 +132,24 @@ def build_import_block(import_block):
         else:
             # import package.module
             imports.add(import_)
-    
+
     # Build out our block
     import_lines = []
     alias = "{} as {}".format
     for import_ in sorted(imports):
-        import_lines.append("import {}".format(alias(import_.path, import_.alias) if import_.alias else import_.path))
+        import_lines.append(
+            "import {}".format(
+                alias(import_.path, import_.alias) if import_.alias else import_.path
+            )
+        )
     for path in sorted(from_imports):
         import_line = (
             alias(import_.name, import_.alias) if import_.alias else import_.name
             for import_ in from_imports[path]
         )
-        import_lines.append("from {} import {}".format(
-            path, ", ".join(sorted(import_line))
-        ))
+        import_lines.append(
+            "from {} import {}".format(path, ", ".join(sorted(import_line)))
+        )
     return "\n".join(import_lines)
 
 
@@ -159,7 +160,7 @@ def build_skeleton_files(paths, directory):
     for path in sorted(paths, reverse=True):
         if path in structures:
             continue
-        
+
         sections = path.split(".")
         for i in range(1, len(sections)):
             subsection = sections[:i]
@@ -199,22 +200,24 @@ def filter_representation(representation):
             for prefix in sorted(module_map, reverse=True):
                 if qualname.startswith(prefix):
                     new_path, new_prefix = module_map[prefix]
-                    new_qualname = new_prefix + qualname[len(prefix):]
+                    new_qualname = new_prefix + qualname[len(prefix) :]
                     break
 
             # If an imported module is found. Mark it, and we'll create a new stub for it
             if isinstance(node, Module):
                 module_map[qualname + "."] = (node.get_name(), "")
-            
+
             # If an imported class is found. Mark it too, and we'll create the definition stub.
             if isinstance(node, Class) and path != node.get_definition():
-                module_map[qualname + "."] = (node.get_definition(), node.get_name() + ".")
+                module_map[qualname + "."] = (
+                    node.get_definition(),
+                    node.get_name() + ".",
+                )
                 # Duplicate so we have a reference in the used module, and one in the defined module
                 if not node.get_definition() in PATH_BLACKLIST:
                     new_representation[node.get_definition()][node.get_name()] = node
 
             if new_path not in PATH_BLACKLIST:
                 new_representation[new_path][new_qualname] = node
-        
-    
+
     return new_representation
