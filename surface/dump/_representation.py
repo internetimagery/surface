@@ -125,6 +125,7 @@ class Class(BaseWrapper):
         return self._definition
 
     def get_imports(self, path, name):
+        name = safe_name(name)
         if self._definition == path:
             # We have the definition in this file
             return []
@@ -189,7 +190,7 @@ class Function(BaseWrapper):
                 self._module,
                 name,
             )
-        name = name_split(name)[-1]
+        name = safe_name(name_split(name)[-1])
         return "{}def {}({}) -> {}: ...".format(
             get_indent(indent),
             name,
@@ -208,7 +209,7 @@ class Function(BaseWrapper):
         return types
 
     def get_cli(self, indent, path, name, colour):
-        name = name_split(name)[-1]
+        name = safe_name(name_split(name)[-1])
         params = ", ".join(p.as_cli() for p in self._parameters)
         return "{}{} {}({}) -> {}".format(
             get_indent(indent),
@@ -263,7 +264,7 @@ class Property(Function):
 
     def get_body(self, indent, path, name):
         return "{}{}: {} = ... # {}".format(
-            get_indent(indent), name_split(name)[-1], self._returns, self._repr
+            get_indent(indent), safe_name(name_split(name)[-1]), self._returns, self._repr
         )
 
     def get_imports(self, path, name):
@@ -275,7 +276,7 @@ class Property(Function):
     def get_cli(self, indent, path, name, colour):
         return "{}{}: {}".format(
             get_indent(indent),
-            name_split(name)[-1],
+            safe_name(name_split(name)[-1]),
             green(self._returns) if colour else self._returns,
         )
 
@@ -287,7 +288,7 @@ class Attribute(BaseWrapper):
 
     def get_body(self, indent, path, name):
         return "{}{}: {} = ... # {}".format(
-            get_indent(indent), name_split(name)[-1], self._type, self._repr
+            get_indent(indent), safe_name(name_split(name)[-1]), self._type, self._repr
         )
 
     def get_imports(self, path, name):
@@ -299,6 +300,6 @@ class Attribute(BaseWrapper):
     def get_cli(self, indent, path, name, colour):
         return "{}{}: {}".format(
             get_indent(indent),
-            name_split(name)[-1],
+            safe_name(name_split(name)[-1]),
             green(self._type) if colour else self._type,
         )
