@@ -200,7 +200,7 @@ class Function(BaseWrapper):
             )
         name = safe_name(name_split(name)[-1])
         quotes = "'''" if '"""' in self._docstring else '"""'
-        return "{indent}def {name}({params}) -> {returns}: ...\n{indent2}{quote} {doc} {quote}".format(
+        return "{indent}def {name}({params}) -> {returns}:\n{indent2}{quote} {doc} {quote}".format(
             indent=get_indent(indent),
             name=name,
             params=", ".join(p.as_arg() for p in self._parameters),
