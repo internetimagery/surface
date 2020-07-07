@@ -6,6 +6,7 @@ if False:  # type checking
 import re
 import inspect
 import itertools
+import collections
 
 
 TYPE_CHARS = r"\w+(?:\[[\w\.\[\]\,\s]+\])?"
@@ -34,26 +35,24 @@ def handle_google(docstring):  # type: (str) -> Optional[Tuple[Dict[str, str], s
     if not headers or len(headers) > 2:
         return None
 
-    params = {}
+    params = collections.OrderedDict()
     returns = None
 
     for i, header in enumerate(headers):
         if header.group(2).lower() in HEADER_ARGS:
             # Search args
-            params = {
-                p.group(1): p.group(2)
-                for p in re.finditer(
-                    r"^{}[ \t]+([\w\-]+) *\(`?({})`?\)(?: *: .+| *)$".format(
-                        header.group(1), TYPE_CHARS
-                    ),
-                    docstring[
-                        header.end() : headers[i + 1].start()
-                        if i < len(headers) - 1
-                        else len(docstring)
-                    ],
-                    re.M,
-                )
-            }
+            for param in re.finditer(
+                r"^{}[ \t]+([\w\-]+) *\(`?({})`?\)(?: *: .+| *)$".format(
+                    header.group(1), TYPE_CHARS
+                ),
+                docstring[
+                    header.end() : headers[i + 1].start()
+                    if i < len(headers) - 1
+                    else len(docstring)
+                ],
+                re.M,
+            ):
+                params[param.group(1)] = param.group(2).strip()
             if not params:
                 # If we have an Args section, and nothing inside it... we are likely looking at a non-google style docstring
                 return None
@@ -77,4 +76,4 @@ def handle_google(docstring):  # type: (str) -> Optional[Tuple[Dict[str, str], s
         # If we have no params, and no returns (but discovered headers earlier so would expect either of these)
         # then this likely was not a google formatted docstring.
         return None
-    return params, returns
+    return params, returns or "typing.Any"

@@ -296,20 +296,31 @@ class CommentTypingPlugin(BasePlugin):
 class DocstringTypingPlugin(BasePlugin):
     def types_from_function(self, function, parent, sig):
         # type: (Callable, Optional[Any], Optional[sigtools.Signature]) -> Optional[Tuple[List[Param], str]]
-        if not sig:
-            return None
         docstring = inspect.getdoc(function)
         if not docstring:
             return None
         parsed = parse_docstring(docstring)
         if not parsed:
             return None
+        if sig:
+            # If we could determine the signature, then use that information to guide us.
+            params = [
+                Param(
+                    param.name,
+                    parsed[0].get(param.name, AnyStr),
+                    self._sig_param_kind_map(param),
+                )
+                for param in sig.parameters.values()
+            ]
+            return params, parsed[1]
+        
+        # If we cannot discover the signature. We can only assume the docstring information is accurate.
         params = [
             Param(
-                param.name,
-                parsed[0].get(param.name, AnyStr),
-                self._sig_param_kind_map(param),
+                name,
+                type_,
+                Param.POSITIONAL_OR_KEYWORD,
             )
-            for param in sig.parameters.values()
+            for name, type_ in parsed[0].items()
         ]
-        return params, parsed[1] or AnyStr
+        return params, parsed[1]
