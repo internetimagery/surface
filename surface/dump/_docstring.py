@@ -42,7 +42,7 @@ def handle_google(docstring):  # type: (str) -> Optional[Tuple[Dict[str, str], s
         if header.group(2).lower() in HEADER_ARGS:
             # Search args
             for param in re.finditer(
-                r"^{}[ \t]+([\w\-]+) *\((?::\w+:)?`*({})`*\)(?: *: .+| *)$".format(
+                r"^{}[ \t]+([\w\-]+) *\((?::\w+:)?`*\.?({})`*\)(?: *: .+| *)$".format(
                     header.group(1), TYPE_CHARS
                 ),
                 docstring[
@@ -59,7 +59,7 @@ def handle_google(docstring):  # type: (str) -> Optional[Tuple[Dict[str, str], s
         elif header.group(2).lower() in HEADER_RETURNS:
             # search returns
             match = re.search(
-                r"^{}[ \t]+(?::\w+:)?`*({})`*(?: *: .+| *)$".format(header.group(1), TYPE_CHARS),
+                r"^{}[ \t]+(?::\w+:)?`*\.?({})`*(?: *: .+| *)$".format(header.group(1), TYPE_CHARS),
                 docstring[
                     header.end() : headers[i + 1].start()
                     if i < len(headers) - 1
