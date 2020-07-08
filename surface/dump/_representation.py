@@ -142,22 +142,26 @@ class Class(BaseWrapper):
         if self._name == name:
             # - from package.module import class
             return [Import(self._definition, name, "")]
+        if not "." in name:
+            # We have a reference to the class under a different name
+            # - from package.module import class as alias
+            return [Import(self._definition, self._name, name)]
+        # We have a nested reference to this class (ie another classes property)
         # - from package.module import class as _alias
-        if "." in name:
-            name = "__{}".format(name_split(name)[-1])
+        name = "__{}".format(name_split(self._name)[-1])
         return [Import(self._definition, self._name, name)]
 
     def get_body(self, indent, path, name):
         if self._isRef(path):
             # We are looking at a reference to the class
             # not the definition itself. The import method handles this.
-            if name == self._name:
+            if name == self._name or "." not in name:
                 return ""
 
             return "{}{}: {} = ... # {}".format(
                 get_indent(indent),
                 name_split(name)[-1],
-                "__{}".format(name_split(name)[-1]) if "." in name else name,
+                "__{}".format(name_split(self._name)[-1]),
                 self._repr,
             )
         # TODO: get mro for subclasses
