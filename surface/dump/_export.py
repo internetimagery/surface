@@ -37,14 +37,14 @@ class Exporter(object):
     def get_representation(self):
         # type: () -> Representation
         if self._representation is None:
-            whitelist = set()
-            builder = RepresentationBuilder(whitelist)
+            added_modules = set()
+            builder = RepresentationBuilder(added_modules)
             traveler = TrailBlazer(builder)
             for module in self._modules:
-                whitelist.add(module.__name__)
+                added_modules.add(module.__name__)
                 traveler.roam_module(module, module.__name__)
             for file_ in self._files:
-                whitelist.add(os.path.basename(file_).split(".", 1)[0])
+                added_modules.add(os.path.basename(file_).split(".", 1)[0])
                 traveler.roam_file(file_)
             for directory_ in self._directories:
                 traveler.roam_directory(directory_)

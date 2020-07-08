@@ -1,4 +1,4 @@
-from typing import _type_repr, Any, Type
+from typing import _type_repr, Any
 
 import re
 import logging
@@ -39,30 +39,23 @@ class Param(object):
 
     def as_arg(self):
         # type: () -> str
-        prefix = (
-            "*"
-            if self.kind == self.VAR_POSITIONAL
-            else "**"
-            if self.kind == self.VAR_KEYWORD
-            else ""
-        )
-        suffix = (
-            ": {} = ..."
-            if self.kind in (self.POSITIONAL_OR_KEYWORD_WITH_DEFAULT, self.KEYWORD_ONLY)
-            else ": {}"
-        )
-        return prefix + self.name + suffix.format(self.type)
+        name = self._get_variadic_prefix() + self.name
+        type_ = ": {}".format(self.type) if self.type else ""
+        default = " = ..." if self.kind in (self.POSITIONAL_OR_KEYWORD_WITH_DEFAULT, self.KEYWORD_ONLY) else ""
+        return name + type_ + default
 
     def as_cli(self):
         # type: () -> str
-        prefix = (
+        return self.as_arg()
+    
+    def _get_variadic_prefix(self):
+        return (
             "*"
             if self.kind == self.VAR_POSITIONAL
             else "**"
             if self.kind == self.VAR_KEYWORD
             else ""
         )
-        return prefix + self.type
 
 
 class BasePlugin(object):
@@ -94,6 +87,13 @@ class BasePlugin(object):
             return Param.VAR_KEYWORD
         raise ValueError("Unknown parameter {}".format(param.kind))
 
+    @staticmethod
+    def _get_default_type(param):
+        # type: (sigtools.Parameter) -> str
+        if param.name in ("self", "cls") and param.kind == param.POSITIONAL_ONLY:
+            return ""
+        return AnyStr
+
 
 class PluginManager(object):
     def __init__(self, plugins):
@@ -117,7 +117,7 @@ class PluginManager(object):
             )
         return (
             [
-                Param(param.name, AnyStr, BasePlugin._sig_param_kind_map(param))
+                Param(param.name, BasePlugin._get_default_type(param), BasePlugin._sig_param_kind_map(param))
                 for param in sig.parameters.values()
             ],
             AnyStr,
@@ -150,7 +150,7 @@ class PluginManager(object):
             else:
                 return sig
             return None
-
+    
     @staticmethod
     @contextlib.contextmanager
     def _fix_annotation(func):
@@ -198,9 +198,9 @@ class AnnotationTypingPlugin(BasePlugin):
         params = tuple(
             Param(
                 param.name,
-                AnyStr
-                if param.annotation is sig.empty
-                else _type_repr(param.annotation),
+                _type_repr(param.annotation)
+                if param.annotation is not sig.empty
+                else self._get_default_type(param),
                 self._sig_param_kind_map(param),
             )
             for param in sig.parameters.values()
@@ -266,9 +266,9 @@ class CommentTypingPlugin(BasePlugin):
             return None
 
         params = [
-            Param(name, arg.strip(), self._sig_param_kind_map(p))
+            Param(name, arg.strip() if arg is not None else self._get_default_type(param), self._sig_param_kind_map(p))
             for (name, p), arg in zip_longest(
-                reversed(sig.parameters.items()), reversed(args), fillvalue=AnyStr
+                reversed(sig.parameters.items()), reversed(args), fillvalue=None
             )
         ]
         return list(reversed(params)), returns
@@ -307,7 +307,7 @@ class DocstringTypingPlugin(BasePlugin):
             params = [
                 Param(
                     param.name,
-                    parsed[0].get(param.name, AnyStr),
+                    parsed[0].get(param.name, self._get_default_type(param)),
                     self._sig_param_kind_map(param),
                 )
                 for param in sig.parameters.values()
@@ -328,8 +328,8 @@ class DocstringTypingPlugin(BasePlugin):
                 if attr.object is not function:
                     continue
                 if attr.kind == "method":
-                    params.insert(0, Param("self", _type_repr(parent), Param.POSITIONAL_ONLY))
+                    params.insert(0, Param("self", "", Param.POSITIONAL_ONLY))
                 if attr.kind == "class method":
-                    params.insert(0, Param("cls", _type_repr(Type[parent]), Param.POSITIONAL_ONLY))
+                    params.insert(0, Param("cls", "", Param.POSITIONAL_ONLY))
                 break
         return params, parsed[1]
