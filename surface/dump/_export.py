@@ -28,7 +28,7 @@ class Exporter(object):
     """
 
     def __init__(self, modules=None, files=None, directories=None):
-        # type: (Optional[Sequence[str]], Optional[Sequence[str]], Optional[Sequence[str]]) -> None
+        # type: (Optional[Sequence[types.ModuleType]], Optional[Sequence[str]], Optional[Sequence[str]]) -> None
         self._modules = modules or []
         self._files = files or []
         self._directories = directories or []
@@ -41,9 +41,8 @@ class Exporter(object):
             builder = RepresentationBuilder(whitelist)
             traveler = TrailBlazer(builder)
             for module in self._modules:
-                whitelist.add(module)
-                live_module = importlib.import_module(module)
-                traveler.roam_module(live_module, module)
+                whitelist.add(module.__name__)
+                traveler.roam_module(module, module.__name__)
             for file_ in self._files:
                 whitelist.add(os.path.basename(file_).split(".", 1)[0])
                 traveler.roam_file(file_)
@@ -208,7 +207,7 @@ def filter_representation(representation):
                 module_map[qualname + "."] = (node.get_name(), "")
 
             # If an imported class is found. Mark it too, and we'll create the definition stub.
-            if isinstance(node, Class) and path != node.get_definition():
+            if isinstance(node, Class) and node.get_definition() and path != node.get_definition():
                 module_map[qualname + "."] = (
                     node.get_definition(),
                     node.get_name() + ".",

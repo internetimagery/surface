@@ -117,7 +117,13 @@ class Class(BaseWrapper):
         # type: (type, OPtional[Any], PluginManager) -> None
         super(Class, self).__init__(wrapped, parent, plugin)
         self._docstring = inspect.getdoc(wrapped) or ""
-        self._definition = wrapped.__module__
+        definition = wrapped.__module__
+        if definition and definition in sys.modules:
+            self._definition = definition
+        else:
+            # Sometimes modules don't behave. If we're given bogus
+            # module data (c extensions looking at you!) disregard!
+            self._definition = ""
         self._name = safe_name(wrapped.__name__)
 
     def get_name(self):
@@ -178,7 +184,6 @@ class Class(BaseWrapper):
         if (
             self._definition
             and self._definition != path
-            and self._definition in sys.modules
         ):
             return True
         return False
@@ -193,12 +198,14 @@ class Function(BaseWrapper):
         self._parameters, self._returns = plugin.types_from_function(wrapped, parent)
         self._docstring = inspect.getdoc(wrapped) or ""
         try:
-            self._module = wrapped.__module__
+            module = wrapped.__module__
         except AttributeError:
-            self._module = None
+            self._module = ""
+        else:
+            self._module = module if module in sys.modules else ""
 
     def _isRef(self, path):
-        if self._module and path != self._module and self._module in sys.modules:
+        if self._module and path != self._module:
             return True
         return False
 

@@ -9,9 +9,11 @@ import sys as _sys
 import time as _time
 import json as _json
 import os.path as _path
+import inspect as _inspect
 import logging as _logging
 import datetime as _datetime
 import contextlib as _contextlib
+import importlib as _importlib
 import surface as _surface
 from surface.git import Store as _Store, Git as _Git
 from surface._base import PY2 as _PY2
@@ -108,15 +110,33 @@ def run_dump(args):  # type: (Any) -> int
     # Prepare our inputs
     files = set()
     directories = set()
+    modules = set()
     for path in args.file or []:
         path = clean_path(path)
         if _os.path.isfile(path):
             files.add(path)
         elif _os.path.isdir(path):
             directories.add(path)
+    for name in args.module or []:
+        modules.add(
+            _importlib.import_module(name)
+        )
+    for name in args.package or []:
+        mod = _importlib.import_module(name)
+        modules.add(mod)
+        try:
+            path = _inspect.getsourcefile(mod)
+        except TypeError:
+            continue
+        if not path:
+            continue
+        package = _os.path.dirname(clean_path(path))
+        if name.rsplit(".", 1)[-1] != _os.path.basename(package):
+            continue
+        directories.add(package)
 
     # Export the public facing api
-    exporter = _Exporter(modules=args.module, files=files, directories=directories,)
+    exporter = _Exporter(modules=modules, files=files, directories=directories)
     if args.output:
         representation = exporter.export(args.output)
     else:

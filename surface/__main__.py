@@ -74,10 +74,13 @@ def main():
         help="Full import path to module eg: mymodule.submodule",
     )
     dump_parser.add_argument(
-        "-r", "--recurse", action="store_true", help="Recusively read submodules too."
+        "-p",
+        "--package",
+        nargs="+",
+        help="Package path. Importing all submodules.",
     )
     dump_parser.add_argument(
-        "-p", "--pythonpath", help="Additional paths to use for imports."
+        "--pythonpath", help="Additional paths to use for imports."
     )
     dump_parser.add_argument(
         "--exclude-modules",
