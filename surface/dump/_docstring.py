@@ -9,7 +9,7 @@ import itertools
 import collections
 
 
-TYPE_CHARS = r"[\w\.]+(?:\[[\w\.\[\]\,\s]+\])?"
+TYPE_CHARS = r"\w[\w\.]*(?:\[[\w\.\[\]\,\s]+\])?"
 
 
 def parse_docstring(docstring):
