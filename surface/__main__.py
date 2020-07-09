@@ -74,10 +74,7 @@ def main():
         help="Full import path to module eg: mymodule.submodule",
     )
     dump_parser.add_argument(
-        "-p",
-        "--package",
-        nargs="+",
-        help="Package path. Importing all submodules.",
+        "-p", "--package", nargs="+", help="Package path. Importing all submodules.",
     )
     dump_parser.add_argument(
         "--pythonpath", help="Additional paths to use for imports."

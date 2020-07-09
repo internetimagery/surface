@@ -41,13 +41,17 @@ class Param(object):
         # type: () -> str
         name = self._get_variadic_prefix() + self.name
         type_ = ": {}".format(self.type) if self.type else ""
-        default = " = ..." if self.kind in (self.POSITIONAL_OR_KEYWORD_WITH_DEFAULT, self.KEYWORD_ONLY) else ""
+        default = (
+            " = ..."
+            if self.kind in (self.POSITIONAL_OR_KEYWORD_WITH_DEFAULT, self.KEYWORD_ONLY)
+            else ""
+        )
         return name + type_ + default
 
     def as_cli(self):
         # type: () -> str
         return self.as_arg()
-    
+
     def _get_variadic_prefix(self):
         return (
             "*"
@@ -117,7 +121,11 @@ class PluginManager(object):
             )
         return (
             [
-                Param(param.name, BasePlugin._get_default_type(param), BasePlugin._sig_param_kind_map(param))
+                Param(
+                    param.name,
+                    BasePlugin._get_default_type(param),
+                    BasePlugin._sig_param_kind_map(param),
+                )
                 for param in sig.parameters.values()
             ],
             AnyStr,
@@ -150,7 +158,7 @@ class PluginManager(object):
             else:
                 return sig
             return None
-    
+
     @staticmethod
     @contextlib.contextmanager
     def _fix_annotation(func):
@@ -266,7 +274,11 @@ class CommentTypingPlugin(BasePlugin):
             return None
 
         params = [
-            Param(name, arg.strip() if arg is not None else self._get_default_type(param), self._sig_param_kind_map(p))
+            Param(
+                name,
+                arg.strip() if arg is not None else self._get_default_type(param),
+                self._sig_param_kind_map(p),
+            )
             for (name, p), arg in zip_longest(
                 reversed(sig.parameters.items()), reversed(args), fillvalue=None
             )
@@ -313,14 +325,10 @@ class DocstringTypingPlugin(BasePlugin):
                 for param in sig.parameters.values()
             ]
             return params, parsed[1]
-        
+
         # If we cannot discover the signature. We can only assume the docstring information is accurate.
         params = [
-            Param(
-                name,
-                type_,
-                Param.POSITIONAL_OR_KEYWORD,
-            )
+            Param(name, type_, Param.POSITIONAL_OR_KEYWORD,)
             for name, type_ in parsed[0].items()
         ]
         if inspect.isclass(parent):

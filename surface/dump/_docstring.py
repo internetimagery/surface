@@ -41,9 +41,20 @@ def handle_google(docstring):  # type: (str) -> Optional[Tuple[Dict[str, str], s
     for i, header in enumerate(headers):
         if header.group(2).lower() in HEADER_ARGS:
             # Search args
+            # format examples:
+            #   param_name (type): description
+            #   param_name (:class:`type`): description
+            #   param_name (type)
+            indent = r"{}[ \t]+".format(header.group(1))
+            param_name = r"([\w\-]+)"
+            type_ = r"\((?::\w+:)?`*\.?({})`*\)".format(TYPE_CHARS)
+            description = r"(?: *: .+| *)"
             for param in re.finditer(
-                r"^{}[ \t]+([\w\-]+) *\((?::\w+:)?`*\.?({})`*\)(?: *: .+| *)$".format(
-                    header.group(1), TYPE_CHARS
+                r"^{indent}{param_name} *{type_}{description}$".format(
+                    indent=indent,
+                    param_name=param_name,
+                    type_=type_,
+                    description=description,
                 ),
                 docstring[
                     header.end() : headers[i + 1].start()
@@ -59,7 +70,9 @@ def handle_google(docstring):  # type: (str) -> Optional[Tuple[Dict[str, str], s
         elif header.group(2).lower() in HEADER_RETURNS:
             # search returns
             match = re.search(
-                r"^{}[ \t]+(?::\w+:)?`*\.?({})`*(?: *: .+| *)$".format(header.group(1), TYPE_CHARS),
+                r"^{}[ \t]+(?::\w+:)?`*\.?({})`*(?: *: .+| *)$".format(
+                    header.group(1), TYPE_CHARS
+                ),
                 docstring[
                     header.end() : headers[i + 1].start()
                     if i < len(headers) - 1

@@ -112,19 +112,47 @@ class Module(BaseWrapper):
         )
 
 
-class Class(BaseWrapper):
+class Reference(BaseWrapper):
     def __init__(self, wrapped, parent, plugin):
-        # type: (type, OPtional[Any], PluginManager) -> None
-        super(Class, self).__init__(wrapped, parent, plugin)
-        self._docstring = inspect.getdoc(wrapped) or ""
-        definition = wrapped.__module__
-        if definition and definition in sys.modules:
-            self._definition = definition
-        else:
-            # Sometimes modules don't behave. If we're given bogus
-            # module data (c extensions looking at you!) disregard!
-            self._definition = ""
-        self._name = safe_name(wrapped.__name__)
+        # type: (type, Optional[Any], PluginManager) -> None
+        super(Reference, self).__init__(wrapped, parent, plugin)
+
+        # Be cautious when getting names and modules as they are not always
+        # available or even accurate...
+        name = getattr(wrapped, "__name__", "") or ""
+        module = getattr(wrapped, "__module__", "") or ""
+
+        # If either info is missing, ignore the whole lot.
+        if not name or not module:
+            self._name = self._module = ""
+            return
+
+        #  Just a little more precaution. It's the wild west out there!
+        if not isinstance(name, str) or not isinstance(module, str):
+            self._name = self._module = ""
+            return
+
+        # Disallow some names.
+        if BAD_NAME.search(name):
+            self._name = self._module = ""
+            return
+
+        # If the module is outputting something incorrect
+        # bail. We know the info is invalid.
+        live_module = sys.modules.get(module)
+        if not live_module:
+            self._name = self._module = ""
+            return
+
+        # Check if the module actually has the named reference
+        # TODO: this may fail with nested classes.
+        live_reference = getattr(live_module, name, None)
+        if not live_reference:
+            self._name = self._module = ""
+            return
+
+        self._module = module
+        self._name = name
 
     def get_name(self):
         # type: () -> str
@@ -132,38 +160,55 @@ class Class(BaseWrapper):
 
     def get_definition(self):
         # type: () -> str
-        return self._definition
+        return self._module
+
+    def is_ref(self, path):
+        if self._module and self._module == path:
+            return True
+        return False
 
     def get_imports(self, path, name):
-        name = safe_name(name)
-        if not self._isRef(path):
-            # Not a reference. We defined it here.
+        if not self.is_ref(path):
             return []
         if self._name == name:
             # - from package.module import class
-            return [Import(self._definition, name, "")]
+            return [Import(self._module, name, "")]
         if not "." in name:
             # We have a reference to the class under a different name
             # - from package.module import class as alias
-            return [Import(self._definition, self._name, name)]
+            return [Import(self._module, self._name, name)]
         # We have a nested reference to this class (ie another classes property)
         # - from package.module import class as _alias
         name = "__{}".format(name_split(self._name)[-1])
-        return [Import(self._definition, self._name, name)]
+        return [Import(self._module, self._name, name)]
 
     def get_body(self, indent, path, name):
-        if self._isRef(path):
-            # We are looking at a reference to the class
-            # not the definition itself. The import method handles this.
-            if name == self._name or "." not in name:
-                return ""
+        if not self.is_ref(path):
+            return "OVERRIDE THIS!"
 
-            return "{}{} = {} # {}".format(
-                get_indent(indent),
-                name_split(name)[-1],
-                "__{}".format(name_split(self._name)[-1]),
-                self._repr,
-            )
+        # We are looking at a reference to the class
+        # not the definition itself. The import method handles this.
+        if name == self._name or "." not in name:
+            return ""
+
+        return "{}{} = {} # {}".format(
+            get_indent(indent),
+            name_split(name)[-1],
+            "__{}".format(name_split(self._name)[-1]),
+            self._repr,
+        )
+
+
+class Class(Reference):
+    def __init__(self, wrapped, parent, plugin):
+        # type: (type, OPtional[Any], PluginManager) -> None
+        super(Class, self).__init__(wrapped, parent, plugin)
+        self._docstring = inspect.getdoc(wrapped) or ""
+
+    def get_body(self, indent, path, name):
+        if self.is_ref(path):
+            return super(Class, self).get_body(indent, path, name)
+
         # TODO: get mro for subclasses
         quotes = "'''" if '"""' in self._docstring else '"""'
         return "{indent}class {name}(object):\n{indent2}{quotes} {doc} {quotes}".format(
@@ -184,58 +229,16 @@ class Class(BaseWrapper):
             cyan(name) if colour else name,
         )
 
-    def _isRef(self, path):
-        if (
-            self._definition
-            and self._definition != path
-        ):
-            return True
-        return False
 
-
-Param = NamedTuple("Sig", [("name", str), ("type", str), ("prefix", str)])
-
-
-class Function(BaseWrapper):
+class Function(Reference):
     def __init__(self, wrapped, parent, plugin):
         super(Function, self).__init__(wrapped, parent, plugin)
         self._parameters, self._returns = plugin.types_from_function(wrapped, parent)
         self._docstring = inspect.getdoc(wrapped) or ""
-        self._name = getattr(wrapped, "__name__", "") or ""
-        if not self._name:
-            self._module = ""
-        else:
-            try:
-                module = wrapped.__module__
-            except AttributeError:
-                self._module = ""
-            else:
-                self._module = module if module in sys.modules else ""
-
-    def _isRef(self, path):
-        if self._name and self._module and path != self._module:
-            return True
-        return False
-    
-    def get_name(self):
-        return self._name
-    
-    def get_definition(self):
-        return self._module
 
     def get_body(self, indent, path, name):
-        if self._isRef(path):
-            # We are looking at a reference to the class
-            # not the definition itself. The import method handles this.
-            if name == self._name or "." not in name:
-                return ""
-
-            return "{}{} = {} # {}".format(
-                get_indent(indent),
-                name_split(name)[-1],
-                "__{}".format(name_split(self._name)[-1]),
-                self._repr,
-            )
+        if self.is_ref(path):
+            return super(Function, self).get_body(indent, path, name)
 
         name = safe_name(name_split(name)[-1])
         quotes = "'''" if '"""' in self._docstring else '"""'
@@ -252,24 +255,9 @@ class Function(BaseWrapper):
         )
 
     def get_imports(self, path, name):
-        imports = []
-        
-        # Gather reference imports
-        if self._isRef(path):
-            if self._name == name:
-                # - from package.module import function
-                imports.append( Import(self._module, name, ""))
-            else:
-                if "." in name:
-                    # We have a nested reference to this class (ie another classes property)
-                    # - from package.module import function as _alias
-                    name = "__{}".format(name_split(self._name)[-1])
-                    imports.append(Import(self._module, self._name, name))
-                else:
-                    # We have a reference to the class under a different name
-                    # - from package.module import class as alias
-                    imports.append(Import(self._module, self._name, name))
-        
+        # Get reference imports
+        imports = super(Function, self).get_imports(path, name)
+
         # Gather typing imports
         for p in self._parameters:
             for match in NAME_REG.finditer(p.type):
@@ -301,7 +289,7 @@ class ClassMethod(Function):
 
     def get_body(self, indent, path, name):
         body = super(ClassMethod, self).get_body(indent, path, name)
-        if self._isRef(path):
+        if self.is_ref(path):
             return body
         return "{}@classmethod\n{}".format(get_indent(indent), body,)
 
@@ -319,7 +307,7 @@ class StaticMethod(Function):
 
     def get_body(self, indent, path, name):
         body = super(StaticMethod, self).get_body(indent, path, name)
-        if self._isRef(path):
+        if self.is_ref(path):
             return body
         return "{}@staticmethod\n{}".format(get_indent(indent), body,)
 

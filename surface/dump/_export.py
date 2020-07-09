@@ -209,7 +209,11 @@ def filter_representation(representation):
                 module_map[qualname + "."] = (node.get_name(), "")
 
             # If an imported class is found. Mark it too, and we'll create the definition stub.
-            if isinstance(node, (Class, Function)) and node.get_definition() and path != node.get_definition():
+            if (
+                isinstance(node, (Class, Function))
+                and node.get_definition()
+                and path != node.get_definition()
+            ):
                 module_map[qualname + "."] = (
                     node.get_definition(),
                     node.get_name() + ".",

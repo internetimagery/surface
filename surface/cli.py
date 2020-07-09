@@ -118,9 +118,7 @@ def run_dump(args):  # type: (Any) -> int
         elif _os.path.isdir(path):
             directories.add(path)
     for name in args.module or []:
-        modules.add(
-            _importlib.import_module(name)
-        )
+        modules.add(_importlib.import_module(name))
     for name in args.package or []:
         mod = _importlib.import_module(name)
         modules.add(mod)
