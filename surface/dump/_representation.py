@@ -40,7 +40,7 @@ def make_docstring(indent, string):
         return str_indent + '""'
     quote = "'''" if '"""' in string else '"""'
     return "{indent}{quote} {doc} {quote}".format(
-        indent=str_indent, quote=quote, doc="    \n".join(string.splitlines())
+        indent=str_indent, quote=quote, doc=(str_indent + "    \n").join(string.splitlines())
     )
 
 
