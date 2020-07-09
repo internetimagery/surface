@@ -100,7 +100,7 @@ def build_content(path, contents):
 
     return "{}\n\n{}\n\n{}".format(
         build_header(path),
-        build_import_block(import_block),
+        build_import_block(path, import_block),
         build_body_block(body_block),
     )
 
@@ -115,8 +115,8 @@ def build_body_block(body_block):
     return "\n\n".join(body for body in body_block if body)
 
 
-def build_import_block(import_block):
-    # type: (List[Import]) -> str
+def build_import_block(path, import_block):
+    # type: (str, List[Import]) -> str
     if not import_block:
         return ""
 
@@ -126,6 +126,8 @@ def build_import_block(import_block):
     # Sort import types
     for import_ in import_block:
         if import_.path in PATH_BLACKLIST:
+            continue
+        if not import_.name and import_.path == path:
             continue
         if import_.name:
             # from package import module as _module
