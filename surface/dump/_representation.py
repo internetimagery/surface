@@ -207,10 +207,10 @@ class Function(BaseWrapper):
             self._module = ""
         else:
             self._module = module if module in sys.modules else ""
-        self._name = wrapped.__name__ or ""
+        self._name = getattr(wrapped, "__name__", "") or ""
 
     def _isRef(self, path):
-        if self._module and path != self._module:
+        if self._name and self._module and path != self._module:
             return True
         return False
 
@@ -246,7 +246,7 @@ class Function(BaseWrapper):
         imports = []
         
         # Gather reference imports
-        if self._isRef(name) and self._name:
+        if self._isRef(name):
             if self._name == name:
                 # - from package.module import function
                 imports.append( Import(self._module, name, ""))
