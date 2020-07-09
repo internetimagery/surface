@@ -143,31 +143,28 @@ class Reference(BaseWrapper):
         # This is not ideal, but also not a bad thing. So we can afford to be
         # a little strict I think, when checking validity of the information
         # provided.
+        self._name = self._module = ""
 
         # If either info is missing, ignore the whole lot.
         if not name or not module:
-            self._name = self._module = ""
             return
 
         #  Just a little more precaution. It's the wild west out there!
         if not isinstance(name, str) or not isinstance(module, str) or not isinstance(qualname, str):
-            self._name = self._module = ""
             return
 
         # Disallow some names.
         if BAD_NAME.search(name):
-            self._name = self._module = ""
             return
 
         # If the module is outputting something incorrect
         # bail. We know the info is invalid.
         live_module = sys.modules.get(module)
         if not live_module:
-            self._name = self._module = ""
             return
 
         # Check if the module actually has the named reference
-        # NOTE: This may fail more with nested classes in python2
+        # NOTE: This may fail more with nested classes in python2 (no qualname).
         #       But ultimately it's only a minor issue if they are referenced outside,
         #       and even then all that'll happen is you get a copy in both places.
         try:
@@ -175,15 +172,15 @@ class Reference(BaseWrapper):
         except (NameError, AttributeError) as err:
             # Given name doesn't exist.
             LOG.debug("Name provided invalid: %s.%s (%s): %s", module, qualname, wrapped, err)
-            self._name = self._module = ""
             return
         else:
             if live_obj is not wrapped:
                 # Name points at something else?!
                 LOG.warning("%s.%s are not equal: %s, %s", module, qualname, wrapped, live_obj)
-                self._name = self._module = ""
                 return
 
+        # Name and module validated! Woot!
+        # We can confirm this is the definition of the object
         self._module = module
         self._name = name
 
