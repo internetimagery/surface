@@ -58,14 +58,13 @@ class Exporter(object):
                 traveler.roam_file(file_)
             for directory_ in self._directories:
                 traveler.roam_directory(directory_)
-            if self._filter_to_input:
-                self._filter_reg = re.compile(
-                    r"^(?:{})".format("|".join(re.escape(in_) for in_ in input_modules))
-                )
+            self._filter_reg = re.compile(
+                r"^(?:{})".format("|".join(re.escape(in_) for in_ in input_modules))
+            )
             traveler.hike()
             representation = builder.get_representation()
             self._representation = filter_representation(
-                representation, self._filter_paths
+                representation, self._filter_paths if self._filter_to_input else (lambda p: True)
             )
         return self._representation
 
