@@ -207,6 +207,7 @@ class Function(BaseWrapper):
             self._module = ""
         else:
             self._module = module if module in sys.modules else ""
+        self._name = wrapped.__name__ or ""
 
     def _isRef(self, path):
         if self._module and path != self._module:
@@ -215,15 +216,18 @@ class Function(BaseWrapper):
 
     def get_body(self, indent, path, name):
         if self._isRef(path):
-            return "{}{}: {} = {}.{}".format(
+            # We are looking at a reference to the class
+            # not the definition itself. The import method handles this.
+            if name == self._name or "." not in name:
+                return ""
+
+            return "{}{} = {} # {}".format(
                 get_indent(indent),
                 name_split(name)[-1],
-                "typing.Callable[[{}], {}]".format(
-                    ", ".join(p.type for p in self._parameters if p.type), self._returns,
-                ),
-                self._module,
-                name,
+                "__{}".format(name_split(self._name)[-1]),
+                self._repr,
             )
+
         name = safe_name(name_split(name)[-1])
         quotes = "'''" if '"""' in self._docstring else '"""'
         return "{indent}def {name}({params}) -> {returns}:\n{indent2}{quote} {doc} {quote}".format(
@@ -239,14 +243,32 @@ class Function(BaseWrapper):
         )
 
     def get_imports(self, path, name):
-        types = []
+        imports = []
+        
+        # Gather reference imports
+        if self._isRef(name) and self._name:
+            if self._name == name:
+                # - from package.module import function
+                imports.append( Import(self._module, name, ""))
+            else:
+                if "." in name:
+                    # We have a nested reference to this class (ie another classes property)
+                    # - from package.module import function as _alias
+                    name = "__{}".format(name_split(self._name)[-1])
+                    imports.append(Import(self._module, self._name, name))
+                else:
+                    # We have a reference to the class under a different name
+                    # - from package.module import class as alias
+                    imports.append(Import(self._module, self._name, name))
+        
+        # Gather typing imports
         for p in self._parameters:
             for match in NAME_REG.finditer(p.type):
-                types.append(Import(match.group(1), "", ""))
+                imports.append(Import(match.group(1), "", ""))
 
         for match in NAME_REG.finditer(self._returns):
-            types.append(Import(match.group(1), "", ""))
-        return types
+            imports.append(Import(match.group(1), "", ""))
+        return imports
 
     def get_cli(self, indent, path, name, colour):
         name = safe_name(name_split(name)[-1])
