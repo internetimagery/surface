@@ -246,7 +246,7 @@ class Function(BaseWrapper):
         imports = []
         
         # Gather reference imports
-        if self._isRef(name):
+        if self._isRef(path):
             if self._name == name:
                 # - from package.module import function
                 imports.append( Import(self._module, name, ""))
