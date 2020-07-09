@@ -169,7 +169,7 @@ class Reference(BaseWrapper):
         # Check if the module actually has the named reference
         # NOTE: This may fail with nested classes being referenced elsewhere in python2
         try:
-            assert eval("{}.{}".format(module, qualname)) is wrapped
+            assert eval("{}.{}".format(module, qualname), {module: live_module}) is wrapped
         except (NameError, AttributeError, AssertionError):
             # Given name doesn't exist or is pointing to something else.
             self._name = self._module = ""
