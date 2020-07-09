@@ -157,9 +157,8 @@ class Reference(BaseWrapper):
             return
 
         # Check if the module actually has the named reference
-        # TODO: this may fail with nested classes.
-        live_reference = getattr(live_module, name, None)
-        if not live_reference:
+        # TODO: this may fail with nested classes being referenced elsewhere.
+        if getattr(module, name, None) is not wrapped:
             self._name = self._module = ""
             return
 
