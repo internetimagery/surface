@@ -33,6 +33,17 @@ def get_indent(num):
     return INDENT * num
 
 
+def make_docstring(indent, string):
+    # type: (int, str) -> str
+    str_indent = get_indent(indent)
+    if not string:
+        return str_indent + '""'
+    quote = "'''" if '"""' in string else '"""'
+    return "{indent}{quote} {doc} {quote}".format(
+        indent=str_indent, quote=quote, doc="    \n".join(string.splitlines())
+    )
+
+
 def safe_name(name):
     # type: (str) -> str
     if not BAD_NAME.match(name):
@@ -76,6 +87,7 @@ class Module(BaseWrapper):
         # type: (types.ModuleType, Optional[Any], PluginManager) -> None
         super(Module, self).__init__(module, parent, plugin)
         self._name = module.__name__
+        self._docstring = inspect.getdoc(module) or ""
 
     def get_name(self):
         # type: () -> str
@@ -184,7 +196,7 @@ class Reference(BaseWrapper):
 
     def get_body(self, indent, path, name):
         if not self.is_ref(path):
-            return "OVERRIDE THIS!"
+            raise NotImplementedError("Override this!")
 
         # We are looking at a reference to the class
         # not the definition itself. The import method handles this.
@@ -210,15 +222,10 @@ class Class(Reference):
             return super(Class, self).get_body(indent, path, name)
 
         # TODO: get mro for subclasses
-        quotes = "'''" if '"""' in self._docstring else '"""'
-        return "{indent}class {name}(object):\n{indent2}{quotes} {doc} {quotes}".format(
+        return "{indent}class {name}(object):\n{doc}".format(
             indent=get_indent(indent),
             name=safe_name(name_split(name)[-1]),
-            indent2=get_indent(indent + 1),
-            doc="\n{}".format(get_indent(indent + 2)).join(
-                self._docstring.splitlines()
-            ),
-            quotes=quotes,
+            doc=make_docstring(indent + 1, self._docstring),
         )
 
     def get_cli(self, indent, path, name, colour):
@@ -241,17 +248,12 @@ class Function(Reference):
             return super(Function, self).get_body(indent, path, name)
 
         name = safe_name(name_split(name)[-1])
-        quotes = "'''" if '"""' in self._docstring else '"""'
-        return "{indent}def {name}({params}) -> {returns}:\n{indent2}{quote} {doc} {quote}".format(
+        return "{indent}def {name}({params}) -> {returns}:\n{doc}".format(
             indent=get_indent(indent),
             name=name,
             params=", ".join(p.as_arg() for p in self._parameters),
             returns="None" if name == "__init__" else self._returns,
-            indent2=get_indent(indent + 1),
-            quote=quotes,
-            doc="\n{}".format(get_indent(indent + 2)).join(
-                self._docstring.splitlines()
-            ),
+            doc=make_docstring(indent + 1, self._docstring),
         )
 
     def get_imports(self, path, name):
