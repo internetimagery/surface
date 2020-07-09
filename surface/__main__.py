@@ -77,6 +77,11 @@ def main():
         "-p", "--package", nargs="+", help="Package path. Importing all submodules.",
     )
     dump_parser.add_argument(
+        "--all",
+        action="store_true",
+        help="Pull in all dependencies (default only grab requested inputs)",
+    )
+    dump_parser.add_argument(
         "--pythonpath", help="Additional paths to use for imports."
     )
     dump_parser.add_argument(

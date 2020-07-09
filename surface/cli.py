@@ -134,7 +134,12 @@ def run_dump(args):  # type: (Any) -> int
         directories.add(package)
 
     # Export the public facing api
-    exporter = _Exporter(modules=modules, files=files, directories=directories)
+    exporter = _Exporter(
+        modules=modules,
+        files=files,
+        directories=directories,
+        filter_to_input=not args.all,
+    )
     if args.output:
         representation = exporter.export(args.output)
     else:

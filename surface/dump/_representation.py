@@ -147,16 +147,16 @@ class Reference(BaseWrapper):
         # provided.
         self._name = self._qualname = self._module = ""
 
-        # If either info is missing, ignore the whole lot.
-        if not name or not module or not qualname:
-            return
-
         #  Just a little more precaution. It's the wild west out there!
         if (
             not isinstance(name, str)
             or not isinstance(module, str)
             or not isinstance(qualname, str)
         ):
+            return
+
+        # If either info is missing, ignore the whole lot.
+        if not name or not module or not qualname:
             return
 
         # Disallow some names.
@@ -168,6 +168,9 @@ class Reference(BaseWrapper):
         live_module = sys.modules.get(module)
         if not live_module:
             return
+
+        # Sanitize qualname.
+        qualname = qualname.replace(".<locals>", "").replace(".<lambda>", name)
 
         # Check if the module actually has the named reference
         # NOTE: This may fail more with nested classes in python2 (no qualname).

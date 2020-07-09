@@ -33,16 +33,17 @@ class RepresentationBuilder(Chart):
     Walk through provided objects. Build a mapping of the live objects to our representation.
     """
 
-    def __init__(self, allowed_paths=None):
-        # type: (Container[str]) -> None
-        self._allowed_paths = set() if allowed_paths is None else allowed_paths
+    def __init__(self, path_filter=None, filter_allowed_only=False):
+        # type: (Optional[Callable[[str], bool]], bool) -> None
+        self._path_filter = path_filter or (lambda p: True)
         self._disallowed_paths = set(("builtins", "__builtin__"))
         self._allowed_names = set(("__init__", "__new__"))
         self._nameMap = {}  # type: Dict[str, BaseWrapper]
         self._idMap = {}  # type: Dict[int, BaseWrapper]
         self._plugin = PluginManager(
-            [AnnotationTypingPlugin(), CommentTypingPlugin(), DocstringTypingPlugin(),],
+            [AnnotationTypingPlugin(), CommentTypingPlugin(), DocstringTypingPlugin()],
         )  # type: List[BasePlugin]
+        self._filter_allowed_only = filter_allowed_only
 
     def get_representation(self):
         # type: () -> Representation
@@ -74,7 +75,14 @@ class RepresentationBuilder(Chart):
                 self._nameMap[name] = module_wrap
                 # We have visited this module. Don't need to do it again.
                 return True
-            self._nameMap[name] = self._set_wrapped(Module(module, None, self._plugin))
+            self._nameMap[name] = module_wrap = self._set_wrapped(
+                Module(module, None, self._plugin)
+            )
+            if self._filter_allowed_only and not self._path_filter(
+                module_wrap.get_name()
+            ):
+                # Requested we do not traverse unspecified
+                return True
 
     def visit_class(self, name, class_, __):
         # type: (str, type, TrailBlazer) -> Optional[bool]
@@ -85,7 +93,12 @@ class RepresentationBuilder(Chart):
             self._nameMap[name] = class_wrap
             # We have already visited this class. Don't need to do it again.
             return True
-        self._nameMap[name] = self._set_wrapped(Class(class_, None, self._plugin))
+        self._nameMap[name] = class_wrap = self._set_wrapped(
+            Class(class_, None, self._plugin)
+        )
+        if self._filter_allowed_only and self._path_filter(class_wrap.get_definition()):
+            # Requested we do not traverse unspecified
+            return True
 
     def visit_function(self, name, func, parent, __):
         # type: (str, Callable, type, TrailBlazer) -> None
@@ -148,7 +161,7 @@ class RepresentationBuilder(Chart):
         path_basename = name_split(name_parts[0])[-1]
         if name_parts[0] in self._disallowed_paths:
             path_allowed = False
-        elif name_parts[0] in self._allowed_paths or not path_basename.startswith("_"):
+        elif self._path_filter(name_parts[0]) or not path_basename.startswith("_"):
             path_allowed = True
         else:
             path_allowed = False

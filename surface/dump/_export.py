@@ -2,6 +2,7 @@
 
 
 import os
+import re
 import importlib
 import collections
 
@@ -27,31 +28,51 @@ class Exporter(object):
     >>> exporter.export("/path/to/directory")
     """
 
-    def __init__(self, modules=None, files=None, directories=None):
-        # type: (Optional[Sequence[types.ModuleType]], Optional[Sequence[str]], Optional[Sequence[str]]) -> None
+    def __init__(
+        self,
+        modules=None,  # type: Optional[Sequence[types.ModuleType]]
+        files=None,  # type: Optional[Sequence[str]]
+        directories=None,  # type: Optional[Sequence[str]]
+        filter_to_input=False,  # type: bool
+    ):  # type: (...) -> None
         self._modules = modules or []
         self._files = files or []
         self._directories = directories or []
         self._representation = None
+        self._filter_to_input = filter_to_input
+        self._filter_reg = None
 
     def get_representation(self):
         # type: () -> Representation
         if self._representation is None:
-            added_modules = set()
-            builder = RepresentationBuilder(added_modules)
+            input_modules = set()
+            builder = RepresentationBuilder(
+                self._filter_paths, filter_allowed_only=self._filter_to_input
+            )
             traveler = TrailBlazer(builder)
             for module in self._modules:
-                added_modules.add(module.__name__)
+                input_modules.add(module.__name__)
                 traveler.roam_module(module, module.__name__)
             for file_ in self._files:
-                added_modules.add(os.path.basename(file_).split(".", 1)[0])
+                input_modules.add(os.path.basename(file_).split(".", 1)[0])
                 traveler.roam_file(file_)
             for directory_ in self._directories:
                 traveler.roam_directory(directory_)
+            if self._filter_to_input:
+                self._filter_reg = re.compile(
+                    r"^(?:{})".format("|".join(re.escape(in_) for in_ in input_modules))
+                )
             traveler.hike()
             representation = builder.get_representation()
-            self._representation = filter_representation(representation)
+            self._representation = filter_representation(
+                representation, self._filter_paths
+            )
         return self._representation
+
+    def _filter_paths(self, path):
+        if not self._filter_reg:
+            return True
+        return bool(self._filter_reg.match(path))
 
     def export(self, directory):
         # type: (str) -> Representation
@@ -183,9 +204,12 @@ def build_skeleton_files(paths, directory):
     return structures
 
 
-def filter_representation(representation):
-    # type: (Representation) -> Representation
+def filter_representation(representation, module_filter):
+    # type: (Representation, Callable[[str], bool]) -> Representation
     """ Pull imported modules into their own file """
+
+    filter_path = lambda p: p not in PATH_BLACKLIST and module_filter(p)
+
     new_representation = collections.defaultdict(dict)
     for path, contents in representation.items():
         module_map = {}
@@ -219,10 +243,10 @@ def filter_representation(representation):
                     node.get_name() + ".",
                 )
                 # Duplicate so we have a reference in the used module, and one in the defined module
-                if not node.get_definition() in PATH_BLACKLIST:
+                if filter_path(node.get_definition()):
                     new_representation[node.get_definition()][node.get_name()] = node
 
-            if new_path not in PATH_BLACKLIST:
+            if filter_path(new_path):
                 new_representation[new_path][new_qualname] = node
 
     return new_representation
