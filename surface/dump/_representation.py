@@ -40,7 +40,9 @@ def make_docstring(indent, string):
         return str_indent + '""'
     quote = "'''" if '"""' in string else '"""'
     return "{indent}{quote}\n{indent}    {doc}\n{indent}{quote}".format(
-        indent=str_indent, quote=quote, doc="\n{}    ".format(str_indent).join(string.splitlines())
+        indent=str_indent,
+        quote=quote,
+        doc="\n{}    ".format(str_indent).join(string.splitlines()),
     )
 
 
@@ -143,14 +145,18 @@ class Reference(BaseWrapper):
         # This is not ideal, but also not a bad thing. So we can afford to be
         # a little strict I think, when checking validity of the information
         # provided.
-        self._name = self._module = ""
+        self._name = self._qualname = self._module = ""
 
         # If either info is missing, ignore the whole lot.
-        if not name or not module:
+        if not name or not module or not qualname:
             return
 
         #  Just a little more precaution. It's the wild west out there!
-        if not isinstance(name, str) or not isinstance(module, str) or not isinstance(qualname, str):
+        if (
+            not isinstance(name, str)
+            or not isinstance(module, str)
+            or not isinstance(qualname, str)
+        ):
             return
 
         # Disallow some names.
@@ -171,22 +177,32 @@ class Reference(BaseWrapper):
             live_obj = eval("__live_module." + qualname, {"__live_module": live_module})
         except (NameError, AttributeError) as err:
             # Given name doesn't exist.
-            LOG.debug("Name provided invalid: %s.%s (%s): %s", module, qualname, wrapped, err)
+            LOG.debug(
+                "Name provided invalid: %s.%s (%s): %s", module, qualname, wrapped, err
+            )
             return
         else:
             if live_obj is not wrapped:
                 # Name points at something else?!
-                LOG.warning("%s.%s are not equal: %s, %s", module, qualname, wrapped, live_obj)
+                # Dynamic python hackery at work!
+                LOG.warning(
+                    "%s.%s are not equal: %s, %s", module, qualname, wrapped, live_obj
+                )
                 return
 
         # Name and module validated! Woot!
         # We can confirm this is the definition of the object
         self._module = module
+        self._qualname = name
         self._name = name
 
     def get_name(self):
         # type: () -> str
         return self._name
+
+    def get_qualname(self):
+        # type: () -> str
+        return self._qualname
 
     def get_definition(self):
         # type: () -> str

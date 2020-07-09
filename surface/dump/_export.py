@@ -7,7 +7,7 @@ import collections
 
 from pyhike import TrailBlazer
 
-from surface.dump._representation import Class, Module, Function
+from surface.dump._representation import Reference, Class, Module
 from surface.dump._traversal import Representation, RepresentationBuilder
 
 PATH_BLACKLIST = set(("builtins", "__builtin__"))
@@ -208,9 +208,9 @@ def filter_representation(representation):
             if isinstance(node, Module):
                 module_map[qualname + "."] = (node.get_name(), "")
 
-            # If an imported class is found. Mark it too, and we'll create the definition stub.
+            # If an imported reference is found. Mark it too, and we'll create the definition stub.
             if (
-                isinstance(node, (Class, Function))
+                isinstance(node, Reference)
                 and node.get_definition()
                 and path != node.get_definition()
             ):

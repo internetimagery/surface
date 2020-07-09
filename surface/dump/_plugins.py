@@ -310,7 +310,9 @@ class DocstringTypingPlugin(BasePlugin):
         # type: (Callable, Optional[Any], Optional[sigtools.Signature]) -> Optional[Tuple[List[Param], str]]
         parsed = self._get_docstring(function)
         if not parsed:
-            if not getattr(function, "__name__", "") == "__init__" or not inspect.isclass(parent):
+            if not getattr(
+                function, "__name__", ""
+            ) == "__init__" or not inspect.isclass(parent):
                 return None
             parsed = self._get_docstring(parent)
             if not parsed:
