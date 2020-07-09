@@ -135,7 +135,14 @@ class Reference(BaseWrapper):
         # Be cautious when getting names and modules as they are not always
         # available or even accurate...
         name = getattr(wrapped, "__name__", "") or ""
+        qualname = getattr(wrapped, "__qualname__", "") or name
         module = getattr(wrapped, "__module__", "") or ""
+
+        # The consequence of having module and name fields blank is that
+        # they will be defined (complete copy) everywhere they are referenced.
+        # This is not ideal, but also not a bad thing. So we can afford to be
+        # a little strict I think, when checking validity of the information
+        # provided.
 
         # If either info is missing, ignore the whole lot.
         if not name or not module:
@@ -143,7 +150,7 @@ class Reference(BaseWrapper):
             return
 
         #  Just a little more precaution. It's the wild west out there!
-        if not isinstance(name, str) or not isinstance(module, str):
+        if not isinstance(name, str) or not isinstance(module, str) or not isinstance(qualname, str):
             self._name = self._module = ""
             return
 
@@ -160,8 +167,11 @@ class Reference(BaseWrapper):
             return
 
         # Check if the module actually has the named reference
-        # TODO: this may fail with nested classes being referenced elsewhere.
-        if getattr(module, name, None) is not wrapped:
+        # NOTE: This may fail with nested classes being referenced elsewhere in python2
+        try:
+            assert eval("{}.{}".format(module, qualname)) is wrapped
+        except (NameError, AttributeError, AssertionError):
+            # Given name doesn't exist or is pointing to something else.
             self._name = self._module = ""
             return
 
