@@ -85,7 +85,9 @@ def build_content(path, contents):
     # Walk from shortest to longest
     for name in sorted(contents):
         # If we leave an indented block, drop down
-        if indent_stack and not name.startswith(indent_stack[-1]):
+        while indent_stack:
+            if name.startswith(indent_stack[-1]):
+                break
             indent_stack.pop()
 
         node = contents[name]
