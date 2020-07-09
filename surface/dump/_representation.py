@@ -95,6 +95,9 @@ class Module(BaseWrapper):
 
     def get_imports(self, path, name):
         # type: (str, str) -> List[Import]
+        if path == self._name:
+            # We are already looking at this module. No import required
+            return []
 
         if name == self._name:
             # We are imported by our full name.
