@@ -308,6 +308,13 @@ class CommentTypingPlugin(BasePlugin):
 class DocstringTypingPlugin(BasePlugin):
     def types_from_function(self, function, parent, sig):
         # type: (Callable, Optional[Any], Optional[sigtools.Signature]) -> Optional[Tuple[List[Param], str]]
+        parsed = self._get_docstring(function)
+        if not parsed:
+            if not getattr(function, "__name__", "") == "__init__" or not inspect.isclass(parent):
+                return None
+            parsed = self._get_docstring(parent)
+            if not parsed:
+                return None
         docstring = inspect.getdoc(function)
         if not docstring:
             return None
@@ -341,3 +348,14 @@ class DocstringTypingPlugin(BasePlugin):
                     params.insert(0, Param("cls", "", Param.POSITIONAL_ONLY))
                 break
         return params, parsed[1]
+
+    @staticmethod
+    def _get_docstring(obj):
+        # type: (Any) -> Optional[str]
+        docstring = inspect.getdoc(obj)
+        if not docstring:
+            return None
+        parsed = parse_docstring(docstring)
+        if not parsed:
+            return None
+p
