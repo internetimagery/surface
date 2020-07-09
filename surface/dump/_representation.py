@@ -158,7 +158,7 @@ class Class(BaseWrapper):
             if name == self._name or "." not in name:
                 return ""
 
-            return "{}{}: {} = ... # {}".format(
+            return "{}{} = {} # {}".format(
                 get_indent(indent),
                 name_split(name)[-1],
                 "__{}".format(name_split(self._name)[-1]),
