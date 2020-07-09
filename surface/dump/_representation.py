@@ -39,8 +39,8 @@ def make_docstring(indent, string):
     if not string:
         return str_indent + '""'
     quote = "'''" if '"""' in string else '"""'
-    return "{indent}{quote} {doc} {quote}".format(
-        indent=str_indent, quote=quote, doc=(str_indent + "    \n").join(string.splitlines())
+    return "{indent}{quote}\n{indent}    {doc}\n{indent}{quote}".format(
+        indent=str_indent, quote=quote, doc="\n{}    ".format(str_indent).join(string.splitlines())
     )
 
 
@@ -175,7 +175,7 @@ class Reference(BaseWrapper):
         return self._module
 
     def is_ref(self, path):
-        if self._module and self._module == path:
+        if self._module and self._module != path:
             return True
         return False
 
