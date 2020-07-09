@@ -201,18 +201,27 @@ class Function(BaseWrapper):
         super(Function, self).__init__(wrapped, parent, plugin)
         self._parameters, self._returns = plugin.types_from_function(wrapped, parent)
         self._docstring = inspect.getdoc(wrapped) or ""
-        try:
-            module = wrapped.__module__
-        except AttributeError:
+        self._name = getattr(wrapped, "__name__", "") or ""
+        if not self._name:
             self._module = ""
         else:
-            self._module = module if module in sys.modules else ""
-        self._name = getattr(wrapped, "__name__", "") or ""
+            try:
+                module = wrapped.__module__
+            except AttributeError:
+                self._module = ""
+            else:
+                self._module = module if module in sys.modules else ""
 
     def _isRef(self, path):
         if self._name and self._module and path != self._module:
             return True
         return False
+    
+    def get_name(self):
+        return self._name
+    
+    def get_definition(self):
+        return self._module
 
     def get_body(self, indent, path, name):
         if self._isRef(path):
