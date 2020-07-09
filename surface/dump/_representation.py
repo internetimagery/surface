@@ -219,7 +219,7 @@ class Function(BaseWrapper):
                 get_indent(indent),
                 name_split(name)[-1],
                 "typing.Callable[[{}], {}]".format(
-                    ", ".join(p.type for p in self._parameters), self._returns,
+                    ", ".join(p.type for p in self._parameters if p.type), self._returns,
                 ),
                 self._module,
                 name,
