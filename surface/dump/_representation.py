@@ -158,7 +158,7 @@ class Reference(BaseWrapper):
             return
 
         # If either info is missing, ignore the whole lot.
-        if not name or not module or not qualname or name == "<lambda>":
+        if not name or not module or not qualname or not re.match(r"[\w\.]+$", qualname):
             return
 
         # Disallow some names.
@@ -170,10 +170,6 @@ class Reference(BaseWrapper):
         live_module = sys.modules.get(module)
         if not live_module:
             return
-
-        # Sanitize qualname.
-        qualname = re.sub(r"\.?<locals>", "", qualname)
-        qualname = re.sub(r"\.?<lambda>", name, qualname)
 
         # Check if the module actually has the named reference
         # NOTE: This may fail more with nested classes in python2 (no qualname).
