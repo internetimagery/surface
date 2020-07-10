@@ -23,3 +23,20 @@ class RegularDoc(object):
                 name (str):
                 index (int):
         """
+
+    def method_doc(self, classdoc: ClassDoc) -> typing.Any:
+        """
+            Some method
+            Args:
+                classdoc (:class:`ClassDoc`): the class doc!
+        """
+
+    @staticmethod
+    def static_doc(input_: typing.Optional[str] = ...) -> int:
+        """
+            Give me an input!
+            Args:
+                input_ (Optional[str]): some string, maybe
+            Returns:
+                int: some number
+        """

@@ -1,7 +1,7 @@
 """ Parse typing information out of docstrings """
 
-if False:  # type checking
-    from typing import *
+import typing
+
 
 import re
 import inspect
@@ -63,7 +63,10 @@ def handle_google(docstring):  # type: (str) -> Optional[Tuple[Dict[str, str], s
                 ],
                 re.M,
             ):
-                params[param.group(1)] = param.group(2).strip()
+                type_ = param.group(2).strip()
+                if type_.split("[", 1)[0] in typing.__all__:
+                    type_ = "typing." + type_
+                params[param.group(1)] = type_
             if not params:
                 # If we have an Args section, and nothing inside it... we are likely looking at a non-google style docstring
                 return None

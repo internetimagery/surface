@@ -22,3 +22,22 @@ class RegularDoc(object):
         """
         self._name = name
         self._index = index
+    
+    def method_doc(self, classdoc):
+        """ Some method
+        Args:
+            classdoc (:class:`ClassDoc`): the class doc!
+        """
+        print("CLASSDOC", classdoc)
+    
+    @staticmethod
+    def static_doc(input_=None):
+        """ Give me an input!
+        Args:
+            input_ (Optional[str]): some string, maybe
+        Returns:
+            int: some number
+        """
+        if input_ is None:
+            print("Oh no!")
+        return 0
