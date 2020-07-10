@@ -158,7 +158,7 @@ class Reference(BaseWrapper):
             return
 
         # If either info is missing, ignore the whole lot.
-        if not name or not module or not qualname:
+        if not name or not module or not qualname or name == "<lambda>":
             return
 
         # Disallow some names.
