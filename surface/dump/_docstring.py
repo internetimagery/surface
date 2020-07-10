@@ -19,7 +19,7 @@ def parse_docstring(docstring):
     return result
 
 
-HEADER_ARGS = ("arg", "args", "arguments", "parameters")
+HEADER_ARGS = ("arg", "args", "arguments", "parameters", "params")
 HEADER_RETURNS = ("yield", "yields", "return", "returns")
 HEADER_REG = re.compile(
     r"^([ \t]*)({}):\s*$".format(
@@ -64,8 +64,14 @@ def handle_google(docstring):  # type: (str) -> Optional[Tuple[Dict[str, str], s
                 re.M,
             ):
                 type_ = param.group(2).strip()
-                if type_.split("[", 1)[0] in typing.__all__:
+                type_basename = type_.split("[", 1)[0]
+                if type_basename in typing.__all__:
                     type_ = "typing." + type_
+                elif type_basename in typing.re.__all__:
+                    type_ = "typing.re." + type_
+                elif type_basename in typing.io.__all__:
+                    type_ = "typing.io." + type_
+                
                 params[param.group(1)] = type_
             if not params:
                 # If we have an Args section, and nothing inside it... we are likely looking at a non-google style docstring

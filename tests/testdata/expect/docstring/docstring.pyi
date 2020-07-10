@@ -2,6 +2,7 @@
 # Module: docstring
 
 import typing
+import typing.re
 
 class ClassDoc(object):
     """
@@ -22,6 +23,16 @@ class RegularDoc(object):
             Args:
                 name (str):
                 index (int):
+        """
+
+    @classmethod
+    def class_doc(cls, regex: typing.re.Pattern) -> bool:
+        """
+            some value becomes another
+            Params:
+                regex (Pattern)
+            Returns:
+                bool
         """
 
     def method_doc(self, classdoc: ClassDoc) -> typing.Any:

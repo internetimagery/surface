@@ -22,6 +22,18 @@ class RegularDoc(object):
         """
         self._name = name
         self._index = index
+
+    @classmethod
+    def class_doc(cls, regex):
+        """
+
+        some value becomes another
+        Params:
+            regex (Pattern)
+        Returns:
+            bool
+        """
+        return bool(regex.match("hello"))
     
     def method_doc(self, classdoc):
         """ Some method
