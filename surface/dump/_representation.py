@@ -172,7 +172,8 @@ class Reference(BaseWrapper):
             return
 
         # Sanitize qualname.
-        qualname = qualname.replace(".<locals>", "").replace(".<lambda>", name)
+        qualname = re.sub(r"\.?<locals>", "", qualname)
+        qualname = re.sub(r"\.?<lambda>", name, qualname)
 
         # Check if the module actually has the named reference
         # NOTE: This may fail more with nested classes in python2 (no qualname).
