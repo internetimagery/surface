@@ -85,6 +85,7 @@ def handle_google(docstring):  # type: (str) -> Optional[Tuple[Dict[str, str], s
                 if "yield" in header.group(2):
                     return_type = "typing.Iterable[{}]".format(return_type)
                 returns = return_type
+    
     if not params and not returns:
         # If we have no params, and no returns (but discovered headers earlier so would expect either of these)
         # then this likely was not a google formatted docstring.

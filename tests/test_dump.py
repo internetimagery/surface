@@ -33,15 +33,11 @@ class TestExportStubs(unittest.TestCase):
                 with open(os.path.join(self.tempdir, filename)) as fh2:
                     self.assertEqual(fh1.read(), fh2.read())
 
-        # test_path = os.path.join(self.tempdir, name + "i")
-        # expect_path = os.path.join(EXPECT, name + "i")
-        # with open(test_path) as fh1:
-        #    with open(expect_path) as fh2:
-        #        self.assertEqual(fh1.read(), fh2.read())
-
     def test_simple(self):
         self._test_file("simple")
 
+    def test_docstring(self):
+        self._test_file("docstring")
 
 if __name__ == "__main__":
     unittest.main()

@@ -358,3 +358,4 @@ class DocstringTypingPlugin(BasePlugin):
         parsed = parse_docstring(docstring)
         if not parsed:
             return None
+        return parsed
