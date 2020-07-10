@@ -52,6 +52,15 @@ class RegularDoc(object):
                 int: some number
         """
 
+def function_bad_doc(value: typing.Any) -> typing.Any:
+    """
+        Not a valid docstring
+        Args:
+            not an argument
+        Returns:
+            something not a type
+    """
+
 def function_doc(day: int, month: int, year: int) -> typing.Iterator[int]:
     """
         Is it the second?

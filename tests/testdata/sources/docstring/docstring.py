@@ -66,3 +66,12 @@ def function_doc(day, month, year):
     for i in range(day):
         if i % 2:
             yield i
+
+def function_bad_doc(value):
+    """ Not a valid docstring
+        Args:
+            not an argument
+        Returns:
+            something not a type
+    """
+    print("BAH!")
