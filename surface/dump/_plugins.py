@@ -310,6 +310,10 @@ class DocstringTypingPlugin(BasePlugin):
         # type: (Callable, Optional[Any], Optional[sigtools.Signature]) -> Optional[Tuple[List[Param], str]]
         parsed = self._get_docstring(function)
         if not parsed:
+            # Function does not have a docstring. However
+            # if the function is __init__ the docstring
+            # could be on the class itself.
+            # So check that as well.
             if not getattr(
                 function, "__name__", ""
             ) == "__init__" or not inspect.isclass(parent):
@@ -317,12 +321,6 @@ class DocstringTypingPlugin(BasePlugin):
             parsed = self._get_docstring(parent)
             if not parsed:
                 return None
-        docstring = inspect.getdoc(function)
-        if not docstring:
-            return None
-        parsed = parse_docstring(docstring)
-        if not parsed:
-            return None
         if sig:
             # If we could determine the signature, then use that information to guide us.
             params = [
@@ -345,9 +343,9 @@ class DocstringTypingPlugin(BasePlugin):
                 if attr.object is not function:
                     continue
                 if attr.kind == "method":
-                    params.insert(0, Param("self", "", Param.POSITIONAL_ONLY))
+                    params.insert(0, Param("self", AnyStr, Param.POSITIONAL_ONLY))
                 if attr.kind == "class method":
-                    params.insert(0, Param("cls", "", Param.POSITIONAL_ONLY))
+                    params.insert(0, Param("cls", AnyStr, Param.POSITIONAL_ONLY))
                 break
         return params, parsed[1]
 

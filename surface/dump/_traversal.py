@@ -113,6 +113,8 @@ class RepresentationBuilder(Chart):
         # type: (str, Callable, type, TrailBlazer) -> None
         if not self._filter_name(name):
             return
+        if not self._filter_function(func):
+            return
         func_wrap = self._get_wrapped(func) or self._set_wrapped(
             Method(func, parent, self._plugin)
         )
@@ -152,6 +154,14 @@ class RepresentationBuilder(Chart):
             Attribute(value, parent, self._plugin)
         )
         self._nameMap[name] = attr_wrap
+
+    @staticmethod
+    def _filter_function(func):
+        # type: (Callable) -> bool
+        """ Filter out functions we don't want to bother with """
+        if func is object.__init__ or func is object.__new__:
+            return False
+        return True
 
     def _filter_name(self, name):
         # type: (str) -> bool

@@ -11,6 +11,8 @@ import contextlib
 
 import sigtools
 
+from surface.dump._plugins import Param
+
 LOG = logging.getLogger(__name__)
 
 INDENT = "    "
@@ -186,12 +188,19 @@ class Reference(BaseWrapper):
             return
         else:
             if live_obj is not wrapped:
-                # Name points at something else?!
-                # Dynamic python hackery at work!
-                LOG.warning(
-                    "%s.%s are not equal: %s, %s", module, qualname, wrapped, live_obj
-                )
-                return
+                # Handle class/static methods (bound method accessed by attribute)
+                func = getattr(live_obj, "__func__", None)
+                if not func or func is not wrapped:
+                    # Name points at something else?!
+                    # Dynamic python hackery at work!
+                    LOG.warning(
+                        "%s.%s are not equal: %s, %s",
+                        module,
+                        qualname,
+                        wrapped,
+                        live_obj,
+                    )
+                    return
 
         # Name and module validated! Woot!
         # We can confirm this is the definition of the object
@@ -319,12 +328,29 @@ class Function(Reference):
 
 
 class Method(Function):
-    pass
+    def __init__(self, wrapped, parent, plugin):
+        super(Method, self).__init__(wrapped, parent, plugin)
+        if not self._parameters:
+            raise RuntimeError("No parameters detected: {}".format(wrapped))
+
+        self_ = self._parameters[0]
+        if self_.kind == Param.VAR_POSITIONAL:
+            self._parameters.insert(0, Param("self", "", Param.POSITIONAL_ONLY))
+        else:
+            self._parameters[0] = Param(self_.name, "", Param.POSITIONAL_ONLY)
 
 
 class ClassMethod(Function):
     def __init__(self, wrapped, parent, plugin):
         super(ClassMethod, self).__init__(wrapped.__func__, parent, plugin)
+        if not self._parameters:
+            raise RuntimeError("No parameters detected: {}".format(wrapped))
+
+        self_ = self._parameters[0]
+        if self_.kind == Param.VAR_POSITIONAL:
+            self._parameters.insert(0, Param("cls", "", Param.POSITIONAL_ONLY))
+        else:
+            self._parameters[0] = Param(self_.name, "", Param.POSITIONAL_ONLY)
 
     def get_body(self, indent, path, name):
         body = super(ClassMethod, self).get_body(indent, path, name)
