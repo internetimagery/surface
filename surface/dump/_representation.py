@@ -64,6 +64,7 @@ class BaseWrapper(object):
         """ Pull information from a live object to create a representation later """
         self._id = id(wrapped)
         self._repr = str(repr(wrapped)).replace("\n", " ")
+        self._docstring = (inspect.getdoc(wrapped) or "").strip()
 
     def get_id(self):
         # type: () -> int
@@ -91,7 +92,6 @@ class Module(BaseWrapper):
         # type: (types.ModuleType, Optional[Any], PluginManager) -> None
         super(Module, self).__init__(module, parent, plugin)
         self._name = module.__name__
-        self._docstring = inspect.getdoc(module) or ""
 
     def get_name(self):
         # type: () -> str
@@ -261,7 +261,6 @@ class Class(Reference):
     def __init__(self, wrapped, parent, plugin):
         # type: (type, OPtional[Any], PluginManager) -> None
         super(Class, self).__init__(wrapped, parent, plugin)
-        self._docstring = inspect.getdoc(wrapped) or ""
 
     def get_body(self, indent, path, name):
         if self.is_ref(path):
@@ -287,7 +286,6 @@ class Function(Reference):
     def __init__(self, wrapped, parent, plugin):
         super(Function, self).__init__(wrapped, parent, plugin)
         self._parameters, self._returns = plugin.types_from_function(wrapped, parent)
-        self._docstring = inspect.getdoc(wrapped) or ""
 
     def get_body(self, indent, path, name):
         if self.is_ref(path):

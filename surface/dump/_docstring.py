@@ -32,7 +32,7 @@ HEADER_REG = re.compile(
 def handle_google(docstring):  # type: (str) -> Optional[Tuple[Dict[str, str], str]]
     # Find the first header, to establish indent
     headers = list(HEADER_REG.finditer(docstring))
-    if not headers or len(headers) > 2:
+    if not headers:
         return None
 
     params = collections.OrderedDict()
@@ -48,7 +48,7 @@ def handle_google(docstring):  # type: (str) -> Optional[Tuple[Dict[str, str], s
             indent = r"{}[ \t]+".format(header.group(1))
             param_name = r"([\w\-]+)"
             type_ = r"\((?::\w+:)?`*\.?({})`*\)".format(TYPE_CHARS)
-            description = r"(?: *: .+| *)"
+            description = r"(?: *: .+| *|: *)"
             for param in re.finditer(
                 r"^{indent}{param_name} *{type_}{description}$".format(
                     indent=indent,

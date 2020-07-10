@@ -3,7 +3,7 @@
 
 import typing
 
-class InitDoc(object):
+class ClassDoc(object):
     """
         Typing information in docstring
         Args:
@@ -12,3 +12,14 @@ class InitDoc(object):
 
     def __init__(self, name: str) -> None:
         ""
+
+class RegularDoc(object):
+    ""
+
+    def __init__(self, name: str, index: int) -> None:
+        """
+            Some information
+            Args:
+                name (str):
+                index (int):
+        """
