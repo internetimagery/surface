@@ -29,6 +29,18 @@ HEADER_REG = re.compile(
 )
 
 
+def append_typing_prefix(match):
+    # type: (typing.re.Pattern) -> str
+    text = match.group(0)
+    if text in typing.__all__:
+        return "typing." + text
+    if text in typing.re.__all__:
+        return "typing.re." + text
+    if text in typing.io.__all__:
+        return "typing.io." + text
+    return text
+
+
 def handle_google(docstring):  # type: (str) -> Optional[Tuple[Dict[str, str], str]]
     # Find the first header, to establish indent
     headers = list(HEADER_REG.finditer(docstring))
@@ -63,16 +75,7 @@ def handle_google(docstring):  # type: (str) -> Optional[Tuple[Dict[str, str], s
                 ],
                 re.M,
             ):
-                type_ = param.group(2).strip()
-                type_basename = type_.split("[", 1)[0]
-                if type_basename in typing.__all__:
-                    type_ = "typing." + type_
-                elif type_basename in typing.re.__all__:
-                    type_ = "typing.re." + type_
-                elif type_basename in typing.io.__all__:
-                    type_ = "typing.io." + type_
-                
-                params[param.group(1)] = type_
+                params[param.group(1)] = re.sub(r"\b\w+\b", append_typing_prefix, param.group(2).strip())
             if not params:
                 # If we have an Args section, and nothing inside it... we are likely looking at a non-google style docstring
                 return None

@@ -43,11 +43,11 @@ class RegularDoc(object):
         """
 
     @staticmethod
-    def static_doc(input_: typing.Optional[str] = ...) -> int:
+    def static_doc(input_: typing.Optional[typing.Dict[str, typing.List[int]]] = ...) -> int:
         """
             Give me an input!
             Args:
-                input_ (Optional[str]): some string, maybe
+                input_ (Optional[Dict[str, List[int]]]): some string, maybe
             Returns:
                 int: some number
         """

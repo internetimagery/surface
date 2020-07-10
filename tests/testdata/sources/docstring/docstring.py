@@ -46,7 +46,7 @@ class RegularDoc(object):
     def static_doc(input_=None):
         """ Give me an input!
         Args:
-            input_ (Optional[str]): some string, maybe
+            input_ (Optional[Dict[str, List[int]]]): some string, maybe
         Returns:
             int: some number
         """
