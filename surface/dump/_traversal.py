@@ -96,7 +96,7 @@ class RepresentationBuilder(Chart):
         self._nameMap[name] = class_wrap = self._set_wrapped(
             Class(class_, None, self._plugin)
         )
-        if self._filter_allowed_only and self._path_filter(class_wrap.get_definition()):
+        if self._filter_allowed_only and not self._path_filter(class_wrap.get_definition()):
             # Requested we do not traverse unspecified
             return True
 
