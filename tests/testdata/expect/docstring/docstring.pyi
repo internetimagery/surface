@@ -51,3 +51,14 @@ class RegularDoc(object):
             Returns:
                 int: some number
         """
+
+def function_doc(day: int, month: int, year: int) -> typing.Iterator[int]:
+    """
+        Is it the second?
+        Arguments:
+            day (int): day of the month (01)
+            month (int): month of the year (02)
+            year (int): Year! four digits! (1999)
+        Yields:
+            int: days!
+    """

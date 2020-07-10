@@ -91,8 +91,8 @@ def handle_google(docstring):  # type: (str) -> Optional[Tuple[Dict[str, str], s
             )
             if match:
                 return_type = match.group(1)
-                if "yield" in header.group(2):
-                    return_type = "typing.Iterable[{}]".format(return_type)
+                if "yield" in header.group(2).lower() and not return_type.startswith("typing.Iter"):
+                    return_type = "typing.Iterator[{}]".format(return_type)
                 returns = return_type
     
     if not params and not returns:

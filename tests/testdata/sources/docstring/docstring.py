@@ -53,3 +53,16 @@ class RegularDoc(object):
         if input_ is None:
             print("Oh no!")
         return 0
+    
+def function_doc(day, month, year):
+    """ Is it the second?
+        Arguments:
+            day (int): day of the month (01)
+            month (int): month of the year (02)
+            year (int): Year! four digits! (1999)
+        Yields:
+            int: days!
+    """
+    for i in range(day):
+        if i % 2:
+            yield i
