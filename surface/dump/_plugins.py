@@ -152,7 +152,6 @@ class PluginManager(object):
                 # Quality of the source code is not our concern here. Let it slide.
                 LOG.debug("Failed to read function source %s", function)
             except RuntimeError:
-                # TypeError?
                 # RuntimeError: https://github.com/epsy/sigtools/issues/10
                 LOG.exception("Failed to get signature for {}".format(function))
             else:
@@ -276,7 +275,7 @@ class CommentTypingPlugin(BasePlugin):
         params = [
             Param(
                 name,
-                arg.strip() if arg is not None else self._get_default_type(param),
+                arg.strip() if arg is not None else self._get_default_type(p),
                 self._sig_param_kind_map(p),
             )
             for (name, p), arg in zip_longest(
