@@ -91,8 +91,10 @@ class RepresentationBuilder(Chart):
         class_wrap = self._get_wrapped(class_)
         if class_wrap:
             self._nameMap[name] = class_wrap
-            # We have already visited this class. Don't need to do it again.
-            return True
+            # We have already visited this class.
+            # If we have verified it's definition, we can skip visiting it again.
+            # If not, we probably need another copy somewhere.
+            return bool(class_wrap.get_definition())
         self._nameMap[name] = class_wrap = self._set_wrapped(
             Class(class_, None, self._plugin)
         )
